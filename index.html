@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agente de respuesta ciudadana · Alcaldía de Marinilla</title>
+<style>
+  :root {
+    --govco-blue: #004884;
+    --agent-blue: #30a2ff;
+    --bar-gray: #52606d;
+    --bar-gray-hover: #46525c;
+    --text-dark: #1c2530;
+    --text-muted: #5b6673;
+    --border-color: #e2e5e9;
+    --radius-pill: 999px;
+    --focus-ring: 0 0 0 3px rgba(46, 156, 224, 0.45);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text-dark);
+    background: #ffffff;
+  }
+
+  a { text-decoration: none; }
+
+  /* Barra superior gov.co */
+  .topbar {
+    background: var(--govco-blue);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+  }
+
+  .govco-link {
+    display: inline-flex;
+    border-radius: 4px;
+  }
+
+  .govco-link:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  .govco-logo {
+    height: 28px;
+    display: block;
+  }
+
+  /* Contenido principal */
+  .app {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 28px 24px 40px;
+  }
+
+  .entity {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+
+  .entity-logo {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  .entity-name {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-dark);
+  }
+
+  .agent-title {
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--agent-blue);
+    margin: 0 0 40px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 24px 12px 44px;
+  }
+
+  .empty-state svg {
+    color: var(--text-dark);
+  }
+
+  .empty-state p {
+    font-size: 15px;
+    color: var(--text-dark);
+    margin: 14px 0 0;
+  }
+
+  /* Barra de pregunta (texto + micrófono) */
+  .query-bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .query-input {
+    width: 100%;
+    height: 56px;
+    border: none;
+    border-radius: var(--radius-pill);
+    background: var(--bar-gray);
+    color: #ffffff;
+    padding: 0 66px 0 22px;
+    font-size: 15px;
+  }
+
+  .query-input::placeholder {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .query-input:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  .mic-button {
+    position: absolute;
+    right: 6px;
+    top: 6px;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: var(--agent-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .mic-button:hover {
+    filter: brightness(0.95);
+  }
+
+  .mic-button:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  .mic-button svg {
+    color: #ffffff;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Respeta preferencia de movimiento reducido para futuras animaciones */
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+
+  @media (max-width: 480px) {
+    .entity-logo { width: 52px; height: 52px; }
+    .entity-name { font-size: 17px; }
+    .agent-title { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+  <header class="topbar">
+    <a
+      class="govco-link"
+      href="https://www.gov.co"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Ir al portal del Estado colombiano gov.co"
+    >
+      <!-- TODO: reemplazar por el logo oficial blanco de gov.co -->
+      <img class="govco-logo" src="assets/govco-logo-blanco.svg" alt="gov.co">
+    </a>
+  </header>
+
+  <main class="app">
+    <div class="entity">
+      <img class="entity-logo" src="assets/logo-alcaldia-marinilla.png" alt="Escudo de la Alcaldía de Marinilla">
+      <h1 class="entity-name">Alcaldía de Marinilla - Antioquia</h1>
+    </div>
+
+    <h2 class="agent-title">Agente de respuesta ciudadana</h2>
+
+    <div class="empty-state">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+      </svg>
+      <p>Pregunta sobre trámites, formatos o normatividad</p>
+    </div>
+
+    <form class="query-bar" id="query-form">
+      <label for="query-input" class="sr-only">Escribe tu pregunta</label>
+      <input
+        type="text"
+        id="query-input"
+        name="query"
+        class="query-input"
+        placeholder="Haz tu pregunta o usa el micrófono"
+        autocomplete="off"
+      >
+      <button type="button" class="mic-button" id="mic-button" aria-label="Preguntar por voz">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+      </button>
+    </form>
+  </main>
+
+  <script>
+    // TODO (US-04): conectar el envío de la pregunta con el backend del agente RAG
+    function handleQuerySubmit(question) {
+      // Por ahora no hace nada. Aquí se enrutará la pregunta al agente.
+      console.log('Pregunta enviada (pendiente de enrutar):', question);
+    }
+
+    // TODO (US-05): implementar captura de audio y transcripción speech-to-text
+    function handleMicClick() {
+      // Por ahora no hace nada. Aquí se abrirá el micrófono y se enviará el audio.
+      console.log('Micrófono presionado (pendiente de implementar)');
+    }
+
+    document.getElementById('query-form').addEventListener('submit', function (event) {
+      event.preventDefault();
+      var input = document.getElementById('query-input');
+      handleQuerySubmit(input.value);
+    });
+
+    document.getElementById('mic-button').addEventListener('click', function () {
+      handleMicClick();
+    });
+  </script>
+
+</body>
+</html>
