@@ -178,6 +178,58 @@
     .entity-name { font-size: 17px; }
     .agent-title { font-size: 22px; }
   }
+
+  /* Estilos para el componente de caracterización US-02 */
+  .char-box {
+    text-align: center;
+    margin-bottom: 32px;
+    background: #f8fafc;
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+  }
+  .char-question {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 18px 0;
+    color: var(--text-dark);
+  }
+  .char-options {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .char-btn {
+    padding: 10px 20px;
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-dark);
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  .char-btn:hover {
+    background: var(--govco-blue);
+    color: #ffffff;
+    border-color: var(--govco-blue);
+  }
+  .char-skip-lnk {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    text-decoration: underline;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px;
+  }
+  .char-skip-lnk:hover {
+    color: var(--text-dark);
+  }
+  
 </style>
 </head>
 <body>
@@ -210,7 +262,50 @@
       <p>Pregunta sobre trámites, formatos o normatividad</p>
     </div>
 
-    <form class="query-bar" id="query-form">
+    <!-- US-02: Contenedor de Caracterización (Flujo de Preguntas) -->
+    <div id="characterization-container" class="char-box">
+      
+      <!-- Pantalla 1: Formato de información -->
+      <div id="char-step-1" class="char-step">
+        <p class="char-question">¿Cómo prefieres recibir la información?</p>
+        <div class="char-options">
+          <button type="button" class="char-btn" onclick="nextStep(1, 'audio')">🔊 Audio</button>
+          <button type="button" class="char-btn" onclick="nextStep(1, 'texto')">📝 Texto</button>
+          <button type="button" class="char-btn" onclick="nextStep(1, 'ambos')">🔄 Ambos</button>
+        </div>
+        <button type="button" class="char-skip-lnk" onclick="abortCharacterization()">Prefiero no responder</button>
+      </div>
+
+      <!-- Pantalla 2: Familiaridad legal -->
+      <div id="char-step-2" class="char-step" style="display: none;">
+        <p class="char-question">¿Qué tan familiarizado(a) estás con trámites y documentos legales?</p>
+        <div class="char-options">
+          <button type="button" class="char-btn" onclick="nextStep(2, 'poco')">Poco</button>
+          <button type="button" class="char-btn" onclick="nextStep(2, 'algo')">Algo</button>
+          <button type="button" class="char-btn" onclick="nextStep(2, 'mucho')">Mucho</button>
+        </div>
+        <button type="button" class="char-skip-lnk" onclick="abortCharacterization()">Prefiero no responder</button>
+      </div>
+
+      <!-- Pantalla 3: Nivel de lenguaje -->
+      <div id="char-step-3" class="char-step" style="display: none;">
+        <p class="char-question">¿Prefieres explicaciones sencillas o más técnicas?</p>
+        <div class="char-options">
+          <button type="button" class="char-btn" onclick="nextStep(3, 'sencillo')">Sencillo</button>
+          <button type="button" class="char-btn" onclick="nextStep(3, 'tecnico')">Técnico</button>
+        </div>
+        <button type="button" class="char-skip-lnk" onclick="abortCharacterization()">Prefiero no responder</button>
+      </div>
+
+    </div>
+
+    <div id="active-profile-badge" style="display: none; text-align: center; margin-bottom: 24px;">
+      <span style="background: var(--border-color); padding: 4px 12px; border-radius: var(--radius-pill); font-size: 13px; color: var(--text-muted);">
+        Perfil activo: <strong id="profile-name" style="color: var(--govco-blue);">Neutro</strong>
+      </span>
+    </div>
+
+    <form class="query-bar" id="query-form" style="display: none;">
       <label for="query-input" class="sr-only">Escribe tu pregunta</label>
       <input
         type="text"
@@ -229,30 +324,121 @@
         </svg>
       </button>
     </form>
-  </main>
 
-  <script>
+ <script>
+    // --- Lógica Integrada US-22 (Caracterización) & US-23 (Almacenamiento) ---
+
+    // Objeto temporal para guardar las respuestas del cuestionario activo
+    var userAnswers = {
+      format: null,
+      legalFamiliarity: null,
+      complexity: null
+    };
+
+    // 1. Función núcleo para guardar el perfil y actualizar la interfaz
+    function setProfile(profileCode, profileName) {
+      localStorage.setItem('agente_perfil_codigo', profileCode);
+      localStorage.setItem('agente_perfil_nombre', profileName);
+      applyProfileUI(profileName);
+    }
+
+    // 2. Función que oculta el bloque de preguntas y muestra la barra
+    function applyProfileUI(profileName) {
+      document.getElementById('characterization-container').style.display = 'none';
+      document.getElementById('profile-name').innerText = profileName;
+      document.getElementById('active-profile-badge').style.display = 'block';
+      document.getElementById('query-form').style.display = 'flex';
+    }
+
+    // 3. Validación al cargar la página (Memoria del usuario)
+   // 3. Validación al cargar la página (¡DESACTIVADA TEMPORALMENTE PARA PRUEBAS!)
+    window.addEventListener('DOMContentLoaded', function() {
+      // Borramos lo que haya quedado viejo de una vez al recargar
+      localStorage.clear(); 
+      
+      // Comentamos esto para que NUNCA salte el cuestionario solo:
+      /*
+      var savedProfileName = localStorage.getItem('agente_perfil_nombre');
+      if (savedProfileName) {
+        applyProfileUI(savedProfileName);
+      }
+      */
+    });
+
+    // 4. Regla de omisión: Salida de emergencia
+    function abortCharacterization() {
+      setProfile('P0', 'Perfil 0 (Neutro)');
+    }
+
+    // 5. Control de flujo paso a paso y cálculo del árbol de decisión
+    function nextStep(currentStep, answer) {
+      if (currentStep === 1) {
+        userAnswers.format = answer;
+        
+        // Ocultamos pantalla 1 y mostramos pantalla 2
+        document.getElementById('char-step-1').style.display = 'none';
+        document.getElementById('char-step-2').style.display = 'flex';
+        document.getElementById('char-step-2').style.flexDirection = 'column'; 
+        document.getElementById('char-step-2').style.alignItems = 'center';
+      } 
+      else if (currentStep === 2) {
+        userAnswers.legalFamiliarity = answer;
+        
+        if (userAnswers.format === 'audio' && userAnswers.legalFamiliarity === 'poco') {
+          setProfile('P1', 'Perfil 1 (Asistencia por voz)');
+        } 
+        else if (userAnswers.format === 'texto' && (userAnswers.legalFamiliarity === 'poco' || userAnswers.legalFamiliarity === 'algo')) {
+          setProfile('P2', 'Perfil 2 (Ciudadano general)');
+        } 
+        else if (userAnswers.format === 'texto' && userAnswers.legalFamiliarity === 'mucho') {
+          // Pasamos a la pantalla 3 opcional
+          document.getElementById('char-step-2').style.display = 'none';
+          document.getElementById('char-step-3').style.display = 'flex';
+          document.getElementById('char-step-3').style.flexDirection = 'column';
+          document.getElementById('char-step-3').style.alignItems = 'center';
+        } 
+        else {
+          setProfile('P2', 'Perfil 2 (Ciudadano general)');
+        }
+      } 
+      else if (currentStep === 3) {
+        userAnswers.complexity = answer;
+        if (userAnswers.complexity === 'tecnico') {
+          setProfile('P3', 'Perfil 3 (Usuario técnico)');
+        } else {
+          setProfile('P2', 'Perfil 2 (Ciudadano general)');
+        }
+      }
+    }
+
+    // --- Funciones previas del formulario ---
+    
     // TODO (US-04): conectar el envío de la pregunta con el backend del agente RAG
     function handleQuerySubmit(question) {
-      // Por ahora no hace nada. Aquí se enrutará la pregunta al agente.
       console.log('Pregunta enviada (pendiente de enrutar):', question);
     }
 
-    // TODO (US-05): implementar captura de audio y transcripción speech-to-text
+    // TODO (US-05): implementar captura de audio
     function handleMicClick() {
-      // Por ahora no hace nada. Aquí se abrirá el micrófono y se enviará el audio.
       console.log('Micrófono presionado (pendiente de implementar)');
     }
 
-    document.getElementById('query-form').addEventListener('submit', function (event) {
-      event.preventDefault();
-      var input = document.getElementById('query-input');
-      handleQuerySubmit(input.value);
-    });
+    // Eventos de la barra de búsqueda
+    var queryForm = document.getElementById('query-form');
+    if(queryForm) {
+      queryForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        var input = document.getElementById('query-input');
+        handleQuerySubmit(input.value);
+      });
+    }
 
-    document.getElementById('mic-button').addEventListener('click', function () {
-      handleMicClick();
-    });
+    var micButton = document.getElementById('mic-button');
+    if(micButton) {
+      micButton.addEventListener('click', function () {
+        handleMicClick();
+      });
+    }
   </script>
 
 </body>
