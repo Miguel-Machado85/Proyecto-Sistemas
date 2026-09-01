@@ -101,10 +101,71 @@
     margin: 14px 0 0;
   }
 
+  /* Área de mensajes (scrolleable) — oculta hasta que hay perfil definido */
+  .chat-messages {
+    max-height: 360px;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    flex-direction: column;
+    gap: 10px;
+    padding: 4px 2px 20px;
+    margin-bottom: 4px;
+  }
+
+  .msg {
+    max-width: 82%;
+    padding: 11px 16px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .msg-user {
+    align-self: flex-end;
+    background: var(--agent-blue);
+    color: #ffffff;
+    border-bottom-right-radius: 4px;
+  }
+
+  .msg-agent {
+    align-self: flex-start;
+    background: #eef1f4;
+    color: var(--text-dark);
+    border-bottom-left-radius: 4px;
+  }
+
+  .msg-pending {
+    align-self: flex-start;
+    background: #eef1f4;
+    color: var(--text-muted);
+    border-bottom-left-radius: 4px;
+    font-style: italic;
+  }
+
+  .msg-error {
+    align-self: flex-start;
+    background: #fdecea;
+    color: #8a2f24;
+    border: 1px solid #f3c2bb;
+    border-bottom-left-radius: 4px;
+  }
+
+  .query-error {
+    min-height: 18px;
+    font-size: 13px;
+    color: #c0392b;
+    margin: 8px 4px 0;
+  }
+
+  .query-input.is-invalid {
+    box-shadow: 0 0 0 2px #c0392b;
+  }
+
   /* Barra de pregunta (texto + micrófono) */
   .query-bar {
     position: relative;
-    display: flex;
     align-items: center;
   }
 
@@ -229,7 +290,7 @@
   .char-skip-lnk:hover {
     color: var(--text-dark);
   }
-  
+
 </style>
 </head>
 <body>
@@ -255,16 +316,9 @@
 
     <h2 class="agent-title">Agente de respuesta ciudadana</h2>
 
-    <div class="empty-state">
-      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-      </svg>
-      <p>Pregunta sobre trámites, formatos o normatividad</p>
-    </div>
-
     <!-- US-02: Contenedor de Caracterización (Flujo de Preguntas) -->
     <div id="characterization-container" class="char-box">
-      
+
       <!-- Pantalla 1: Formato de información -->
       <div id="char-step-1" class="char-step">
         <p class="char-question">¿Cómo prefieres recibir la información?</p>
@@ -305,7 +359,17 @@
       </span>
     </div>
 
-    <form class="query-bar" id="query-form" style="display: none;">
+    <!-- Oculto hasta que hay perfil (setProfile lo revela) -->
+    <div class="chat-messages" id="chat-messages" style="display: none;" aria-live="polite" aria-label="Conversación con el agente">
+      <div class="empty-state" id="empty-state">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+        </svg>
+        <p>Pregunta sobre trámites, formatos o normatividad</p>
+      </div>
+    </div>
+
+    <form class="query-bar" id="query-form" style="display: none;" novalidate>
       <label for="query-input" class="sr-only">Escribe tu pregunta</label>
       <input
         type="text"
@@ -314,6 +378,7 @@
         class="query-input"
         placeholder="Haz tu pregunta o usa el micrófono"
         autocomplete="off"
+        aria-describedby="query-error"
       >
       <button type="button" class="mic-button" id="mic-button" aria-label="Preguntar por voz">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -324,39 +389,43 @@
         </svg>
       </button>
     </form>
+    <p class="query-error" id="query-error" role="alert"></p>
+  </main>
 
  <script>
-    // --- Lógica Integrada US-22 (Caracterización) & US-23 (Almacenamiento) ---
+    // ══════════════════════════════════════════════════════════════
+    // Caracterización (US-02) — sin cambios de lógica, solo se agregó
+    // que applyProfileUI() también revele el área de chat.
+    // ══════════════════════════════════════════════════════════════
 
-    // Objeto temporal para guardar las respuestas del cuestionario activo
     var userAnswers = {
       format: null,
       legalFamiliarity: null,
       complexity: null
     };
 
-    // 1. Función núcleo para guardar el perfil y actualizar la interfaz
     function setProfile(profileCode, profileName) {
       localStorage.setItem('agente_perfil_codigo', profileCode);
       localStorage.setItem('agente_perfil_nombre', profileName);
       applyProfileUI(profileName);
     }
 
-    // 2. Función que oculta el bloque de preguntas y muestra la barra
     function applyProfileUI(profileName) {
       document.getElementById('characterization-container').style.display = 'none';
       document.getElementById('profile-name').innerText = profileName;
       document.getElementById('active-profile-badge').style.display = 'block';
       document.getElementById('query-form').style.display = 'flex';
+      // Antes solo se revelaba el input; ahora también el área de mensajes,
+      // para que no se vea el chat vacío mientras el cuestionario sigue abierto.
+      document.getElementById('chat-messages').style.display = 'flex';
     }
 
-    // 3. Validación al cargar la página (Memoria del usuario)
-   // 3. Validación al cargar la página (¡DESACTIVADA TEMPORALMENTE PARA PRUEBAS!)
-    window.addEventListener('DOMContentLoaded', function() {
+    window.addEventListener('DOMContentLoaded', function () {
       // Borramos lo que haya quedado viejo de una vez al recargar
-      localStorage.clear(); 
-      
-      // Comentamos esto para que NUNCA salte el cuestionario solo:
+      localStorage.clear();
+
+      // Comentado a propósito (pruebas del equipo): cuando se reactive,
+      // esto recupera el perfil guardado y salta directo al chat.
       /*
       var savedProfileName = localStorage.getItem('agente_perfil_nombre');
       if (savedProfileName) {
@@ -365,42 +434,38 @@
       */
     });
 
-    // 4. Regla de omisión: Salida de emergencia
     function abortCharacterization() {
       setProfile('P0', 'Perfil 0 (Neutro)');
     }
 
-    // 5. Control de flujo paso a paso y cálculo del árbol de decisión
     function nextStep(currentStep, answer) {
       if (currentStep === 1) {
         userAnswers.format = answer;
-        
-        // Ocultamos pantalla 1 y mostramos pantalla 2
+
         document.getElementById('char-step-1').style.display = 'none';
         document.getElementById('char-step-2').style.display = 'flex';
-        document.getElementById('char-step-2').style.flexDirection = 'column'; 
+        document.getElementById('char-step-2').style.flexDirection = 'column';
         document.getElementById('char-step-2').style.alignItems = 'center';
-      } 
+      }
       else if (currentStep === 2) {
         userAnswers.legalFamiliarity = answer;
-        
+
         if (userAnswers.format === 'audio' && userAnswers.legalFamiliarity === 'poco') {
           setProfile('P1', 'Perfil 1 (Asistencia por voz)');
-        } 
+        }
         else if (userAnswers.format === 'texto' && (userAnswers.legalFamiliarity === 'poco' || userAnswers.legalFamiliarity === 'algo')) {
           setProfile('P2', 'Perfil 2 (Ciudadano general)');
-        } 
+        }
         else if (userAnswers.format === 'texto' && userAnswers.legalFamiliarity === 'mucho') {
-          // Pasamos a la pantalla 3 opcional
           document.getElementById('char-step-2').style.display = 'none';
           document.getElementById('char-step-3').style.display = 'flex';
           document.getElementById('char-step-3').style.flexDirection = 'column';
           document.getElementById('char-step-3').style.alignItems = 'center';
-        } 
+        }
         else {
           setProfile('P2', 'Perfil 2 (Ciudadano general)');
         }
-      } 
+      }
       else if (currentStep === 3) {
         userAnswers.complexity = answer;
         if (userAnswers.complexity === 'tecnico') {
@@ -411,30 +476,116 @@
       }
     }
 
-    // --- Funciones previas del formulario ---
-    
-    // TODO (US-04): conectar el envío de la pregunta con el backend del agente RAG
-    function handleQuerySubmit(question) {
-      console.log('Pregunta enviada (pendiente de enrutar):', question);
+    // ══════════════════════════════════════════════════════════════
+    // Chat (US-04 / US-07): validación, scrolling y conexión al API
+    // ══════════════════════════════════════════════════════════════
+
+    // Ajusta esto según dónde esté corriendo tu API de FastAPI (api.py)
+    const API_BASE_URL = 'http://localhost:8001';
+
+    // Un id de hilo por carga de página, para que el agente mantenga
+    // memoria de la conversación entre mensajes.
+    const threadId = (crypto.randomUUID && crypto.randomUUID())
+      || ('thread-' + Date.now() + '-' + Math.random().toString(16).slice(2));
+
+    var chatMessages = document.getElementById('chat-messages');
+    var emptyState = document.getElementById('empty-state');
+    var queryForm = document.getElementById('query-form');
+    var queryInput = document.getElementById('query-input');
+    var queryError = document.getElementById('query-error');
+    var micButton = document.getElementById('mic-button');
+
+    function scrollToBottom() {
+      chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // TODO (US-05): implementar captura de audio
+    // kind: 'user' | 'agent' | 'pending' | 'error'
+    function addMessage(text, kind) {
+      if (emptyState) {
+        emptyState.remove();
+        emptyState = null;
+      }
+      var bubble = document.createElement('div');
+      bubble.className = 'msg msg-' + kind;
+      bubble.textContent = text;
+      chatMessages.appendChild(bubble);
+      scrollToBottom();
+      return bubble;
+    }
+
+    function showValidationError(message) {
+      queryError.textContent = message;
+      queryInput.classList.add('is-invalid');
+    }
+
+    function clearValidationError() {
+      queryError.textContent = '';
+      queryInput.classList.remove('is-invalid');
+    }
+
+    async function handleQuerySubmit(question) {
+      var pregunta = question.trim();
+
+      if (!pregunta) {
+        showValidationError('Escribe una pregunta antes de enviarla.');
+        queryInput.focus();
+        return;
+      }
+      clearValidationError();
+
+      addMessage(pregunta, 'user');
+      queryInput.value = '';
+      queryInput.disabled = true;
+
+      var pendingBubble = addMessage('Escribiendo…', 'pending');
+
+      try {
+        var response = await fetch(API_BASE_URL + '/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mensaje: pregunta, thread_id: threadId })
+        });
+
+        if (!response.ok) {
+          throw new Error('El servidor respondió con estado ' + response.status);
+        }
+
+        // api.py devuelve un ChatResponse: { respuesta, thread_id, pasos, tiempo_ms }
+        var data = await response.json();
+
+        pendingBubble.remove();
+        addMessage(data.respuesta, 'agent');
+
+        // Para depurar la prueba (ej. confirmar que entró a buscar_en_sigem)
+        console.log('Pasos del agente:', data.pasos);
+        console.log('Tiempo de respuesta (ms):', data.tiempo_ms);
+      } catch (error) {
+        pendingBubble.remove();
+        addMessage('Hubo un problema al contactar al agente. Intenta de nuevo.', 'error');
+        console.error('Error al llamar al API:', error);
+      } finally {
+        queryInput.disabled = false;
+        queryInput.focus();
+      }
+    }
+
+    // TODO (US-05): implementar captura de audio y transcripción speech-to-text
     function handleMicClick() {
       console.log('Micrófono presionado (pendiente de implementar)');
     }
 
-    // Eventos de la barra de búsqueda
-    var queryForm = document.getElementById('query-form');
-    if(queryForm) {
+    if (queryForm) {
       queryForm.addEventListener('submit', function (event) {
         event.preventDefault();
-        var input = document.getElementById('query-input');
-        handleQuerySubmit(input.value);
+        handleQuerySubmit(queryInput.value);
       });
     }
 
-    var micButton = document.getElementById('mic-button');
-    if(micButton) {
+    if (queryInput) {
+      queryInput.addEventListener('input', clearValidationError);
+    }
+
+    if (micButton) {
       micButton.addEventListener('click', function () {
         handleMicClick();
       });
