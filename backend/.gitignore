@@ -2,3 +2,4 @@
 .env
 __pycache__/
 uv.lock
+/chroma_db/

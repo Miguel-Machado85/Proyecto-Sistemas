@@ -11,7 +11,7 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint.memory import MemorySaver
 
-from config import config
+from .config import config
 
 # ══════════════════════════════════════════════════════════════
 # RETRIEVER (Herramienta)

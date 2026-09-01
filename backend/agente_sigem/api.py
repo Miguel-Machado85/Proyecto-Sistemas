@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from langchain_core.messages import HumanMessage
 import time
 
-from agent import agente_sigem
+from .agent import agente_sigem
 
 # ══════════════════════════════════════════════════════════════
 # MODELOS PYDANTIC
