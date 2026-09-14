@@ -1,44 +1,59 @@
-"""Adaptadores de Google Gemini para audio (STT y TTS)."""
+"""Adaptadores de Google Gemini para audio (STT y TTS), vía la Interactions API."""
+import base64
 import io
 import wave
 
 from google import genai
-from google.genai import types
 
 from .config import config
 
+# IMPORTANTE: el cliente se crea UNA SOLA VEZ y se reutiliza.
+# Crearlo "al vuelo" en cada llamada hace que el httpx.Client interno se
+# cierre antes de que la petición termine de enviarse:
+#   RuntimeError: Cannot send a request, as the client has been closed.
+# Ver: https://github.com/googleapis/python-genai/issues/1763
+_client: genai.Client | None = None
 
-def _client() -> genai.Client:
-    if not config.GOOGLE_API_KEY:
-        raise ValueError("Falta configurar GOOGLE_API_KEY en el archivo .env.")
-    return genai.Client(api_key=config.GOOGLE_API_KEY)
+
+def _get_client() -> genai.Client:
+    global _client
+    if _client is None:
+        if not config.GOOGLE_API_KEY:
+            raise ValueError("Falta configurar GOOGLE_API_KEY en el archivo .env.")
+        _client = genai.Client(api_key=config.GOOGLE_API_KEY)
+    return _client
 
 
 def transcribe(data: bytes, content_type: str) -> str:
-    """Envía el audio directamente a Gemini y devuelve la transcripción."""
-    audio_part = types.Part.from_bytes(data=data, mime_type=content_type)
-    respuesta = _client().models.generate_content(
+    """Transcribe audio usando el modelo dedicado de STT (gemini-3.5-transcribe)."""
+    # El navegador a veces manda "audio/webm;codecs=opus"; nos quedamos
+    # solo con el mime_type base.
+    mime_type = (content_type or "audio/webm").split(";")[0].strip()
+
+    interaction = _get_client().interactions.create(
         model=config.AUDIO_MODEL,
-        contents=["Transcribe este audio literalmente, solo el texto, sin comentarios adicionales.", audio_part],
+        input=[
+            {
+                "type": "audio",
+                "data": base64.b64encode(data).decode("utf-8"),
+                "mime_type": mime_type,
+            }
+        ],
     )
-    return (respuesta.text or "").strip()
+    return (interaction.output_text or "").strip()
 
 
 def synthesize(text: str) -> bytes:
-    """Genera voz a partir de texto y devuelve un WAV listo para reproducir."""
-    respuesta = _client().models.generate_content(
+    """Genera voz a partir de texto (gemini-3.1-flash-tts-preview) y devuelve un WAV."""
+    interaction = _get_client().interactions.create(
         model=config.TTS_MODEL,
-        contents=text,
-        config=types.GenerateContentConfig(
-            response_modalities=["AUDIO"],
-            speech_config=types.SpeechConfig(
-                voice_config=types.VoiceConfig(
-                    prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=config.TTS_VOICE)
-                )
-            ),
-        ),
+        input=text,
+        response_format={"type": "audio"},
+        generation_config={
+            "speech_config": [{"voice": config.TTS_VOICE}],
+        },
     )
-    pcm = respuesta.candidates[0].content.parts[0].inline_data.data
+    pcm = base64.b64decode(interaction.output_audio.data)
 
     buffer = io.BytesIO()
     with wave.open(buffer, "wb") as wav_file:

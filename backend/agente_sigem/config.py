@@ -20,8 +20,8 @@ class Config:
     EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "gemini-embedding-001")
 
     # ── Audio (Gemini STT/TTS) ──
-    AUDIO_MODEL = os.getenv("AUDIO_MODEL", "gemini-2.5-flash")            # para transcribir
-    TTS_MODEL = os.getenv("TTS_MODEL", "gemini-2.5-flash-preview-tts")    # para sintetizar
+    AUDIO_MODEL = os.getenv("AUDIO_MODEL", "gemini-3.5-transcribe")            # para transcribir
+    TTS_MODEL = os.getenv("TTS_MODEL", "gemini-3.1-flash-tts-preview")    # para sintetizar
     TTS_VOICE = os.getenv("TTS_VOICE", "Kore")
     MAX_AUDIO_BYTES = int(os.getenv("MAX_AUDIO_BYTES", 15 * 1024 * 1024))
     ALLOWED_AUDIO_EXTENSIONS = {"webm", "wav", "mp3", "m4a", "mp4", "ogg"}
