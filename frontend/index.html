@@ -585,7 +585,7 @@
         var response = await fetch(API_BASE_URL + '/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mensaje: pregunta, thread_id: threadId })
+          body: JSON.stringify({ mensaje: pregunta, thread_id: threadId, perfil: localStorage.getItem('agente_perfil_codigo') || 'P0' })
         });
 
         if (!response.ok) {
@@ -668,6 +668,7 @@
         var form = new FormData();
         form.append('audio', blob, 'grabacion.' + extension);
         form.append('thread_id', threadId);
+        form.append('perfil', localStorage.getItem('agente_perfil_codigo') || 'P0');
 
         var response = await fetch(API_BASE_URL + '/chat-voz', {
           method: 'POST',
