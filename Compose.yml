@@ -6,8 +6,33 @@ services:
       - "8001:8001"
     env_file:
       - ./backend/.env
+    environment:
+      # Ollama sigue corriendo en tu host (GPU/Metal), no en un contenedor.
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      # Postgres sí vive en este compose, se resuelve por nombre de servicio.
+      DATABASE_URL: postgresql://sigem:sigem@db:5432/sigem
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./backend/chroma_db:/app/chroma_db
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sigem
+      POSTGRES_PASSWORD: sigem
+      POSTGRES_DB: sigem
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sigem -d sigem"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
   frontend:
@@ -18,3 +43,6 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
+volumes:
+  postgres-data:

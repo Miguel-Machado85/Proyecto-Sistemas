@@ -1,10 +1,14 @@
-from fastapi import FastAPI, HTTPException
+import time
+
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from langchain_core.messages import HumanMessage
-import time
 
+from . import db, storage
 from .agent import agente_sigem
+from .audio import synthesize, transcribe
+from .config import config
 
 # ══════════════════════════════════════════════════════════════
 # MODELOS PYDANTIC
@@ -25,6 +29,19 @@ class ChatResponse(BaseModel):
     pasos: list[PasoAgente]
     tiempo_ms: float
 
+class ChatVozResponse(BaseModel):
+    transcripcion: str
+    respuesta: str
+    thread_id: str
+    pregunta_audio_url: str | None
+    respuesta_audio_url: str | None
+
+class TurnoOut(BaseModel):
+    rol: str
+    texto: str
+    audio_url: str | None
+    creado_en: str
+
 # ══════════════════════════════════════════════════════════════
 # FASTAPI APP
 # ══════════════════════════════════════════════════════════════
@@ -34,6 +51,12 @@ app = FastAPI(
     description="API del agente RAG (LangGraph + Ollama) que responde preguntas sobre procesos, formatos y normatividad del municipio de Marinilla, con base en el repositorio SIGEM.",
     version="0.1.0",
 )
+
+
+@app.on_event("startup")
+def crear_tablas():
+    """Crea la tabla de historial en Postgres si todavía no existe."""
+    db.init_db()
 
 
 @app.get("/health", tags=["sistema"])
@@ -76,7 +99,11 @@ async def endpoint_chat(request: ChatRequest):
                     ))
         
         tiempo_ms = (time.time() - inicio) * 1000
-        
+
+        # Persistimos ambos lados del intercambio (sin audio, este endpoint es texto).
+        db.guardar_turno(request.thread_id, "usuario", request.mensaje)
+        db.guardar_turno(request.thread_id, "agente", respuesta)
+
         return ChatResponse(
             respuesta=respuesta,
             thread_id=request.thread_id,
@@ -85,6 +112,74 @@ async def endpoint_chat(request: ChatRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/chat-voz", response_model=ChatVozResponse, tags=["voz"])
+async def endpoint_chat_voz(audio: UploadFile = File(...), thread_id: str = Form(default="default_user")):
+    """Recibe audio, lo transcribe, lo pasa al agente SIGEM y responde en texto + audio.
+
+    Ambos audios (la pregunta grabada y la respuesta sintetizada) se suben a S3
+    y se guardan junto con el texto en Postgres, para que se puedan volver a
+    escuchar más tarde vía /historial/{thread_id}.
+    """
+    extension = (audio.filename or "").split(".")[-1].lower()
+    if extension not in config.ALLOWED_AUDIO_EXTENSIONS:
+        raise HTTPException(415, "Formato de audio no permitido.")
+
+    data = await audio.read(config.MAX_AUDIO_BYTES + 1)
+    if not data:
+        raise HTTPException(400, "El audio está vacío.")
+    if len(data) > config.MAX_AUDIO_BYTES:
+        raise HTTPException(413, f"El audio supera el límite de {config.MAX_AUDIO_BYTES // (1024 * 1024)} MB.")
+
+    try:
+        transcripcion = transcribe(data, audio.content_type or "audio/webm")
+        if not transcripcion:
+            raise HTTPException(400, "No se detectó texto en el audio.")
+
+        config_graph = {"configurable": {"thread_id": thread_id}}
+        resultado = agente_sigem.invoke(
+            {"messages": [HumanMessage(content=transcripcion)]},
+            config=config_graph,
+        )
+        respuesta_texto = resultado["messages"][-1].content
+
+        audio_respuesta = synthesize(respuesta_texto)
+
+        # Subimos ambos audios a S3 (guardamos la key, no la URL: el bucket es privado).
+        pregunta_key = storage.subir_audio(data, audio.content_type or "audio/webm", extension, thread_id)
+        respuesta_key = storage.subir_audio(audio_respuesta, "audio/wav", "wav", thread_id)
+
+        db.guardar_turno(thread_id, "usuario", transcripcion, audio_key=pregunta_key)
+        db.guardar_turno(thread_id, "agente", respuesta_texto, audio_key=respuesta_key)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(502, f"No fue posible procesar el turno de voz: {e}")
+
+    return ChatVozResponse(
+        transcripcion=transcripcion,
+        respuesta=respuesta_texto,
+        thread_id=thread_id,
+        pregunta_audio_url=storage.url_firmada(pregunta_key),
+        respuesta_audio_url=storage.url_firmada(respuesta_key),
+    )
+
+
+@app.get("/historial/{thread_id}", response_model=list[TurnoOut], tags=["voz"])
+async def endpoint_historial(thread_id: str):
+    """Devuelve el historial completo de un hilo, con URLs firmadas para los audios."""
+    turnos = db.obtener_historial(thread_id)
+    return [
+        TurnoOut(
+            rol=turno.rol,
+            texto=turno.texto,
+            audio_url=storage.url_firmada(turno.audio_key),
+            creado_en=turno.creado_en.isoformat(),
+        )
+        for turno in turnos
+    ]
 
 if __name__ == "__main__":
     import uvicorn
