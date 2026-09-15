@@ -17,6 +17,7 @@ from .config import config
 class ChatRequest(BaseModel):
     mensaje: str = Field(min_length=1)
     thread_id: str = Field(default="default_user", min_length=1)
+    perfil: str = Field(default="P0")
 
 class PasoAgente(BaseModel):
     agente: str
@@ -82,7 +83,8 @@ async def endpoint_chat(request: ChatRequest):
         config_graph = {"configurable": {"thread_id": request.thread_id}}
         
         resultado = agente_sigem.invoke(
-            {"messages": [HumanMessage(content=request.mensaje)]},
+            {"messages": [HumanMessage(content=request.mensaje)],
+             "perfil":request.perfil},
             config=config_graph
         )
         
@@ -115,7 +117,7 @@ async def endpoint_chat(request: ChatRequest):
 
 
 @app.post("/chat-voz", response_model=ChatVozResponse, tags=["voz"])
-async def endpoint_chat_voz(audio: UploadFile = File(...), thread_id: str = Form(default="default_user")):
+async def endpoint_chat_voz(audio: UploadFile = File(...), thread_id: str = Form(default="default_user"), perfil: str = Form(default="P0")):
     """Recibe audio, lo transcribe, lo pasa al agente SIGEM y responde en texto + audio.
 
     Ambos audios (la pregunta grabada y la respuesta sintetizada) se suben a S3
@@ -139,8 +141,9 @@ async def endpoint_chat_voz(audio: UploadFile = File(...), thread_id: str = Form
 
         config_graph = {"configurable": {"thread_id": thread_id}}
         resultado = agente_sigem.invoke(
-            {"messages": [HumanMessage(content=transcripcion)]},
-            config=config_graph,
+            {"messages": [HumanMessage(content=transcripcion)],
+             "perfil": perfil},
+            config=config_graph,    
         )
         respuesta_texto = resultado["messages"][-1].content
 
