@@ -1,4 +1,6 @@
 import time
+import re
+import unicodedata
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -42,6 +44,90 @@ class TurnoOut(BaseModel):
     audio_url: str | None
     creado_en: str
 
+
+RESPUESTA_SALUDO = (
+    "¡Hola! Soy el asistente virtual de la Alcaldía de Marinilla. "
+    "Puedo ayudarte con información disponible en los documentos de SIGEM. "
+    "Cuéntame qué trámite, norma, formato o proceso quieres consultar."
+)
+
+RESPUESTA_FUERA_DE_CONTEXTO = (
+    "Soy especialista en el conocimiento de los documentos de SIGEM de la Alcaldía de Marinilla. "
+    "No puedo responder sobre temas que estén por fuera de ese repositorio. "
+    "Si tienes una pregunta sobre trámites, normas, formatos o procesos municipales, con gusto te ayudo."
+)
+
+RESPUESTA_CONSULTA_AMBIGUA = (
+    "Claro, puedo ayudarte a buscar en los documentos de SIGEM. "
+    "Para orientarte mejor, dime algún dato adicional: el tema, número, año, dependencia "
+    "o trámite relacionado con el documento que necesitas."
+)
+
+PALABRAS_SALUDO = {
+    "hola", "buenas", "buenos", "dias", "tardes", "noches", "saludos",
+    "hey", "ola", "que tal", "como estas", "como vas",
+}
+
+PALABRAS_CONSULTA_GENERICA = {
+    "busco", "buscar", "necesito", "quiero", "consultar", "consulta", "informacion",
+    "dame", "dar", "saber", "ver", "encontrar", "un", "una", "el", "la", "sobre",
+    "tramite", "tramites", "proceso", "procesos", "procedimiento", "procedimientos",
+    "formato", "formatos", "documento", "documentos", "norma", "normas",
+    "normativa", "ley", "leyes", "decreto", "decretos", "resolucion", "resoluciones",
+    "acuerdo", "acuerdos", "clausula", "clausulas",
+}
+
+PALABRAS_DOMINIO_SIGEM = {
+    "sigem", "marinilla", "alcaldia", "municipio", "municipal", "ciudadano",
+    "tramite", "tramites", "proceso", "procesos", "procedimiento", "procedimientos",
+    "formato", "formatos", "documento", "documentos", "norma", "normas",
+    "normativa", "ley", "leyes", "decreto", "decretos", "resolucion", "resoluciones",
+    "acuerdo", "acuerdos", "clausula", "clausulas", "requisito", "requisitos",
+    "permiso", "permisos", "solicitud", "solicitudes", "certificado", "certificados",
+    "impuesto", "impuestos", "catastro", "predial", "movilidad", "vial",
+    "contratacion", "licencia", "licencias", "peticion", "pqrs", "queja",
+    "reclamo", "reclamos", "alcalde", "secretaria", "dependencia",
+}
+
+
+def normalizar_texto(texto: str) -> str:
+    texto = unicodedata.normalize("NFD", texto.lower())
+    texto = "".join(c for c in texto if unicodedata.category(c) != "Mn")
+    return re.sub(r"\s+", " ", texto).strip()
+
+
+def respuesta_directa_si_aplica(mensaje: str) -> str | None:
+    texto = normalizar_texto(mensaje)
+    palabras = set(re.findall(r"[a-z0-9]+", texto))
+
+    if not texto:
+        return RESPUESTA_SALUDO
+
+    es_saludo_corto = len(palabras) <= 4 and any(saludo in texto for saludo in PALABRAS_SALUDO)
+    if es_saludo_corto:
+        return RESPUESTA_SALUDO
+
+    tiene_contexto_sigem = any(palabra in palabras for palabra in PALABRAS_DOMINIO_SIGEM)
+    if not tiene_contexto_sigem:
+        return RESPUESTA_FUERA_DE_CONTEXTO
+
+    consulta_muy_generica = len(palabras) <= 5 and palabras.issubset(PALABRAS_CONSULTA_GENERICA)
+    if consulta_muy_generica:
+        return RESPUESTA_CONSULTA_AMBIGUA
+
+    return None
+
+
+def respuesta_chat_directa(request: ChatRequest, inicio: float, respuesta: str) -> ChatResponse:
+    db.guardar_turno(request.thread_id, "usuario", request.mensaje)
+    db.guardar_turno(request.thread_id, "agente", respuesta)
+    return ChatResponse(
+        respuesta=respuesta,
+        thread_id=request.thread_id,
+        pasos=[],
+        tiempo_ms=round((time.time() - inicio) * 1000, 1),
+    )
+
 # ══════════════════════════════════════════════════════════════
 # FASTAPI APP
 # ══════════════════════════════════════════════════════════════
@@ -79,6 +165,10 @@ async def endpoint_chat(request: ChatRequest):
     """
     inicio = time.time()
     try:
+        respuesta_directa = respuesta_directa_si_aplica(request.mensaje)
+        if respuesta_directa:
+            return respuesta_chat_directa(request, inicio, respuesta_directa)
+
         config_graph = {"configurable": {"thread_id": request.thread_id}}
         
         resultado = agente_sigem.invoke(

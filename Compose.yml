@@ -22,6 +22,8 @@ services:
 
   db:
     image: postgres:16-alpine
+    ports:
+      - "55432:5432"
     environment:
       POSTGRES_USER: sigem
       POSTGRES_PASSWORD: sigem
