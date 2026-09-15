@@ -102,10 +102,18 @@ def crear_agente():
     """
     Crea el agente RAG usando el modelo de Ollama configurado.
     """
+    client_kwargs = {}
+    if "ngrok-free" in config.OLLAMA_BASE_URL:
+        client_kwargs = {
+            "headers": {"ngrok-skip-browser-warning": "true"},
+            "verify": False,
+        }
+
     modelo = ChatOllama(
         model=config.CHAT_MODEL,
         base_url=config.OLLAMA_BASE_URL,
         temperature=0.3,
+        client_kwargs=client_kwargs,
     )
     herramientas = [buscar_en_sigem]
     modelo_con_tools = modelo.bind_tools(herramientas)

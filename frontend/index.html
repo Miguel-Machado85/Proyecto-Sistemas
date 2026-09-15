@@ -425,7 +425,7 @@
     function setProfile(profileCode, profileName) {
       localStorage.setItem('agente_perfil_codigo', profileCode);
       localStorage.setItem('agente_perfil_nombre', profileName);
-      applyProfileUI(profileName);
+      iniciarChat(profileName);
     }
 
     function applyProfileUI(profileName) {
@@ -441,8 +441,7 @@
     window.addEventListener('DOMContentLoaded', function () {
       var savedProfileName = localStorage.getItem('agente_perfil_nombre');
       if (savedProfileName) {
-        applyProfileUI(savedProfileName);
-        cargarHistorial(threadId);
+        iniciarChat(savedProfileName);
       }
     });
 
@@ -514,6 +513,9 @@
     var queryInput = document.getElementById('query-input');
     var queryError = document.getElementById('query-error');
     var micButton = document.getElementById('mic-button');
+    var chatInicializado = false;
+    var MENSAJE_BIENVENIDA_INICIAL = '¡Hola! Soy el asistente virtual de la Alcaldía de Marinilla. Cuéntame en qué te puedo ayudar.';
+    var MENSAJE_BIENVENIDA_REGRESO = 'Qué bueno tenerte de vuelta. ¿En qué puedo ayudar ahora?';
 
     function scrollToBottom() {
       chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -533,13 +535,28 @@
       return bubble;
     }
 
+    async function iniciarChat(profileName) {
+      if (chatInicializado) return;
+      chatInicializado = true;
+      applyProfileUI(profileName);
+      await cargarHistorial(threadId);
+    }
+
     // Trae el historial guardado en Postgres/S3 y lo pinta al entrar.
     async function cargarHistorial(threadId) {
       try {
         var response = await fetch(API_BASE_URL + '/historial/' + encodeURIComponent(threadId));
-        if (!response.ok) return; // hilo nuevo, sin historial todavía: no pasa nada
+        if (!response.ok) {
+          addMessage(MENSAJE_BIENVENIDA_INICIAL, 'agent');
+          return;
+        }
 
         var turnos = await response.json();
+        if (!turnos.length) {
+          addMessage(MENSAJE_BIENVENIDA_INICIAL, 'agent');
+          return;
+        }
+
         turnos.forEach(function (turno) {
           var kind = turno.rol === 'usuario' ? 'user' : 'agent';
           var bubble = addMessage(turno.texto, kind);
@@ -550,8 +567,10 @@
             bubble.appendChild(player);
           }
         });
+        addMessage(MENSAJE_BIENVENIDA_REGRESO, 'agent');
       } catch (error) {
         console.error('No se pudo cargar el historial:', error);
+        addMessage(MENSAJE_BIENVENIDA_INICIAL, 'agent');
       }
     }
 
