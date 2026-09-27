@@ -152,6 +152,17 @@
     border-bottom-left-radius: 4px;
   }
 
+  .msg-alerta {
+    align-self: flex-start;
+    background: #fff6e0;
+    color: #8a6d1f;
+    border: 1px solid #f0dfa3;
+    border-bottom-left-radius: 4px;
+  }
+  .msg-alerta::before {
+    content: "⚠️ ";
+  }
+
   .query-error {
     min-height: 18px;
     font-size: 13px;
@@ -309,6 +320,54 @@
     color: var(--text-dark);
   }
 
+  /* Cambiar de perfil sin rehacer la encuesta (US-08) */
+  .switch-profile {
+    text-align: center;
+    margin: 4px 0 14px;
+  }
+  .switch-profile-lnk {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    text-decoration: underline;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px;
+  }
+  .switch-profile-lnk:hover {
+    color: var(--govco-blue);
+  }
+  .switch-profile-panel {
+    display: none;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+  .switch-profile-panel.is-open {
+    display: flex;
+  }
+  .switch-profile-btn {
+    padding: 8px 14px;
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-dark);
+  }
+  .switch-profile-btn:hover {
+    background: var(--govco-blue);
+    color: #ffffff;
+    border-color: var(--govco-blue);
+  }
+  .switch-profile-btn.is-active {
+    background: var(--agent-blue);
+    color: #ffffff;
+    border-color: var(--agent-blue);
+    font-weight: 600;
+  }
+
 </style>
 </head>
 <body>
@@ -371,10 +430,23 @@
 
     </div>
 
-    <div id="active-profile-badge" style="display: none; text-align: center; margin-bottom: 24px;">
+    <div id="active-profile-badge" style="display: none; text-align: center; margin-bottom: 8px;">
       <span style="background: var(--border-color); padding: 4px 12px; border-radius: var(--radius-pill); font-size: 13px; color: var(--text-muted);">
         Perfil activo: <strong id="profile-name" style="color: var(--govco-blue);">Neutro</strong>
       </span>
+    </div>
+
+    <!-- US-08: cambiar de perfil sin rehacer la encuesta -->
+    <div id="switch-profile" class="switch-profile" style="display: none;">
+      <button type="button" class="switch-profile-lnk" id="switch-profile-toggle">
+        ¿No entiendes la respuesta? Modifica tu perfil
+      </button>
+      <div class="switch-profile-panel" id="switch-profile-panel">
+        <button type="button" class="switch-profile-btn" data-code="P0" data-name="Perfil 0 (Neutro)">Neutro</button>
+        <button type="button" class="switch-profile-btn" data-code="P1" data-name="Perfil 1 (Asistencia por voz)">Sin experiencia digital</button>
+        <button type="button" class="switch-profile-btn" data-code="P2" data-name="Perfil 2 (Ciudadano general)">Ciudadano general</button>
+        <button type="button" class="switch-profile-btn" data-code="P3" data-name="Perfil 3 (Usuario técnico)">Técnico</button>
+      </div>
     </div>
 
     <!-- Oculto hasta que hay perfil (setProfile lo revela) -->
@@ -436,6 +508,17 @@
       // Antes solo se revelaba el input; ahora también el área de mensajes,
       // para que no se vea el chat vacío mientras el cuestionario sigue abierto.
       document.getElementById('chat-messages').style.display = 'flex';
+
+      document.getElementById('switch-profile').style.display = 'block';
+      resaltarBotonDePerfilActivo();
+    }
+
+    // US-08: marca visualmente cuál perfil está activo dentro del panel
+    function resaltarBotonDePerfilActivo() {
+      var codigoActivo = localStorage.getItem('agente_perfil_codigo') || 'P0';
+      document.querySelectorAll('.switch-profile-btn').forEach(function (btn) {
+        btn.classList.toggle('is-active', btn.dataset.code === codigoActivo);
+      });
     }
 
     window.addEventListener('DOMContentLoaded', function () {
@@ -558,7 +641,7 @@
         }
 
         turnos.forEach(function (turno) {
-          var kind = turno.rol === 'usuario' ? 'user' : 'agent';
+          var kind = turno.rol === 'usuario' ? 'user' : (turno.rol === 'alerta' ? 'alerta' : 'agent');
           var bubble = addMessage(turno.texto, kind);
           if (turno.audio_url) {
             var player = document.createElement('audio');
@@ -713,8 +796,10 @@
           userBubble.appendChild(playerPregunta);
         }
 
-        var agentBubble = addMessage(data.respuesta, 'agent');
-        if (data.respuesta_audio_url) {
+        // US-09: si el audio no fue comprensible, se muestra como alerta,
+        // no como una respuesta normal del agente (y no trae audio de vuelta).
+        var agentBubble = addMessage(data.respuesta, data.alerta ? 'alerta' : 'agent');
+        if (!data.alerta && data.respuesta_audio_url) {
           var playerRespuesta = document.createElement('audio');
           playerRespuesta.controls = true;
           playerRespuesta.autoplay = true;
@@ -747,6 +832,30 @@
         handleMicClick();
       });
     }
+
+    // ══════════════════════════════════════════════════════════════
+    // US-08: cambiar de perfil sin rehacer la encuesta
+    // ══════════════════════════════════════════════════════════════
+
+    var switchProfileToggle = document.getElementById('switch-profile-toggle');
+    var switchProfilePanel = document.getElementById('switch-profile-panel');
+
+    if (switchProfileToggle) {
+      switchProfileToggle.addEventListener('click', function () {
+        switchProfilePanel.classList.toggle('is-open');
+      });
+    }
+
+    document.querySelectorAll('.switch-profile-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        // setProfile ya guarda en localStorage y actualiza el badge;
+        // /chat y /chat-voz lo leen de ahí en cada request siguiente,
+        // así que no hace falta tocar nada más para que aplique.
+        setProfile(btn.dataset.code, btn.dataset.name);
+        switchProfilePanel.classList.remove('is-open');
+        addMessage('Perfil cambiado a: ' + btn.dataset.name + '. Tus próximas preguntas usarán este estilo de respuesta.', 'pending');
+      });
+    });
   </script>
 
 </body>

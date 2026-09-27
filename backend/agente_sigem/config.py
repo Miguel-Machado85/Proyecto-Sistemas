@@ -23,6 +23,9 @@ class Config:
     AUDIO_MODEL = os.getenv("AUDIO_MODEL", "gemini-3.5-transcribe")            # para transcribir
     TTS_MODEL = os.getenv("TTS_MODEL", "gemini-3.1-flash-tts-preview")    # para sintetizar
     TTS_VOICE = os.getenv("TTS_VOICE", "Kore")
+
+    VERIFICACION_MODEL = os.getenv("VERIFICACION_MODEL", "gemini-3.5-flash-lite")
+
     MAX_AUDIO_BYTES = int(os.getenv("MAX_AUDIO_BYTES", 15 * 1024 * 1024))
     ALLOWED_AUDIO_EXTENSIONS = {"webm", "wav", "mp3", "m4a", "mp4", "ogg"}
 
@@ -45,6 +48,13 @@ class Config:
     S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
     # Las URLs firmadas expiran; así el bucket puede quedar privado sin problema.
     PRESIGNED_URL_EXPIRATION = int(os.getenv("PRESIGNED_URL_EXPIRATION", 3600))
+
+    # ── Langfuse (observabilidad/tracing del agente) ──
+    # Si estas dos quedan vacías, el tracing simplemente se desactiva:
+    # la app sigue funcionando igual, solo sin mandar traces.
+    LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY")
+    LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY")
+    LANGFUSE_BASE_URL = os.getenv("LANGFUSE_BASE_URL", "https://cloud.langfuse.com")
 
 
 config = Config()

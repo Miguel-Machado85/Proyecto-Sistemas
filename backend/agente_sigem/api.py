@@ -10,7 +10,9 @@ from langchain_core.messages import HumanMessage
 from . import db, storage
 from .agent import agente_sigem
 from .audio import synthesize, transcribe
+from .calidad import es_audio_comprensible
 from .config import config
+from .tracing import obtener_langfuse_handler
 
 # ══════════════════════════════════════════════════════════════
 # MODELOS PYDANTIC
@@ -38,6 +40,14 @@ class ChatVozResponse(BaseModel):
     thread_id: str
     pregunta_audio_url: str | None
     respuesta_audio_url: str | None
+    alerta: bool = False
+
+
+MENSAJE_AUDIO_POCO_CLARO = (
+    "No logré entender bien tu audio. Puede que se haya grabado sin voz, con "
+    "mucho ruido de fondo, o que se haya enviado sin querer. Intenta de nuevo "
+    "hablando cerca del micrófono."
+)
 
 class TurnoOut(BaseModel):
     rol: str
@@ -170,8 +180,19 @@ async def endpoint_chat(request: ChatRequest):
         if respuesta_directa:
             return respuesta_chat_directa(request, inicio, respuesta_directa)
 
-        config_graph = {"configurable": {"thread_id": request.thread_id}}
-        
+        langfuse_handler = obtener_langfuse_handler()
+        config_graph = {
+            "configurable": {"thread_id": request.thread_id},
+            "callbacks": [langfuse_handler] if langfuse_handler else [],
+            "metadata": {
+                # Agrupa todos los turnos de este hilo en una misma sesión en Langfuse,
+                # y etiqueta el trace con el perfil: así se puede filtrar/comparar
+                # desempeño del agente por perfil de usuario (P0-P3) en el dashboard.
+                "langfuse_session_id": request.thread_id,
+                "langfuse_tags": [request.perfil],
+            },
+        }
+
         resultado = agente_sigem.invoke(
             {"messages": [HumanMessage(content=request.mensaje)],
              "perfil":request.perfil},
@@ -226,10 +247,31 @@ async def endpoint_chat_voz(audio: UploadFile = File(...), thread_id: str = Form
 
     try:
         transcripcion = transcribe(data, audio.content_type or "audio/webm")
-        if not transcripcion:
-            raise HTTPException(400, "No se detectó texto en el audio.")
 
-        config_graph = {"configurable": {"thread_id": thread_id}}
+        # US-09: si el audio llegó sin voz clara (silencio, ruido, envío
+        # accidental), avisamos al usuario en vez de mandarle eso al agente.
+        if not es_audio_comprensible(transcripcion):
+            pregunta_key = storage.subir_audio(data, audio.content_type or "audio/webm", extension, thread_id)
+            db.guardar_turno(thread_id, "usuario", transcripcion or "[audio no comprensible]", audio_key=pregunta_key)
+            db.guardar_turno(thread_id, "alerta", MENSAJE_AUDIO_POCO_CLARO)
+            return ChatVozResponse(
+                transcripcion=transcripcion or "",
+                respuesta=MENSAJE_AUDIO_POCO_CLARO,
+                thread_id=thread_id,
+                pregunta_audio_url=storage.url_firmada(pregunta_key),
+                respuesta_audio_url=None,
+                alerta=True,
+            )
+
+        langfuse_handler = obtener_langfuse_handler()
+        config_graph = {
+            "configurable": {"thread_id": thread_id},
+            "callbacks": [langfuse_handler] if langfuse_handler else [],
+            "metadata": {
+                "langfuse_session_id": thread_id,
+                "langfuse_tags": [perfil, "voz"],
+            },
+        }
         resultado = agente_sigem.invoke(
             {"messages": [HumanMessage(content=transcripcion)],
              "perfil": perfil},
