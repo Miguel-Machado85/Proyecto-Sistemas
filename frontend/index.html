@@ -320,52 +320,36 @@
     color: var(--text-dark);
   }
 
-  /* Cambiar de perfil sin rehacer la encuesta (US-08) */
+  /* Volver a la encuesta para cambiar de perfil (US-08) */
   .switch-profile {
     text-align: center;
-    margin: 4px 0 14px;
+    margin: 4px 0 20px;
   }
-  .switch-profile-lnk {
-    background: none;
-    border: none;
+  .switch-profile-hint {
+    font-size: 13px;
     color: var(--text-muted);
-    text-decoration: underline;
-    font-size: 13px;
-    cursor: pointer;
-    padding: 4px;
+    margin: 0 0 8px;
   }
-  .switch-profile-lnk:hover {
-    color: var(--govco-blue);
-  }
-  .switch-profile-panel {
-    display: none;
-    justify-content: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: 10px;
-  }
-  .switch-profile-panel.is-open {
-    display: flex;
-  }
-  .switch-profile-btn {
-    padding: 8px 14px;
-    background: #ffffff;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-pill);
-    cursor: pointer;
-    font-size: 13px;
-    color: var(--text-dark);
-  }
-  .switch-profile-btn:hover {
-    background: var(--govco-blue);
-    color: #ffffff;
-    border-color: var(--govco-blue);
-  }
-  .switch-profile-btn.is-active {
+  .switch-profile-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 20px;
     background: var(--agent-blue);
     color: #ffffff;
-    border-color: var(--agent-blue);
+    border: none;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    font-size: 14px;
     font-weight: 600;
+    box-shadow: 0 2px 6px rgba(48, 162, 255, 0.35);
+  }
+  .switch-profile-trigger:hover {
+    filter: brightness(0.95);
+  }
+  .switch-profile-trigger:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
   }
 
 </style>
@@ -438,15 +422,10 @@
 
     <!-- US-08: cambiar de perfil sin rehacer la encuesta -->
     <div id="switch-profile" class="switch-profile" style="display: none;">
-      <button type="button" class="switch-profile-lnk" id="switch-profile-toggle">
-        ¿No entiendes la respuesta? Modifica tu perfil
+      <p class="switch-profile-hint">¿No entiendes la respuesta?</p>
+      <button type="button" class="switch-profile-trigger" id="switch-profile-toggle">
+        🔄 Cambiar mi perfil
       </button>
-      <div class="switch-profile-panel" id="switch-profile-panel">
-        <button type="button" class="switch-profile-btn" data-code="P0" data-name="Perfil 0 (Neutro)">Neutro</button>
-        <button type="button" class="switch-profile-btn" data-code="P1" data-name="Perfil 1 (Asistencia por voz)">Sin experiencia digital</button>
-        <button type="button" class="switch-profile-btn" data-code="P2" data-name="Perfil 2 (Ciudadano general)">Ciudadano general</button>
-        <button type="button" class="switch-profile-btn" data-code="P3" data-name="Perfil 3 (Usuario técnico)">Técnico</button>
-      </div>
     </div>
 
     <!-- Oculto hasta que hay perfil (setProfile lo revela) -->
@@ -497,7 +476,20 @@
     function setProfile(profileCode, profileName) {
       localStorage.setItem('agente_perfil_codigo', profileCode);
       localStorage.setItem('agente_perfil_nombre', profileName);
-      iniciarChat(profileName);
+
+      // applyProfileUI() siempre se aplica (para que el badge se actualice
+      // también cuando el usuario cambia de perfil a mitad de conversación,
+      // no solo la primera vez). El historial solo se carga una vez.
+      applyProfileUI(profileName);
+
+      if (!chatInicializado) {
+        chatInicializado = true;
+        cargarHistorial(threadId);
+      } else {
+        // Ya había una conversación en curso: esto es un cambio real de
+        // perfil, no el llenado inicial de la encuesta. Avisamos en el chat.
+        addMessage('Perfil actualizado a: ' + profileName + '. Tus próximas preguntas usarán este estilo de respuesta.', 'pending');
+      }
     }
 
     function applyProfileUI(profileName) {
@@ -510,15 +502,19 @@
       document.getElementById('chat-messages').style.display = 'flex';
 
       document.getElementById('switch-profile').style.display = 'block';
-      resaltarBotonDePerfilActivo();
     }
 
-    // US-08: marca visualmente cuál perfil está activo dentro del panel
-    function resaltarBotonDePerfilActivo() {
-      var codigoActivo = localStorage.getItem('agente_perfil_codigo') || 'P0';
-      document.querySelectorAll('.switch-profile-btn').forEach(function (btn) {
-        btn.classList.toggle('is-active', btn.dataset.code === codigoActivo);
-      });
+    // US-08: vuelve a mostrar la encuesta de caracterización desde el paso 1,
+    // para que el usuario pueda recontestarla y quedar con un perfil nuevo.
+    function reabrirEncuesta() {
+      userAnswers = { format: null, legalFamiliarity: null, complexity: null };
+
+      document.getElementById('char-step-2').style.display = 'none';
+      document.getElementById('char-step-3').style.display = 'none';
+      document.getElementById('char-step-1').style.display = 'block';
+
+      document.getElementById('characterization-container').style.display = 'block';
+      document.getElementById('characterization-container').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     window.addEventListener('DOMContentLoaded', function () {
@@ -834,28 +830,14 @@
     }
 
     // ══════════════════════════════════════════════════════════════
-    // US-08: cambiar de perfil sin rehacer la encuesta
+    // US-08: cambiar de perfil, recontestando la misma encuesta
     // ══════════════════════════════════════════════════════════════
 
     var switchProfileToggle = document.getElementById('switch-profile-toggle');
-    var switchProfilePanel = document.getElementById('switch-profile-panel');
 
     if (switchProfileToggle) {
-      switchProfileToggle.addEventListener('click', function () {
-        switchProfilePanel.classList.toggle('is-open');
-      });
+      switchProfileToggle.addEventListener('click', reabrirEncuesta);
     }
-
-    document.querySelectorAll('.switch-profile-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        // setProfile ya guarda en localStorage y actualiza el badge;
-        // /chat y /chat-voz lo leen de ahí en cada request siguiente,
-        // así que no hace falta tocar nada más para que aplique.
-        setProfile(btn.dataset.code, btn.dataset.name);
-        switchProfilePanel.classList.remove('is-open');
-        addMessage('Perfil cambiado a: ' + btn.dataset.name + '. Tus próximas preguntas usarán este estilo de respuesta.', 'pending');
-      });
-    });
   </script>
 
 </body>
