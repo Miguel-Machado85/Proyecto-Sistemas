@@ -29,6 +29,8 @@ class Config:
     MAX_AUDIO_BYTES = int(os.getenv("MAX_AUDIO_BYTES", 15 * 1024 * 1024))
     ALLOWED_AUDIO_EXTENSIONS = {"webm", "wav", "mp3", "m4a", "mp4", "ogg"}
 
+    OLLAMA_PROXY_TOKEN = os.getenv("OLLAMA_PROXY_TOKEN")
+
     # ── Chroma ────────
     # Chroma corre embebido (una carpeta local persistida), se usa
     # CHROMA_PERSIST_DIR. 
