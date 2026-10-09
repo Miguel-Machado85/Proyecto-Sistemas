@@ -203,6 +203,17 @@
     border-bottom-left-radius: 4px;
   }
 
+  .msg-alerta {
+    align-self: flex-start;
+    background: #fff6e0;
+    color: #8a6d1f;
+    border: 1px solid #f0dfa3;
+    border-bottom-left-radius: 4px;
+  }
+  .msg-alerta::before {
+    content: "⚠️ ";
+  }
+
   .query-error {
     min-height: 18px;
     font-size: 13px;
@@ -360,6 +371,38 @@
     color: var(--text-dark);
   }
 
+  /* Volver a la encuesta para cambiar de perfil (US-08) */
+  .switch-profile {
+    text-align: center;
+    margin: 4px 0 20px;
+  }
+  .switch-profile-hint {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0 0 8px;
+  }
+  .switch-profile-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 20px;
+    background: var(--agent-blue);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(48, 162, 255, 0.35);
+  }
+  .switch-profile-trigger:hover {
+    filter: brightness(0.95);
+  }
+  .switch-profile-trigger:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
 </style>
 </head>
 <body>
@@ -422,10 +465,18 @@
 
     </div>
 
-    <div id="active-profile-badge" style="display: none; text-align: center; margin-bottom: 24px;">
+    <div id="active-profile-badge" style="display: none; text-align: center; margin-bottom: 8px;">
       <span style="background: var(--border-color); padding: 4px 12px; border-radius: var(--radius-pill); font-size: 13px; color: var(--text-muted);">
         Perfil activo: <strong id="profile-name" style="color: var(--govco-blue);">Neutro</strong>
       </span>
+    </div>
+
+    <!-- US-08: cambiar de perfil sin rehacer la encuesta -->
+    <div id="switch-profile" class="switch-profile" style="display: none;">
+      <p class="switch-profile-hint">¿No entiendes la respuesta?</p>
+      <button type="button" class="switch-profile-trigger" id="switch-profile-toggle">
+        🔄 Cambiar mi perfil
+      </button>
     </div>
 
     <!-- Oculto hasta que hay perfil (setProfile lo revela) -->
@@ -477,7 +528,20 @@
     function setProfile(profileCode, profileName) {
       localStorage.setItem('agente_perfil_codigo', profileCode);
       localStorage.setItem('agente_perfil_nombre', profileName);
-      iniciarChat(profileName);
+
+      // applyProfileUI() siempre se aplica (para que el badge se actualice
+      // también cuando el usuario cambia de perfil a mitad de conversación,
+      // no solo la primera vez). El historial solo se carga una vez.
+      applyProfileUI(profileName);
+
+      if (!chatInicializado) {
+        chatInicializado = true;
+        cargarHistorial(threadId);
+      } else {
+        // Ya había una conversación en curso: esto es un cambio real de
+        // perfil, no el llenado inicial de la encuesta. Avisamos en el chat.
+        addMessage('Perfil actualizado a: ' + profileName + '. Tus próximas preguntas usarán este estilo de respuesta.', 'pending');
+      }
     }
 
     function applyProfileUI(profileName) {
@@ -488,6 +552,21 @@
       // Antes solo se revelaba el input; ahora también el área de mensajes,
       // para que no se vea el chat vacío mientras el cuestionario sigue abierto.
       document.getElementById('chat-messages').style.display = 'flex';
+
+      document.getElementById('switch-profile').style.display = 'block';
+    }
+
+    // US-08: vuelve a mostrar la encuesta de caracterización desde el paso 1,
+    // para que el usuario pueda recontestarla y quedar con un perfil nuevo.
+    function reabrirEncuesta() {
+      userAnswers = { format: null, legalFamiliarity: null, complexity: null };
+
+      document.getElementById('char-step-2').style.display = 'none';
+      document.getElementById('char-step-3').style.display = 'none';
+      document.getElementById('char-step-1').style.display = 'block';
+
+      document.getElementById('characterization-container').style.display = 'block';
+      document.getElementById('characterization-container').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     window.addEventListener('DOMContentLoaded', function () {
@@ -692,7 +771,7 @@
         }
 
         turnos.forEach(function (turno) {
-          var kind = turno.rol === 'usuario' ? 'user' : 'agent';
+          var kind = turno.rol === 'usuario' ? 'user' : (turno.rol === 'alerta' ? 'alerta' : 'agent');
           var bubble = addMessage(turno.texto, kind);
           if (turno.audio_url) {
             var player = document.createElement('audio');
@@ -850,10 +929,12 @@
           userBubble.appendChild(playerPregunta);
         }
 
-        var agentBubble = addMessage(data.respuesta, 'agent');
+        // US-09: si el audio no fue comprensible, se muestra como alerta,
+        // no como una respuesta normal del agente (y no trae audio de vuelta).
+        var agentBubble = addMessage(data.respuesta, data.alerta ? 'alerta' : 'agent');
         appendSources(agentBubble, data.fuentes);
         appendCandidates(agentBubble, data.candidatos);
-        if (data.respuesta_audio_url) {
+        if (!data.alerta && data.respuesta_audio_url) {
           var playerRespuesta = document.createElement('audio');
           playerRespuesta.controls = true;
           playerRespuesta.autoplay = true;
@@ -885,6 +966,16 @@
       micButton.addEventListener('click', function () {
         handleMicClick();
       });
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // US-08: cambiar de perfil, recontestando la misma encuesta
+    // ══════════════════════════════════════════════════════════════
+
+    var switchProfileToggle = document.getElementById('switch-profile-toggle');
+
+    if (switchProfileToggle) {
+      switchProfileToggle.addEventListener('click', reabrirEncuesta);
     }
   </script>
 
