@@ -12,8 +12,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 RUN addgroup --system app && adduser --system --ingroup app app
 
-COPY pyproject.toml uv.lock ./
-RUN uv sync --locked --no-dev --no-install-project
+COPY pyproject.toml ./
+RUN uv sync --no-dev --no-install-project
 
 COPY README.md ./
 COPY agente_sigem ./agente_sigem

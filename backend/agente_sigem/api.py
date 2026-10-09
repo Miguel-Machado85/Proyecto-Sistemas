@@ -1,16 +1,21 @@
 import time
 import re
 import unicodedata
+import json
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, ToolMessage
 
 from . import db, storage
 from .agent import agente_sigem
+from .retrieval import obtener_catalogo_documentos
 from .audio import synthesize, transcribe
 from .config import config
+from .contexto import enriquecer_consulta_con_contexto, es_pregunta_de_seguimiento
 
 # ══════════════════════════════════════════════════════════════
 # MODELOS PYDANTIC
@@ -26,10 +31,28 @@ class PasoAgente(BaseModel):
     accion: str
     icono: str
 
+
+class FuenteSigem(BaseModel):
+    titulo: str
+    archivo: str
+    pagina: str | None = None
+    fecha_expedicion: str | None = None
+    descripcion: str | None = None
+
+
+class CandidatoDocumento(BaseModel):
+    titulo: str
+    archivo: str
+    fecha_expedicion: str | None = None
+    descripcion: str | None = None
+
+
 class ChatResponse(BaseModel):
     respuesta: str
     thread_id: str
     pasos: list[PasoAgente]
+    fuentes: list[FuenteSigem] = []
+    candidatos: list[CandidatoDocumento] = []
     tiempo_ms: float
 
 class ChatVozResponse(BaseModel):
@@ -38,6 +61,8 @@ class ChatVozResponse(BaseModel):
     thread_id: str
     pregunta_audio_url: str | None
     respuesta_audio_url: str | None
+    fuentes: list[FuenteSigem] = []
+    candidatos: list[CandidatoDocumento] = []
 
 class TurnoOut(BaseModel):
     rol: str
@@ -126,8 +151,63 @@ def respuesta_chat_directa(request: ChatRequest, inicio: float, respuesta: str) 
         respuesta=respuesta,
         thread_id=request.thread_id,
         pasos=[],
+        fuentes=[],
         tiempo_ms=round((time.time() - inicio) * 1000, 1),
     )
+
+
+def fuentes_del_ultimo_turno(mensajes) -> list[FuenteSigem]:
+    """Extrae las fuentes de las herramientas ejecutadas después de la última pregunta."""
+    ultimo_usuario = max(
+        (indice for indice, mensaje in enumerate(mensajes) if isinstance(mensaje, HumanMessage)),
+        default=-1,
+    )
+    fuentes = []
+    vistas = set()
+    for mensaje in mensajes[ultimo_usuario + 1:]:
+        if not isinstance(mensaje, ToolMessage):
+            continue
+        try:
+            contenido = json.loads(str(mensaje.content))
+        except (TypeError, json.JSONDecodeError):
+            continue
+        for fuente in contenido.get("fuentes", []):
+            fuente_sigem = FuenteSigem(**fuente)
+            clave = (fuente_sigem.archivo, fuente_sigem.pagina)
+            if clave not in vistas:
+                vistas.add(clave)
+                fuentes.append(fuente_sigem)
+    return fuentes
+
+
+def candidatos_del_ultimo_turno(mensajes) -> list[CandidatoDocumento]:
+    candidatos = []
+    vistos = set()
+    for mensaje in mensajes:
+        if not isinstance(mensaje, ToolMessage):
+            continue
+        try:
+            contenido = json.loads(str(mensaje.content))
+        except (TypeError, json.JSONDecodeError):
+            continue
+        for candidato in contenido.get("candidatos", []):
+            candidato_documento = CandidatoDocumento(**candidato)
+            if candidato_documento.archivo not in vistos:
+                vistos.add(candidato_documento.archivo)
+                candidatos.append(candidato_documento)
+    return candidatos
+
+
+def guardar_fuentes_como_contexto(thread_id: str, fuentes: list[FuenteSigem]) -> None:
+    if fuentes:
+        db.guardar_contexto_sigem(thread_id, [fuente.model_dump() for fuente in fuentes])
+
+
+def mensaje_para_agente(thread_id: str, mensaje: str) -> tuple[str, bool]:
+    fuentes_activas = db.obtener_contexto_sigem(thread_id)
+    if es_pregunta_de_seguimiento(mensaje, fuentes_activas):
+        return enriquecer_consulta_con_contexto(mensaje, fuentes_activas), True
+    return mensaje, False
 
 # ══════════════════════════════════════════════════════════════
 # FASTAPI APP
@@ -151,6 +231,38 @@ async def health_check():
     """Indica si el proceso del API está disponible."""
     return {"status": "ok"}
 
+
+@app.get("/health/llm", tags=["sistema"])
+def health_check_llm():
+    """Comprueba el acceso al servidor Ollama y al modelo configurado."""
+    headers = {}
+    if config.OLLAMA_PROXY_TOKEN:
+        headers["X-Ollama-Proxy-Token"] = config.OLLAMA_PROXY_TOKEN
+
+    try:
+        request = Request(f"{config.OLLAMA_BASE_URL}/api/tags", headers=headers)
+        with urlopen(request, timeout=config.OLLAMA_HEALTH_TIMEOUT_SECONDS) as response:
+            payload = json.load(response)
+    except HTTPError as error:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Ollama respondió HTTP {error.code}. Revisa la URL y el token del proxy.",
+        ) from error
+    except URLError as error:
+        raise HTTPException(
+            status_code=503,
+            detail="No fue posible conectar con Ollama. Revisa el túnel de Colab y OLLAMA_BASE_URL.",
+        ) from error
+
+    installed_models = {model.get("name") for model in payload.get("models", [])}
+    if config.CHAT_MODEL not in installed_models:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Ollama está disponible, pero no tiene instalado el modelo {config.CHAT_MODEL}.",
+        )
+
+    return {"status": "ok", "model": config.CHAT_MODEL}
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -159,6 +271,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.get("/documentos/sugerencias", response_model=list[CandidatoDocumento], tags=["sigem"])
+def sugerencias_documentos(q: str = ""):
+    """Sugiere documentos del catálogo sin ejecutar una búsqueda semántica."""
+    return [
+        CandidatoDocumento(
+            titulo=documento.titulo,
+            archivo=documento.archivo,
+            fecha_expedicion=str(documento.anio) if documento.anio else None,
+            descripcion=documento.descripcion,
+        )
+        for documento in obtener_catalogo_documentos().sugerencias(q)
+    ]
+
 @app.post("/chat", response_model=ChatResponse)
 async def endpoint_chat(request: ChatRequest):
     """
@@ -166,19 +292,23 @@ async def endpoint_chat(request: ChatRequest):
     """
     inicio = time.time()
     try:
-        respuesta_directa = respuesta_directa_si_aplica(request.mensaje)
+        mensaje_agente, es_seguimiento = mensaje_para_agente(request.thread_id, request.mensaje)
+        respuesta_directa = None if es_seguimiento else respuesta_directa_si_aplica(request.mensaje)
         if respuesta_directa:
             return respuesta_chat_directa(request, inicio, respuesta_directa)
 
         config_graph = {"configurable": {"thread_id": request.thread_id}}
         
         resultado = agente_sigem.invoke(
-            {"messages": [HumanMessage(content=request.mensaje)],
+            {"messages": [HumanMessage(content=mensaje_agente)],
              "perfil":request.perfil},
             config=config_graph
         )
         
         respuesta = resultado["messages"][-1].content
+        fuentes = fuentes_del_ultimo_turno(resultado["messages"])
+        candidatos = candidatos_del_ultimo_turno(resultado["messages"])
+        guardar_fuentes_como_contexto(request.thread_id, fuentes)
         
         pasos = []
         for msg in resultado["messages"]:
@@ -200,6 +330,8 @@ async def endpoint_chat(request: ChatRequest):
             respuesta=respuesta,
             thread_id=request.thread_id,
             pasos=pasos,
+            fuentes=fuentes,
+            candidatos=candidatos,
             tiempo_ms=round(tiempo_ms, 1)
         )
     except Exception as e:
@@ -229,13 +361,17 @@ async def endpoint_chat_voz(audio: UploadFile = File(...), thread_id: str = Form
         if not transcripcion:
             raise HTTPException(400, "No se detectó texto en el audio.")
 
+        mensaje_agente, _ = mensaje_para_agente(thread_id, transcripcion)
         config_graph = {"configurable": {"thread_id": thread_id}}
         resultado = agente_sigem.invoke(
-            {"messages": [HumanMessage(content=transcripcion)],
+            {"messages": [HumanMessage(content=mensaje_agente)],
              "perfil": perfil},
             config=config_graph,    
         )
         respuesta_texto = resultado["messages"][-1].content
+        fuentes = fuentes_del_ultimo_turno(resultado["messages"])
+        candidatos = candidatos_del_ultimo_turno(resultado["messages"])
+        guardar_fuentes_como_contexto(thread_id, fuentes)
 
         audio_respuesta = synthesize(respuesta_texto)
 
@@ -257,6 +393,8 @@ async def endpoint_chat_voz(audio: UploadFile = File(...), thread_id: str = Form
         thread_id=thread_id,
         pregunta_audio_url=storage.url_firmada(pregunta_key),
         respuesta_audio_url=storage.url_firmada(respuesta_key),
+        fuentes=fuentes,
+        candidatos=candidatos,
     )
 
 

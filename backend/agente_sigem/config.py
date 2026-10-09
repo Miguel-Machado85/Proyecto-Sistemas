@@ -7,8 +7,10 @@ load_dotenv()
 
 
 class Config:
-    # ── Ollama (chat, corriendo en tu Docker local) ─────────────────
-    OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    # ── Ollama (local o publicado temporalmente desde Colab) ───────
+    OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
+    OLLAMA_PROXY_TOKEN = os.getenv("OLLAMA_PROXY_TOKEN")
+    OLLAMA_HEALTH_TIMEOUT_SECONDS = float(os.getenv("OLLAMA_HEALTH_TIMEOUT_SECONDS", "15"))
 
     # TODO: pon aquí el nombre EXACTO del modelo que ya tienes descargado
     # (revísalo con `ollama list` en la terminal donde corre el contenedor).
@@ -17,7 +19,7 @@ class Config:
     # ── Gemini (solo para embeddings) ──
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-    EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "gemini-embedding-001")
+    EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "models/gemini-embedding-2")
 
     # ── Audio (Gemini STT/TTS) ──
     AUDIO_MODEL = os.getenv("AUDIO_MODEL", "gemini-3.5-transcribe")            # para transcribir

@@ -7,8 +7,6 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      # Ollama sigue corriendo en tu host (GPU/Metal), no en un contenedor.
-      OLLAMA_BASE_URL: http://host.docker.internal:11434
       # Postgres sí vive en este compose, se resuelve por nombre de servicio.
       DATABASE_URL: postgresql://sigem:sigem@db:5432/sigem
     extra_hosts:

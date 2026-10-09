@@ -1,5 +1,6 @@
-"""Historial de conversación (texto + referencia al audio en S3), en PostgreSQL."""
+"""Historial y contexto documental de conversación, persistidos en PostgreSQL."""
 from datetime import datetime, timezone
+import json
 
 from sqlalchemy import Column, DateTime, Integer, String, Text, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
@@ -24,6 +25,16 @@ class Turno(Base):
     creado_en = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
+class ContextoSigem(Base):
+    """La última fuente SIGEM que permite resolver mensajes de seguimiento."""
+
+    __tablename__ = "contextos_sigem"
+
+    thread_id = Column(String, primary_key=True)
+    fuentes_json = Column(Text, nullable=False)
+    actualizado_en = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+
 def init_db() -> None:
     """Crea la tabla si no existe. Se llama al arrancar la API."""
     Base.metadata.create_all(bind=engine)
@@ -46,3 +57,27 @@ def obtener_historial(thread_id: str) -> list[Turno]:
             .order_by(Turno.creado_en.asc())
             .all()
         )
+
+
+def guardar_contexto_sigem(thread_id: str, fuentes: list[dict]) -> None:
+    """Reemplaza el contexto activo solo después de una respuesta respaldada por SIGEM."""
+    with SessionLocal() as session:
+        contexto = session.get(ContextoSigem, thread_id)
+        fuentes_json = json.dumps(fuentes, ensure_ascii=False)
+        if contexto is None:
+            session.add(ContextoSigem(thread_id=thread_id, fuentes_json=fuentes_json))
+        else:
+            contexto.fuentes_json = fuentes_json
+            contexto.actualizado_en = datetime.now(timezone.utc)
+        session.commit()
+
+
+def obtener_contexto_sigem(thread_id: str) -> list[dict]:
+    with SessionLocal() as session:
+        contexto = session.get(ContextoSigem, thread_id)
+        if contexto is None:
+            return []
+        try:
+            return json.loads(contexto.fuentes_json)
+        except json.JSONDecodeError:
+            return []

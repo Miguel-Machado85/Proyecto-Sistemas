@@ -136,6 +136,57 @@
     border-bottom-left-radius: 4px;
   }
 
+  .msg-sources {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #d7dde4;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .msg-sources summary {
+    cursor: pointer;
+    color: var(--govco-blue);
+    font-weight: 600;
+  }
+
+  .msg-sources ul {
+    margin: 7px 0 0;
+    padding-left: 18px;
+  }
+
+  .msg-sources li + li {
+    margin-top: 5px;
+  }
+
+  .source-pages { color: var(--text-muted); }
+
+  .document-candidates, .query-suggestions {
+    margin-top: 8px;
+    border: 1px solid #d7dde4;
+    background: #ffffff;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .candidate-button, .suggestion-button {
+    display: block;
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid #e7ebef;
+    background: #ffffff;
+    color: var(--text-dark);
+    padding: 9px 12px;
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .candidate-button:last-child, .suggestion-button:last-child { border-bottom: 0; }
+  .candidate-button:hover, .suggestion-button:hover { background: #f1f7fc; }
+  .candidate-detail { display: block; color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+  .query-suggestions { position: absolute; z-index: 3; top: calc(100% + 4px); left: 0; right: 0; margin: 0; }
+
   .msg-pending {
     align-self: flex-start;
     background: #eef1f4;
@@ -406,6 +457,7 @@
           <line x1="8" y1="23" x2="16" y2="23"/>
         </svg>
       </button>
+      <div id="query-suggestions" class="query-suggestions" role="listbox" hidden></div>
     </form>
     <p class="query-error" id="query-error" role="alert"></p>
   </main>
@@ -512,6 +564,7 @@
     var queryForm = document.getElementById('query-form');
     var queryInput = document.getElementById('query-input');
     var queryError = document.getElementById('query-error');
+    var querySuggestions = document.getElementById('query-suggestions');
     var micButton = document.getElementById('mic-button');
     var chatInicializado = false;
     var MENSAJE_BIENVENIDA_INICIAL = '¡Hola! Soy el asistente virtual de la Alcaldía de Marinilla. Cuéntame en qué te puedo ayudar.';
@@ -534,6 +587,87 @@
       scrollToBottom();
       return bubble;
     }
+
+    function appendSources(bubble, sources) {
+      if (!sources || !sources.length) return;
+
+      var grouped = {};
+      sources.forEach(function (source) {
+        var key = source.archivo || source.titulo;
+        if (!grouped[key]) grouped[key] = { source: source, pages: [] };
+        if (source.pagina && grouped[key].pages.indexOf(source.pagina) === -1) grouped[key].pages.push(source.pagina);
+      });
+      var documents = Object.keys(grouped).map(function (key) { return grouped[key]; });
+      var details = document.createElement('details');
+      details.className = 'msg-sources';
+      var summary = document.createElement('summary');
+      summary.textContent = documents.length === 1
+        ? 'Documento consultado: ' + (documents[0].source.titulo || documents[0].source.archivo)
+        : 'Documentos consultados (' + documents.length + ')';
+      details.appendChild(summary);
+
+      var list = document.createElement('ul');
+      documents.forEach(function (entry) {
+        var source = entry.source;
+        var item = document.createElement('li');
+        var label = source.titulo || source.archivo || 'Documento SIGEM';
+        if (entry.pages.length) label += ', páginas ' + entry.pages.join(', ');
+        if (source.fecha_expedicion) label += ', ' + source.fecha_expedicion;
+        item.textContent = label;
+        list.appendChild(item);
+      });
+      details.appendChild(list);
+      bubble.appendChild(details);
+      scrollToBottom();
+    }
+
+    function appendCandidates(bubble, candidates) {
+      if (!candidates || !candidates.length) return;
+      var container = document.createElement('div');
+      container.className = 'document-candidates';
+      candidates.forEach(function (candidate) {
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'candidate-button';
+        button.textContent = candidate.titulo;
+        var detail = document.createElement('span');
+        detail.className = 'candidate-detail';
+        detail.textContent = candidate.fecha_expedicion || candidate.descripcion || candidate.archivo;
+        button.appendChild(detail);
+        button.addEventListener('click', function () { queryInput.value = candidate.titulo; queryInput.focus(); });
+        container.appendChild(button);
+      });
+      bubble.appendChild(container);
+    }
+
+    var suggestionTimer;
+    function hideSuggestions() { querySuggestions.hidden = true; querySuggestions.replaceChildren(); }
+    function showSuggestions(documents) {
+      hideSuggestions();
+      if (!documents.length) return;
+      documents.forEach(function (document) {
+        var button = document.createElement('button');
+        button.type = 'button'; button.className = 'suggestion-button'; button.textContent = document.titulo;
+        var detail = document.createElement('span'); detail.className = 'candidate-detail';
+        detail.textContent = document.fecha_expedicion || document.descripcion || document.archivo;
+        button.appendChild(detail);
+        button.addEventListener('click', function () { queryInput.value = document.titulo; hideSuggestions(); queryInput.focus(); });
+        querySuggestions.appendChild(button);
+      });
+      querySuggestions.hidden = false;
+    }
+
+    queryInput.addEventListener('input', function () {
+      var query = queryInput.value.trim();
+      clearTimeout(suggestionTimer);
+      if (query.length < 3) { hideSuggestions(); return; }
+      suggestionTimer = setTimeout(async function () {
+        try {
+          var response = await fetch(API_BASE_URL + '/documentos/sugerencias?q=' + encodeURIComponent(query));
+          showSuggestions(response.ok ? await response.json() : []);
+        } catch (error) { hideSuggestions(); }
+      }, 250);
+    });
 
     async function iniciarChat(profileName) {
       if (chatInicializado) return;
@@ -596,6 +730,7 @@
 
       addMessage(pregunta, 'user');
       queryInput.value = '';
+      hideSuggestions();
       queryInput.disabled = true;
 
       var pendingBubble = addMessage('Escribiendo…', 'pending');
@@ -611,11 +746,13 @@
           throw new Error('El servidor respondió con estado ' + response.status);
         }
 
-        // api.py devuelve un ChatResponse: { respuesta, thread_id, pasos, tiempo_ms }
+        // api.py devuelve la respuesta y las fuentes estructuradas que la respaldan.
         var data = await response.json();
 
         pendingBubble.remove();
-        addMessage(data.respuesta, 'agent');
+        var agentBubble = addMessage(data.respuesta, 'agent');
+        appendSources(agentBubble, data.fuentes);
+        appendCandidates(agentBubble, data.candidatos);
 
         // Para depurar la prueba (ej. confirmar que entró a buscar_en_sigem)
         console.log('Pasos del agente:', data.pasos);
@@ -714,6 +851,8 @@
         }
 
         var agentBubble = addMessage(data.respuesta, 'agent');
+        appendSources(agentBubble, data.fuentes);
+        appendCandidates(agentBubble, data.candidatos);
         if (data.respuesta_audio_url) {
           var playerRespuesta = document.createElement('audio');
           playerRespuesta.controls = true;

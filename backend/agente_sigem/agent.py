@@ -2,8 +2,6 @@ from typing import Annotated
 from typing_extensions import TypedDict
 
 from langchain_ollama import ChatOllama
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain_chroma import Chroma
 from langchain_core.messages import SystemMessage, BaseMessage
 from langchain_core.tools import tool
 from langgraph.graph import StateGraph, START, END
@@ -12,26 +10,16 @@ from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint.memory import MemorySaver
 
 from .config import config
+from .retrieval import (
+    candidatos_referencia_ambigua,
+    recuperar_sigem,
+    respuesta_de_recuperacion,
+    respuesta_referencia_ambigua,
+)
 
 # ══════════════════════════════════════════════════════════════
 # RETRIEVER (Herramienta)
 # ══════════════════════════════════════════════════════════════
-
-def obtener_retriever():
-    """Conecta a la base vectorial de Chroma (la administra el compañero de datos) y retorna el retriever."""
-    embeddings = GoogleGenerativeAIEmbeddings(
-        model=config.EMBEDDING_MODEL,
-        google_api_key=config.GOOGLE_API_KEY,
-    )
-
-    
-    vector_store = Chroma(
-        collection_name=config.COLLECTION_NAME,
-        embedding_function=embeddings,
-        persist_directory=config.CHROMA_PERSIST_DIR,
-    )
-
-    return vector_store.as_retriever(search_kwargs={"k": 3})
 
 @tool
 def buscar_en_sigem(consulta: str) -> str:
@@ -41,18 +29,16 @@ def buscar_en_sigem(consulta: str) -> str:
     sobre un trámite, un documento oficial, un formato o una norma municipal.
     """
     try:
-        retriever = obtener_retriever()
-        resultados = retriever.invoke(consulta)
+        candidatos = candidatos_referencia_ambigua(consulta)
+        if candidatos:
+            return respuesta_referencia_ambigua(candidatos)
+
+        resultados = recuperar_sigem(consulta)
 
         if not resultados:
             return "No se encontró información relevante en el repositorio SIGEM."
 
-        contexto = []
-        for doc in resultados:
-            origen = doc.metadata.get("source", "Documento SIGEM sin identificar")
-            contexto.append(f"--- Información de {origen} ---\n{doc.page_content}")
-
-        return "\n\n".join(contexto)
+        return respuesta_de_recuperacion(resultados)
     except Exception as e:
         return f"Error al buscar en SIGEM: {str(e)}"
 
@@ -73,6 +59,10 @@ REGLAS IMPORTANTES:
 3. Recuerda el contexto de la conversación (memoria). Si el usuario hace referencia a algo dicho antes, usa el historial.
 4. Si te hacen una pregunta sobre normativa, trámites o formatos, RESPONDE ÚNICA Y EXCLUSIVAMENTE con base en la información que devuelva la herramienta 'buscar_en_sigem'. No completes con conocimiento general ni inventes información.
 5. Si la herramienta no devuelve información útil, indícale al usuario que ese contenido no está disponible en SIGEM por el momento, y sugiere que consulte directamente en la Alcaldía de Marinilla.
+6. La herramienta devuelve JSON con los campos `fragmentos` y `fuentes`. Usa exclusivamente el contenido de `fragmentos` para responder y no afirmes que no hay información si alguno es pertinente.
+7. Si el mensaje indica que es continuación de un documento SIGEM activo, llama obligatoriamente a `buscar_en_sigem` incluyendo el título de ese documento, aunque la pregunta sea corta.
+8. Si el usuario pide ampliar, explicar o hablar más sobre el documento activo y la herramienta devuelve fragmentos, sintetiza detalles de esos fragmentos; nunca respondas que no hay contenido relevante.
+9. Si la herramienta devuelve `aclaracion` y `candidatos`, pide al usuario que seleccione el año o tema del documento. No respondas usando documentos distintos a esos candidatos.
 """
 
 ESTILO_POR_PERFIL = {
@@ -103,10 +93,9 @@ def crear_agente():
     Crea el agente RAG usando el modelo de Ollama configurado.
     """
     client_kwargs = {}
-    if "ngrok-free" in config.OLLAMA_BASE_URL:
-        client_kwargs = {
-            "headers": {"ngrok-skip-browser-warning": "true"},
-            "verify": False,
+    if config.OLLAMA_PROXY_TOKEN:
+        client_kwargs["headers"] = {
+            "X-Ollama-Proxy-Token": config.OLLAMA_PROXY_TOKEN,
         }
 
     modelo = ChatOllama(
