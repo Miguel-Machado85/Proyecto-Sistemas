@@ -70,6 +70,7 @@ class DocumentoCatalogado:
     anio: int | None
     codigo_archivo: str | None
     aliases: tuple[str, ...]
+    fecha_expedicion: str | None = None
 
 
 @dataclass(frozen=True)
@@ -115,6 +116,7 @@ class CatalogoDocumentos:
                     anio=anio,
                     codigo_archivo=codigo.group("codigo") if codigo else None,
                     aliases=aliases,
+                    fecha_expedicion=str(fecha) if fecha else None,
                 )
             )
         return cls(documentos)
@@ -196,6 +198,36 @@ class CatalogoDocumentos:
                 puntuados.append((puntaje, documento))
         puntuados.sort(key=lambda par: (-par[0], par[1].titulo))
         return [documento for _, documento in puntuados[:limite]]
+
+    def listar(
+        self,
+        tipo: str | None = None,
+        anio: int | None = None,
+        tema: str | None = None,
+        limite: int = 15,
+        puntaje_minimo: float = 80.0,
+    ) -> tuple[list[DocumentoCatalogado], int]:
+        """Filtra por tipo y año (exactos) y por tema (coincidencia aproximada en título y descripción).
+
+        Devuelve (documentos hasta `limite`, total de coincidencias).
+        """
+        seleccionados = []
+        for documento in self.documentos:
+            if tipo and documento.tipo != tipo:
+                continue
+            if anio is not None and documento.anio != anio:
+                continue
+            puntaje = 0.0
+            if tema:
+                texto = normalizar(f"{documento.titulo} {documento.descripcion or ''}")
+                consulta = normalizar(tema).strip()
+                puntaje = max(fuzz.partial_token_set_ratio(consulta, texto), fuzz.partial_ratio(consulta, texto))
+                if puntaje < puntaje_minimo:
+                    continue
+            seleccionados.append((puntaje, documento))
+        # Más afín al tema primero; sin tema, los más recientes primero.
+        seleccionados.sort(key=lambda par: (-par[0], -(par[1].anio or 0), par[1].titulo))
+        return [documento for _, documento in seleccionados[:limite]], len(seleccionados)
 
     @staticmethod
     def _resultado(candidatos: list[DocumentoCatalogado]) -> ResolucionCatalogo:

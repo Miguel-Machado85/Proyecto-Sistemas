@@ -37,7 +37,7 @@ cd backend && uv run python evaluacion/evaluar_recuperacion.py
 - [x] **Fase 0** — Preparación: rama, CLAUDE.md, dependencias, verificación del entorno, dataset y línea base de recuperación
 - [x] **Fase 1** — Configuración y LLM: `config.py`, `llm.py`, variables Gemini, `.env.example`, retirar Ollama
 - [x] **Fase 2** — Recuperación: `retrieval.py` refactor, `reranker.py`, `catalogo.py` (`buscar_por_atributos`, `similares`)
-- [ ] **Fase 3** — Tools y estado: `estado.py`, `tools.py`, `prompts.py`
+- [x] **Fase 3** — Tools y estado: `estado.py`, `tools.py`, `prompts.py`
 - [ ] **Fase 4** — Nodos y grafo: `nodos/*`, `agent.py`, `checkpointer.py`
 - [ ] **Fase 5** — API y persistencia: `api.py` simplificado + lifespan, `db.py`, eliminar `contexto.py`/`calidad.py`/`test_contexto.py`
 - [ ] **Fase 6** — Evaluación final y despliegue: `evaluar_agente.py`, Dockerfile/Compose (torch CPU, `hf-cache`), README
@@ -103,6 +103,24 @@ langchain-google-genai 4.3.7 · google-genai 2.21.0 · langchain-chroma 1.1.0 ·
   palabras (MRR 0.33→0.06), `mal_escrita` y `glob-02`. En conjunto no supera al respaldo; revisar tras el analista (Fase 4),
   que reescribe la consulta, antes de decidir si se deja activo o se prueba `BAAI/bge-reranker-v2-m3`.
   Archivos: `evaluacion/fase2_*.json`.
+
+### Fase 3 — tools (`agente_sigem/tools.py`, aún sin conectar al grafo)
+- `HERRAMIENTAS_INVESTIGADOR = [buscar_documento_por_referencia, listar_documentos, buscar_fragmentos, leer_documento]`.
+  Todas devuelven JSON `str`, nunca lanzan: un fallo interno o un argumento inválido (p. ej. `tipo` fuera del `Literal`,
+  gestionado con `handle_validation_error`) vuelve como `{"fuentes": [], "fragmentos": [], "error": "..."}`.
+- Las tools llaman a `retrieval.obtener_vector_store()` / `retrieval.obtener_catalogo_documentos()` / `retrieval.recuperar_sigem`
+  **a través del módulo** (`retrieval.x`), para poder sustituirlos con monkeypatch en los tests (ver `tests/test_tools.py`:
+  Chroma en memoria + `DeterministicFakeEmbedding`; `RERANKER_HABILITADO=False` para que nunca cargue un modelo).
+- `CatalogoDocumentos` ganó `listar(tipo, anio, tema, limite)` y `DocumentoCatalogado.fecha_expedicion` (fecha completa).
+  `listar_documentos` también devuelve `total` y acepta `tipo` en plural/mayúsculas ("Decretos"); un tipo desconocido
+  devuelve `aclaracion` con los válidos.
+- Candidatos: máximo 5 (la spec) — `agente_sigem/referencias.py` sigue limitado a 3 hasta que la Fase 4/5 lo elimine.
+- Con Chroma real: referencia exacta/ambigua/inexistente, listados y lectura funcionan (listar tema "presupuesto" → 29 coincidencias).
+  `buscar_fragmentos` con reranker ≈ 1.8–3.5 s por llamada; **la primera llamada tarda ~30 s** (import de torch + pesos), por eso
+  hay que llamar a `reranker.precargar()` en el lifespan de FastAPI (`RERANKER_PRECARGAR=true`).
+- `test_salida_es_compatible_con_fuente_y_candidato_de_la_api` importa `agente_sigem.api`, que hoy construye el agente al
+  importarse (necesita `GOOGLE_API_KEY`); si falla el import, el test se salta. Deja de ser necesario cuando la Fase 5
+  construya el grafo en el lifespan.
 
 ### Estado de tests al iniciar (Fase 0)
 `13 passed, 1 failed` (**corregido en la Fase 2**: 26 passed). Fallaba `tests/test_retrieval_diversidad.py::test_limita_fragmentos_por_documento_en_consulta_amplia`:
