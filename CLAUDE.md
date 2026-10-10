@@ -37,7 +37,8 @@ cd backend && uv run python evaluacion/evaluar_recuperacion.py
 - [x] **Fase 0** — Preparación: rama, CLAUDE.md, dependencias, verificación del entorno, dataset y línea base de recuperación
 - [x] **Fase 1** — Configuración y LLM: `config.py`, `llm.py`, variables Gemini, `.env.example`, retirar Ollama
 - [x] **Fase 2** — Recuperación: `retrieval.py` refactor, `reranker.py`, `catalogo.py` (`buscar_por_atributos`, `similares`)
-- [x] **Fase 3** — Tools y estado: `estado.py`, `tools.py`, `prompts.py`
+- [x] **Fase 3** — Tools: `tools.py` (4 tools, sin conectar al grafo)
+- [ ] **Fase 3b** — Estado y prompts: `estado.py`, `prompts.py` (pendiente; necesarios para la Fase 4)
 - [ ] **Fase 4** — Nodos y grafo: `nodos/*`, `agent.py`, `checkpointer.py`
 - [ ] **Fase 5** — API y persistencia: `api.py` simplificado + lifespan, `db.py`, eliminar `contexto.py`/`calidad.py`/`test_contexto.py`
 - [ ] **Fase 6** — Evaluación final y despliegue: `evaluar_agente.py`, Dockerfile/Compose (torch CPU, `hf-cache`), README
