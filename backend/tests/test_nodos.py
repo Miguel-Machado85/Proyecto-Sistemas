@@ -407,6 +407,25 @@ def test_investigador_propaga_el_config(monkeypatch):
     assert "langfuse-prueba" in modelo.etiquetas[0]
 
 
+def test_investigador_recibe_el_codigo_de_archivo_en_el_encargo(monkeypatch):
+    estado = estado_base(
+        analisis=analisis_dict(
+            consulta_autonoma="¿Qué dice el documento 18399?",
+            filtros={"tipo": None, "numero": None, "anio": None, "codigo": "18399", "tema": None},
+        ),
+        consulta_actual="¿Qué dice el documento 18399?",
+    )
+
+    _, modelo, _ = correr_investigador(monkeypatch, [AIMessage(content="Nada.")], {"buscar_fragmentos": {}}, estado)
+
+    assert "codigo=18399" in modelo.entradas[0][1].content
+
+
+def test_el_analista_distingue_codigo_de_archivo_en_su_prompt():
+    assert "codigo:" in prompts.PROMPT_ANALISTA and "NUNCA \"ambigua\"" in prompts.PROMPT_ANALISTA
+    assert FiltrosSigem(codigo="18399").codigo == "18399"
+
+
 # ══════════════════════════════════════════════════════════════
 # EVALUADOR
 # ══════════════════════════════════════════════════════════════

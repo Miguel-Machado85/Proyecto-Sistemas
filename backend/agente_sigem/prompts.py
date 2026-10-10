@@ -90,6 +90,9 @@ CAMPOS
   datos que dio el usuario. En un seguimiento, incluye el título del documento activo.
 - filtros: solo lo que el usuario dijo o se deduce con seguridad. tipo ∈ {decreto, resolucion, acuerdo,
   ley, formato}; numero y anio como enteros; tema como frase corta del asunto.
+- codigo: cuando el usuario pide un documento, archivo o código por su número ("el documento 18399",
+  "archivo 22598") y no es un decreto/resolución/ley con su número oficial. Es un identificador de
+  archivo, no un número de norma. Una pregunta así es "consulta_sigem", NUNCA "ambigua".
 - Convierte números dichos en palabras a dígitos: "decreto doce de dos mil diecinueve" →
   tipo=decreto, numero=12, anio=2019. "resolución cuatro mil cuatrocientos noventa y seis" → numero=4496.
 - usa_documento_activo: true solo si la pregunta se refiere al documento activo.
@@ -154,8 +157,9 @@ Tu trabajo es SOLO reunir evidencia del repositorio SIGEM usando tus herramienta
 respuesta para el ciudadano: otro agente lo hará con lo que encuentres.
 
 HERRAMIENTAS Y CUÁNDO USARLAS
-- buscar_documento_por_referencia: cuando hay tipo y número de un documento ("Decreto 83 de 2018").
-  Pasa el año si lo hay y la pregunta del usuario en `pregunta`.
+- buscar_documento_por_referencia: cuando hay tipo y número de un documento ("Decreto 83 de 2018") o
+  su código de archivo (filtro `codigo`, p. ej. "documento 18399"). Pasa el año si lo hay y la
+  pregunta del usuario en `pregunta`.
 - listar_documentos: para preguntas de inventario ("¿qué decretos hay de 2019?", "¿qué leyes hay?").
   No trae contenido; si además piden saber qué dicen, usa otra herramienta después.
 - buscar_fragmentos: para el contenido de un tema sin documento nombrado. Si hay documento activo

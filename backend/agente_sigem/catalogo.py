@@ -199,6 +199,16 @@ class CatalogoDocumentos:
         puntuados.sort(key=lambda par: (-par[0], par[1].titulo))
         return [documento for _, documento in puntuados[:limite]]
 
+    def buscar_por_codigo(self, codigo: str | int) -> ResolucionCatalogo:
+        """Busca por el código numérico del archivo (el prefijo de `22598_decreto-no-0012019.pdf`).
+
+        Compara dígitos ya extraídos por el analista; no analiza texto libre.
+        """
+        digitos = "".join(caracter for caracter in str(codigo) if caracter.isdigit())
+        if not digitos:
+            return ResolucionCatalogo(estado="sin_coincidencia", documentos=())
+        return self._resultado([d for d in self.documentos if d.codigo_archivo == digitos])
+
     def listar(
         self,
         tipo: str | None = None,

@@ -162,8 +162,13 @@ langchain-google-genai 4.3.7 · google-genai 2.21.0 · langchain-chroma 1.1.0 ·
 - **Humo con la API real (CHECKPOINTER=memory, `db` en memoria):** hola, taxi, "decreto 83", "qué dice el decrto 1 dl 2019" + "explícame más", inventario 2019 y
   fuera de dominio respondieron bien y con citas. **Latencia alta: 10–60 s por turno** (taxi: 61 s con 3 llamadas del investigador + evaluador + redactor).
 - **Hallazgos abiertos para la Fase 6 / siguiente iteración:**
-  1. **Código de archivo:** "Necesito el documento 18399" → el analista lo clasifica `ambigua` (antes lo resolvía el regex `documento N`). Ninguna tool busca por código.
-  2. **Cuota de Gemini:** al agotarse (`429 RESOURCE_EXHAUSTED`) `/chat` responde 500 con el texto crudo del proveedor en `detail`; conviene un mensaje amable.
+  1. ~~**Código de archivo**~~ **RESUELTO:** `buscar_documento_por_referencia` acepta `codigo` (tipo y numero pasan a opcionales; se exige tipo+numero o codigo),
+     `FiltrosSigem.codigo` y `CatalogoDocumentos.buscar_por_codigo` (compara los dígitos con el prefijo del archivo). "Necesito el documento 18399" →
+     `consulta_sigem` con `codigo=18399` (validado con Gemini real). Un código inexistente devuelve `aclaracion`; con tipo+numero como respaldo.
+  2. **Cuota de Gemini (diagnosticada):** el plan gratuito limita `gemini-3.5-flash` a **20 solicitudes por día y por proyecto**
+     (`GenerateRequestsPerDayPerProjectPerModel-FreeTier`; el 429 trae `retryDelay`). Cada turno con búsqueda gasta 3–6 llamadas flash (investigador + redactor),
+     así que el plan gratuito alcanza para ~4–6 consultas al día. `gemini-3.5-flash-lite` tiene su propia cuota y seguía disponible. Para uso real hace falta
+     facturación o mover investigador/redactor a flash-lite (medir calidad antes). Al agotarse: al agotarse (`429 RESOURCE_EXHAUSTED`) `/chat` responde 500 con el texto crudo del proveedor en `detail`; conviene un mensaje amable.
   3. **`fuentes` acumula todas las búsquedas** del turno (taxi devolvió 12 fuentes, solo una citada); se podría filtrar a las realmente citadas por el redactor.
   4. Una transcripción vacía queda en `messages` como `HumanMessage("")` + la alerta; inocuo pero ensucia el historial del hilo.
   5. `VERIFICACION_MODEL` quedó huérfano en `config.py` (lo usaba `calidad.py`).

@@ -34,6 +34,7 @@ class FiltrosSigem(BaseModel):
     tipo: Literal["decreto", "resolucion", "acuerdo", "ley", "formato"] | None = None
     numero: int | None = None
     anio: int | None = None
+    codigo: str | None = None  # código numérico del archivo ("documento 18399")
     tema: str | None = None
 
 

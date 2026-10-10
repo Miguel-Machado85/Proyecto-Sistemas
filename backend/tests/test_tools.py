@@ -39,6 +39,9 @@ def construir_documentos() -> list[Document]:
                   "Por medio del cual se adopta el documento Políticas Contables"),
         fragmento("l387_1997.pdf", "Ley 387 de 1997", "1997-07-18T08:00:00", 0, "Medidas contra el desplazamiento forzado",
                   "Por la cual se adoptan medidas para la prevención del desplazamiento forzado"),
+        fragmento("18399_resolucion-3615.pdf", "Resolución No. 3615", "2018-10-29T08:00:00", 0,
+                  "Plan estratégico de talento humano 2018-2020",
+                  "Por medio de la cual se adopta el plan estratégico de talento humano"),
         fragmento("d1_2019.pdf", "Decreto 001 de 2019", "2019-01-03T08:00:00", 0, "Tarifas de taxis y buses",
                   "Por medio del cual se fijan las tarifas para el servicio público de transporte de taxis"),
     ]
@@ -132,6 +135,39 @@ def test_tipo_fuera_del_literal_no_lanza_excepcion(almacen):
 
     resultado = json.loads(salida)
     assert "error" in resultado and resultado["fuentes"] == []
+
+
+def test_referencia_por_codigo_de_archivo(almacen):
+    resultado = ejecutar(tools.buscar_documento_por_referencia, codigo="18399", pregunta="¿qué periodo cubre?")
+
+    assert archivos(resultado) == {"18399_resolucion-3615.pdf"}
+    assert resultado["fragmentos"]
+
+
+def test_codigo_tolera_espacios_y_texto_alrededor(almacen):
+    resultado = ejecutar(tools.buscar_documento_por_referencia, codigo=" documento 18399 ")
+
+    assert archivos(resultado) == {"18399_resolucion-3615.pdf"}
+
+
+def test_codigo_inexistente_pide_verificar_sin_error(almacen):
+    resultado = ejecutar(tools.buscar_documento_por_referencia, codigo="99999")
+
+    assert resultado["fuentes"] == [] and resultado["fragmentos"] == []
+    assert "error" not in resultado
+    assert "99999" in resultado["aclaracion"]
+
+
+def test_codigo_inexistente_usa_tipo_y_numero_como_respaldo(almacen):
+    resultado = ejecutar(tools.buscar_documento_por_referencia, codigo="99999", tipo="decreto", numero=83, anio=2018)
+
+    assert archivos(resultado) == {"d83_2018.pdf"}
+
+
+def test_referencia_sin_tipo_numero_ni_codigo_devuelve_error_explicativo(almacen):
+    resultado = ejecutar(tools.buscar_documento_por_referencia, anio=2018)
+
+    assert resultado["fuentes"] == [] and "codigo" in resultado["error"]
 
 
 # ── listar_documentos ──

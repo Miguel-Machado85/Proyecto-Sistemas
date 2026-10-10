@@ -106,3 +106,19 @@ def test_similares_encuentra_por_descripcion_y_respeta_limite():
     assert catalogo.similares("tarifas taxis")[0].archivo == "22598_decreto-no-0012019.pdf"
     assert len(catalogo.similares("decreto", limite=2)) <= 2
     assert catalogo.similares("ab") == []
+
+
+def test_buscar_por_codigo_de_archivo():
+    catalogo = CatalogoDocumentos.desde_metadatas(
+        [
+            metadata("18399_resolucion-3615.pdf", "Resolución No. 3615", "2018-10-29T08:00:00"),
+            metadata("22598_decreto-no-0012019.pdf", "Decreto 001 de 2019", "2019-01-03T08:00:00"),
+        ]
+    )
+
+    exacta = catalogo.buscar_por_codigo("18399")
+    assert exacta.estado == "exacta" and exacta.documentos[0].titulo == "Resolución No. 3615"
+    assert catalogo.buscar_por_codigo(" archivo 22598 ").documentos[0].archivo == "22598_decreto-no-0012019.pdf"
+    assert catalogo.buscar_por_codigo(18399).estado == "exacta"
+    assert catalogo.buscar_por_codigo("00000").estado == "sin_coincidencia"
+    assert catalogo.buscar_por_codigo("sin digitos").estado == "sin_coincidencia"

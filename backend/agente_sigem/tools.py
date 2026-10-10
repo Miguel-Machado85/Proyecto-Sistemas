@@ -99,31 +99,53 @@ def _tipo_canonico(tipo: str | None) -> str | None:
 
 @tool
 def buscar_documento_por_referencia(
-    tipo: TipoDocumento,
-    numero: int,
+    tipo: TipoDocumento | None = None,
+    numero: int | None = None,
     anio: int | None = None,
     pregunta: str | None = None,
+    codigo: str | None = None,
 ) -> str:
-    """Trae el contenido de UN documento concreto cuando el usuario lo nombra por tipo y número
-    ("Decreto 83 de 2018", "la Resolución 4496", "la Ley 387 de 1997").
+    """Trae el contenido de UN documento concreto cuando el usuario lo identifica, ya sea por
+    tipo y número ("Decreto 83 de 2018", "la Resolución 4496", "la Ley 387 de 1997") o por el
+    código del archivo ("el documento 18399", "el archivo 22598").
 
-    Úsala SOLO cuando hay un tipo (decreto, resolucion, acuerdo, ley o formato) y un número.
-    Pasa `anio` si el usuario lo dijo; si no, déjalo vacío. Pasa en `pregunta` lo que el usuario
-    quiere saber del documento para que se devuelvan los fragmentos más pertinentes.
+    Identificación (usa una de las dos):
+    - `tipo` (decreto, resolucion, acuerdo, ley o formato) + `numero`, y `anio` si el usuario lo dijo.
+    - `codigo`: el número que antecede al nombre del archivo (p. ej. "18399" para
+      "18399_resolucion-3615.pdf"). Un código identifica un único documento. Si pasas `codigo`
+      junto con tipo y número, se usa primero el código.
+
+    Pasa en `pregunta` lo que el usuario quiere saber del documento para que se devuelvan los
+    fragmentos más pertinentes.
 
     Resultados posibles:
     - Un documento: devuelve sus fragmentos más relevantes con `fuentes` y `fragmentos`.
     - Varios documentos con ese número (por ejemplo de distintos años): devuelve `candidatos`
       y `aclaracion`; no inventes cuál es, pide al usuario que elija.
-    - Ninguno: devuelve `sugerencias` con los títulos más parecidos; corrige tipo, número o año
-      y vuelve a intentar, o usa `buscar_fragmentos` si la referencia puede estar mal.
+    - Ninguno: devuelve `sugerencias` con los títulos más parecidos (o una `aclaracion` si el
+      código no existe); corrige y vuelve a intentar, o usa `buscar_fragmentos` si la referencia
+      puede estar mal.
 
     NO la uses para preguntas sobre un tema sin documento nombrado (usa `buscar_fragmentos`),
     ni para listar documentos (usa `listar_documentos`).
     """
     try:
         catalogo = retrieval.obtener_catalogo_documentos()
-        resolucion = catalogo.buscar_por_atributos(tipo, numero, anio)
+        codigo_limpio = (str(codigo).strip() if codigo is not None else "") or None
+        if codigo_limpio is None and (tipo is None or numero is None):
+            return _json(
+                fuentes=[],
+                fragmentos=[],
+                error="Indica `tipo` y `numero` del documento, o su `codigo` de archivo.",
+            )
+
+        resolucion = None
+        if codigo_limpio is not None:
+            resolucion = catalogo.buscar_por_codigo(codigo_limpio)
+            etiqueta = f"el documento con código {codigo_limpio}"
+        if (resolucion is None or resolucion.estado == "sin_coincidencia") and tipo and numero is not None:
+            resolucion = catalogo.buscar_por_atributos(tipo, numero, anio)
+            etiqueta = f"{tipo} {numero}" + (f" de {anio}" if anio else "")
 
         if resolucion.estado == "exacta":
             documentos = _fragmentos_de_archivo(resolucion.documentos[0].archivo)
@@ -141,13 +163,23 @@ def buscar_documento_por_referencia(
                 fragmentos=[],
                 candidatos=candidatos,
                 aclaracion=(
-                    f"Hay varios documentos posibles para {tipo} {numero}: {opciones}. "
+                    f"Hay varios documentos posibles para {etiqueta}: {opciones}. "
                     "Pide al usuario que indique el año o el tema."
                 ),
             )
 
-        referencia = f"{tipo} {numero}" + (f" de {anio}" if anio else "")
-        similares = catalogo.similares(referencia, limite=MAX_SUGERENCIAS)
+        if codigo_limpio is not None and not (tipo and numero is not None):
+            return _json(
+                fuentes=[],
+                fragmentos=[],
+                sugerencias=[],
+                aclaracion=(
+                    f"No existe un documento con el código {codigo_limpio} en SIGEM. "
+                    "Pide al usuario que verifique el código o que indique el tipo y número."
+                ),
+            )
+
+        similares = catalogo.similares(etiqueta, limite=MAX_SUGERENCIAS)
         return _json(
             fuentes=[],
             fragmentos=[],
