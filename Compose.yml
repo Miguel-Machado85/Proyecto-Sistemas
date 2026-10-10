@@ -9,13 +9,27 @@ services:
     environment:
       # Postgres sí vive en este compose, se resuelve por nombre de servicio.
       DATABASE_URL: postgresql://sigem:sigem@db:5432/sigem
+      # Memoria conversacional persistente: sobrevive a reinicios del contenedor.
+      CHECKPOINTER: postgres
+      # Caché de Hugging Face del reranker (montada como volumen hf-cache).
+      HF_HOME: /app/.cache/huggingface
+      # Carga el reranker al arrancar para que la primera consulta no tarde ~30 s.
+      RERANKER_PRECARGAR: "true"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
       - ./backend/chroma_db:/app/chroma_db
+      - hf-cache:/app/.cache/huggingface
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health', timeout=4)"]
+      interval: 15s
+      timeout: 6s
+      retries: 5
+      # La API espera a Postgres, crea el checkpointer y precarga el reranker antes de responder.
+      start_period: 120s
     restart: unless-stopped
 
   db:
@@ -46,3 +60,4 @@ services:
 
 volumes:
   postgres-data:
+  hf-cache:

@@ -314,3 +314,51 @@ El frontend (`frontend/index.html`) usa estos campos y **no se modifica**:
 - No tocar `chroma_db/`, no reindexar, no cambiar `EMBEDDING_MODEL`.
 - No modificar `frontend/`.
 - Un commit por fase, en la rama `feature-agentico`, con un mensaje que describa la fase.
+
+---
+
+## 15. Estado de implementación
+
+> Escrito al cerrar la Fase 6 (rama `feature-agentico`). Lista lo que se implementó, las desviaciones respecto
+> a esta especificación y su razón. Donde esta sección y las anteriores difieren, **rige lo implementado**
+> (el código y los tests son la fuente de verdad); las secciones 1–14 se conservan como diseño original.
+
+### Resumen
+| Sección | Estado |
+|---|---|
+| 3 Arquitectura (analista → investigador → evaluador → redactor) | Implementada tal cual (`agent.construir_grafo`). |
+| 4 Estado | Implementado; campos por turno sin reducer. |
+| 5 Nodos | Implementados con las desviaciones D1–D6 de abajo. |
+| 6 Tools | Implementadas con la desviación D7. |
+| 7 Recuperación y reranker | Implementada. El reranker queda **activo por defecto** pero su efecto neto es discutible (ver D12). |
+| 8 Modelos (Gemini) | Implementada; Ollama retirado. |
+| 9 Persistencia | Implementada (`PostgresSaver` / `MemorySaver`; grafo construido en el `lifespan`). |
+| 10 Contrato de la API | Sin cambios de contrato; código basado en regex eliminado. |
+| 12 Pruebas | 131 tests, sin llamadas reales a Gemini ni a Chroma. |
+| 13 Evaluación | `evaluar_recuperacion.py` ejecutado; `evaluar_agente.py` escrito y probado en su lógica, **pendiente de correr** por la cuota (ver D14). |
+
+### Desviaciones y su razón
+| # | Desviación | Razón |
+|---|---|---|
+| D1 | `intentos_busqueda` lo incrementa el **investigador** en cada ejecución; el evaluador solo reformula `consulta_actual` (la spec decía que lo hacía el evaluador). | Con la lectura literal, una búsqueda con evidencia vacía dejaba `intentos=0` y el evaluador volvía a reintentar sin tope claro. Así `MAX_INTENTOS_BUSQUEDA` significa "máximo de pasadas del investigador". |
+| D2 | La señal de reintento se codifica en el último paso del evaluador (`"Reintentando: <motivo>"`, `estado.PREFIJO_REINTENTO`); no hay un campo nuevo en `EstadoAgente`. | Mantener el estado "exactamente como en la sección 4". `ruta_despues_evaluador` y el investigador leen ese paso. |
+| D3 | Un listado (`listar_documentos`) se convierte en evidencia marcada `"tipo": "listado"` y **no** activa `documento_activo`. | Sin fragmentos, el redactor habría entrado en modo "sin resultados"; y activar el primer documento de un listado sería arbitrario. |
+| D4 | `respuesta_directa` agrega un paso (`💬`); el analista corrige `seguimiento`/`usa_documento_activo` a `consulta_sigem`/`false` si no hay documento activo. | Coherencia del estado y trazabilidad en `pasos`. |
+| D5 | El subagente se crea con `create_agent(..., checkpointer=False)` y se consume con `stream(stream_mode="values")`. | Que cada intento empiece sin historial aunque el padre tenga checkpointer, y conservar lo recolectado si salta `GraphRecursionError`. |
+| D6 | El redactor **propaga** sus errores (solo analista y evaluador son fail-open). La API los devuelve como 500 con el texto del error. | La spec no pide fail-open para el redactor. Pendiente: mensaje amable para errores de cuota. |
+| D7 | `buscar_documento_por_referencia` acepta además `codigo` (código del archivo) y `tipo`/`numero` pasan a opcionales; `FiltrosSigem` tiene `codigo`; `CatalogoDocumentos` suma `buscar_por_codigo` y `listar`. `listar_documentos` devuelve también `total` y acepta `tipo` en plural. | Cubrir "documento 18399", que antes resolvía un regex y el analista clasificaba como `ambigua`; pedido por los usuarios de la alcaldía. |
+| D8 | `ejecutar_turno` recibe el `agente` como primer parámetro y corre en `run_in_threadpool`; el arranque usa `lifespan` en lugar de `@app.on_event`. | Testabilidad y no bloquear el event loop con `invoke` síncrono; `on_event` está deprecado. |
+| D9 | `referencias.py` existió en las fases 2–4 como transición y se eliminó en la 5; `catalogo.resolver()`/`extraer_referencia()` y sus regex se conservan solo para el autocompletado y sus tests. | Cumple la regla de regex de la sección 3: el agente ya no interpreta texto del usuario con regex. |
+| D10 | `dataset.jsonl` añade campos opcionales (`consulta_recuperacion`, `candidatos_esperados`, `origen_caso`); 43 casos en lugar de "unos 40". | Evaluar recuperación sin LLM en casos de varios turnos y medir candidatos. |
+| D11 | `VERIFICACION_MODEL` y `combinar_sin_duplicados`/`RESULTADOS_SEMANTICOS` se eliminaron; `clave_documento` ahora usa `nombre_archivo` (con respaldo a `source`). | Código muerto tras retirar `calidad.py`; y corrección del test de diversidad que fallaba desde `9dd88aa`. |
+| D12 | El reranker mmarco queda habilitado por defecto, aunque en la evaluación de recuperación no mejora el conjunto (hit@8 0.82 con reranker vs 0.85 sin él, sobre `recuperar_sigem` puro). Ayuda en preguntas sin palabras clave; empeora números dichos en palabras y consultas genéricas. | Es lo que pide la spec. Debe decidirse con `evaluar_agente.py` (consultas ya reescritas por el analista); `RERANKER_HABILITADO=false` es un interruptor sin riesgo. |
+| D13 | `Dockerfile`: `uv.lock` es opcional (`COPY pyproject.toml uv.lock*`) y se quitó `--locked`; hay `.dockerignore` y `healthcheck`; el `chown` se limita a `/app/.cache`. Python 3.14 se mantiene (hay wheel de torch CPU para 3.14; imagen ≈ 2,0 GB descomprimida / ≈ 1,0 GB comprimida, `torch 2.14.1+cpu`, sin CUDA). | `uv.lock` está en el `.gitignore` del backend, así que `--locked` fallaba en un clon limpio; `chown -R /app` duplicaba el venv (~2 GB) en una capa. |
+| D15 | La precarga del reranker corre en segundo plano (`asyncio.create_task`) en lugar de bloquear el `lifespan`; `Compose.yml` fija `CHECKPOINTER=postgres`, `HF_HOME`, `RERANKER_PRECARGAR=true`, el volumen `hf-cache` y un `healthcheck`. | En una red con proxy TLS la descarga del modelo tardó ~4 min en fallar y el arranque quedó bloqueado; la API debe estar disponible aunque el reranker no. |
+| D14 | `evaluar_agente.py` no se ejecutó en la Fase 6. | El plan gratuito de Gemini limita `gemini-3.5-flash` a ~20 solicitudes/día; el dataset implica ~240 llamadas. Ver "Pendientes". |
+
+### Pendientes conocidos
+1. **Correr `evaluar_agente.py`** con cuota suficiente (facturación, o `INVESTIGADOR_MODEL`/`REDACTOR_MODEL` en flash-lite) y decidir sobre el reranker y los few-shot del analista con esos números.
+2. **Errores de cuota (429)**: `/chat` devuelve 500 con el texto crudo del proveedor; conviene un mensaje amable (y quizá 503).
+3. **`fuentes` acumula todas las búsquedas del turno** (p. ej. 12 fuentes con una sola citada); filtrar a las realmente citadas por el redactor.
+4. Una transcripción vacía queda en `messages` como `HumanMessage("")` junto con la alerta.
+5. Latencia de 10–60 s por turno con búsqueda (varias llamadas encadenadas + reranker en CPU).

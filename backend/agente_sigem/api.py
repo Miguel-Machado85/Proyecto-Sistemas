@@ -1,3 +1,4 @@
+import asyncio
 import time
 from contextlib import asynccontextmanager
 
@@ -134,7 +135,7 @@ def _pasos(resultado: dict) -> list[PasoAgente]:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Arranque: tablas de historial, checkpointer, grafo y (opcional) precarga del reranker.
+    """Arranque: tablas de historial, checkpointer, grafo y (opcional) precarga del reranker en segundo plano.
 
     El grafo no se construye al importar este módulo: así los tests y las herramientas
     pueden importar la API sin Postgres.
@@ -143,7 +144,9 @@ async def lifespan(app: FastAPI):
     checkpointer, cerrar_checkpointer = await run_in_threadpool(crear_checkpointer)
     app.state.agente = construir_grafo(checkpointer)
     if config.RERANKER_PRECARGAR:
-        await run_in_threadpool(reranker.precargar)
+        # En segundo plano: si la descarga del modelo es lenta o falla (sin red, proxy con TLS propio),
+        # la API no se queda esperando; el reranker cae al respaldo léxico (ver reranker.py).
+        app.state.precarga_reranker = asyncio.create_task(run_in_threadpool(reranker.precargar))
     try:
         yield
     finally:

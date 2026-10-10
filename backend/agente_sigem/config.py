@@ -37,8 +37,6 @@ class Config:
     TTS_MODEL = os.getenv("TTS_MODEL", "gemini-3.1-flash-tts-preview")    # para sintetizar
     TTS_VOICE = os.getenv("TTS_VOICE", "Kore")
 
-    VERIFICACION_MODEL = os.getenv("VERIFICACION_MODEL", "gemini-3.5-flash-lite")
-
     MAX_AUDIO_BYTES = int(os.getenv("MAX_AUDIO_BYTES", 15 * 1024 * 1024))
     ALLOWED_AUDIO_EXTENSIONS = {"webm", "wav", "mp3", "m4a", "mp4", "ogg"}
 

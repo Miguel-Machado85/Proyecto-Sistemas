@@ -8,7 +8,7 @@
 5. La respuesta se adapta al perfil del usuario (P0–P3) con prompts de estilo distintos.
 6. Entrada por texto y por voz (STT/TTS con Gemini; audios en S3).
 7. Historial de turnos en Postgres; trazas en Langfuse.
-8. Hoy el LLM es Ollama (`llama3`) y las decisiones están en regex/listas fuera del grafo.
+8. LLM: Gemini (flash-lite para clasificar, flash para investigar y redactar); las decisiones las toman los agentes, no regex.
 9. Se migra a un sistema multi-agente (analista → investigador → evaluador → redactor) con Gemini.
 10. Rama de trabajo: `feature-agentico` (base `feature-Sprint6`); un commit por fase.
 
@@ -40,7 +40,8 @@ cd backend && uv run python evaluacion/evaluar_recuperacion.py
 - [x] **Fase 3** — Tools: `tools.py` (4 tools, sin conectar al grafo)
 - [x] **Fase 4** — Estado, prompts y nodos: `estado.py`, `prompts.py`, `nodos/*` (módulos probados por separado)
 - [x] **Fase 5** — Grafo conectado: `agent.py` (`construir_grafo`), `checkpointer.py`, `api.py` simplificado + lifespan, `db.py`; eliminados `contexto.py`, `calidad.py`, `referencias.py`, `test_contexto.py`
-- [ ] **Fase 6** — Evaluación final y despliegue: `evaluar_agente.py`, Dockerfile/Compose (torch CPU, `hf-cache`), README
+- [x] **Fase 6** — Despliegue y documentación: Dockerfile/Compose (torch CPU, `hf-cache`), `evaluar_agente.py` (escrito; **sin correr**), READMEs, sección 15 de la spec
+- [ ] **Fase 7** — Evaluación final con cuota suficiente y ajustes (reranker, few-shot, `fuentes` citadas, error 429 amable)
 
 > Las fases 1–6 son la agrupación de los entregables de la sección 11 de la especificación;
 > la especificación no numera fases, así que esta división es la que usamos como guía.
@@ -172,6 +173,23 @@ langchain-google-genai 4.3.7 · google-genai 2.21.0 · langchain-chroma 1.1.0 ·
   3. **`fuentes` acumula todas las búsquedas** del turno (taxi devolvió 12 fuentes, solo una citada); se podría filtrar a las realmente citadas por el redactor.
   4. Una transcripción vacía queda en `messages` como `HumanMessage("")` + la alerta; inocuo pero ensucia el historial del hilo.
   5. `VERIFICACION_MODEL` quedó huérfano en `config.py` (lo usaba `calidad.py`).
+
+### Fase 6 — despliegue, evaluación y documentación
+- **Imagen Docker** (`docker compose build backend`, Python 3.14 + `torch 2.14.1+cpu`, sin CUDA): ≈ 2,0 GB descomprimida (997 MB comprimida). El primer build daba
+  7 GB porque `chown -R /app` duplicaba el venv en otra capa; ahora solo se hace `chown` de `/app/.cache`. `uv.lock` está en `.gitignore`: el Dockerfile lo copia
+  si existe y no usa `--locked`. Hay `backend/.dockerignore`.
+- **Compose validado en vivo:** `db` + `backend` con `CHECKPOINTER=postgres`: el `PostgresSaver` creó `checkpoints`, `checkpoint_blobs`, `checkpoint_writes`,
+  `checkpoint_migrations` y escribió 8 checkpoints para 2 turnos; `turnos` se guardó igual que antes. (Filas de prueba borradas.)
+- **Red con proxy TLS:** dentro del contenedor `huggingface.co` falla con `CERTIFICATE_VERIFY_FAILED` (certificado autofirmado en la cadena). La API
+  arrancó igual y usa el respaldo sin reranker; por eso la precarga ahora es en segundo plano (`app.state.precarga_reranker`).
+- **Recuperación (33 casos, `recuperar_sigem` puro, sin referencias en el camino):** con reranker hit@8 0.82 / MRR 0.68; sin reranker 0.85 / 0.70
+  (línea base de la Fase 0: 0.88 / 0.77, que sí incluía el regex de referencias). Las "regresiones" en `referencia_exacta` (1.00→0.80),
+  `busqueda_global_con_doc_activo` y `mal_escrita` son casos de referencia (ref-04, glob-04, mal-01) que ahora resuelven el analista + la tool,
+  no la recuperación; solo `evaluar_agente.py` puede medirlo. Archivos: `evaluacion/fase6_*.json`.
+- **Limpieza final:** eliminados `VERIFICACION_MODEL`, `combinar_sin_duplicados` y `RESULTADOS_SEMANTICOS`; sin restos de Ollama, TODOs ni prints de depuración
+  (los `print` que quedan son de los scripts de evaluación); sin secretos versionados (`.env` ignorado; `.env.example` sin valores).
+- **`evaluar_agente.py`:** ~55 turnos / ~240 llamadas a Gemini; `--estimar`, `--categorias`, `--max-casos`, `--pausa`; aborta si detecta cuota diaria agotada.
+  `tests/test_evaluacion.py` cubre su lógica sin Gemini. Total tests: 132.
 
 ### Estado de tests al iniciar (Fase 0)
 `13 passed, 1 failed` (**corregido en la Fase 2**: 26 passed). Fallaba `tests/test_retrieval_diversidad.py::test_limita_fragmentos_por_documento_en_consulta_amplia`:

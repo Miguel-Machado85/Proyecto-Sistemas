@@ -2,6 +2,8 @@
 
 import subprocess
 import sys
+import threading
+import time
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
@@ -242,6 +244,25 @@ def test_sugerencias_de_documentos_conservan_su_forma(monkeypatch, cliente):
         "titulo": "Decreto 001 de 2019", "archivo": "22598_decreto-no-0012019.pdf",
         "fecha_expedicion": "2019", "descripcion": "Tarifas de taxis",
     }]
+
+
+def test_la_precarga_del_reranker_no_bloquea_el_arranque(monkeypatch, entorno):
+    liberar = threading.Event()
+    llamadas = []
+
+    def precargar_lento():
+        llamadas.append(1)
+        liberar.wait(10)
+        return True
+
+    monkeypatch.setattr(config, "RERANKER_PRECARGAR", True)
+    monkeypatch.setattr(api.reranker, "precargar", precargar_lento)
+
+    inicio = time.time()
+    with TestClient(api.app) as cliente:
+        assert cliente.get("/health").json() == {"status": "ok"}
+        assert time.time() - inicio < 5  # no esperó a la precarga (que sigue bloqueada)
+        liberar.set()
 
 
 def test_health_responde_ok(cliente):

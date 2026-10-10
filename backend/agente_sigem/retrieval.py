@@ -14,7 +14,6 @@ from .catalogo import CatalogoDocumentos
 
 
 RESULTADOS_FINALES = 8
-RESULTADOS_SEMANTICOS = RESULTADOS_FINALES  # nombre histórico, conservado por compatibilidad
 RESULTADOS_POR_ESTRATEGIA = 24
 MAX_FRAGMENTOS_POR_DOCUMENTO = 2
 PALABRAS_NO_SIGNIFICATIVAS = {
@@ -141,11 +140,6 @@ def unir_sin_duplicados(*grupos: list[Document], limite: int | None = None) -> l
             if limite is not None and len(unidos) >= limite:
                 return unidos
     return unidos
-
-
-def combinar_sin_duplicados(*grupos: list[Document]) -> list[Document]:
-    """Conserva el orden recibido, con tope de resultados finales."""
-    return unir_sin_duplicados(*grupos, limite=RESULTADOS_FINALES)
 
 
 def diversificar(
