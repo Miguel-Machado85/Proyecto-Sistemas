@@ -35,7 +35,7 @@ cd backend && uv run python evaluacion/evaluar_recuperacion.py
 
 ## Fases
 - [x] **Fase 0** — Preparación: rama, CLAUDE.md, dependencias, verificación del entorno, dataset y línea base de recuperación
-- [ ] **Fase 1** — Configuración y LLM: `config.py`, `llm.py`, variables Gemini, `.env.example`, retirar Ollama
+- [x] **Fase 1** — Configuración y LLM: `config.py`, `llm.py`, variables Gemini, `.env.example`, retirar Ollama
 - [ ] **Fase 2** — Recuperación: `retrieval.py` refactor, `reranker.py`, `catalogo.py` (`buscar_por_atributos`, `similares`)
 - [ ] **Fase 3** — Tools y estado: `estado.py`, `tools.py`, `prompts.py`
 - [ ] **Fase 4** — Nodos y grafo: `nodos/*`, `agent.py`, `checkpointer.py`
@@ -74,6 +74,12 @@ langchain-google-genai 4.3.7 · google-genai 2.21.0 · langchain-chroma 1.1.0 ·
 - **Pytest necesitaba configuración**: sin `pythonpath`, `import agente_sigem` fallaba en la recolección. Se agregó
   `[tool.pytest.ini_options] pythonpath = ["."]` y `testpaths = ["tests"]` en `backend/pyproject.toml`.
   Los scripts fuera de `tests/` deben ejecutarse desde `backend/` (las rutas de `config.py` son relativas: `./chroma_db`).
+- **`AIMessage.content` de Gemini 3.x es una lista de bloques** (`[{'type':'text','text':...}]`), no un `str`. Usar siempre
+  `mensaje.text` (propiedad de langchain-core 1.x, concatena los bloques de texto) para obtener el texto; nunca `.content`.
+  `api.py` ya lo hace. Los `ToolMessage` de nuestras tools sí son `str` (JSON).
+- **Modelos por defecto (Fase 1, verificados con `models.list()`):** flash-lite = `gemini-3.5-flash-lite` (analista, evaluador),
+  flash = `gemini-3.5-flash` (investigador, redactor). `/health/llm` usa `client.models.get(INVESTIGADOR_MODEL)`.
+  Prueba de humo con `gemini-3.5-flash` + `bind_tools` correcta (llamó a `buscar_en_sigem` y respondió con citas del decreto).
 - **Consola Windows:** imprimir texto con tildes/`​` desde Python puede fallar por cp1252; usar `PYTHONIOENCODING=utf-8`.
 
 ### Estado de tests al iniciar (Fase 0)

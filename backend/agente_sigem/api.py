@@ -2,9 +2,9 @@ import time
 import re
 import unicodedata
 import json
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
 
+from google import genai
+from google.genai import errors as genai_errors
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -225,7 +225,7 @@ def mensaje_para_agente(thread_id: str, mensaje: str) -> tuple[str, bool]:
 
 app = FastAPI(
     title="Agente de respuesta ciudadana - SIGEM",
-    description="API del agente RAG (LangGraph + Ollama) que responde preguntas sobre procesos, formatos y normatividad del municipio de Marinilla, con base en el repositorio SIGEM.",
+    description="API del agente RAG (LangGraph + Gemini) que responde preguntas sobre procesos, formatos y normatividad del municipio de Marinilla, con base en el repositorio SIGEM.",
     version="0.1.0",
 )
 
@@ -244,34 +244,26 @@ async def health_check():
 
 @app.get("/health/llm", tags=["sistema"])
 def health_check_llm():
-    """Comprueba el acceso al servidor Ollama y al modelo configurado."""
-    headers = {}
-    if config.OLLAMA_PROXY_TOKEN:
-        headers["X-Ollama-Proxy-Token"] = config.OLLAMA_PROXY_TOKEN
+    """Comprueba que la API key de Gemini sea válida y que el modelo del agente exista."""
+    if not config.GOOGLE_API_KEY:
+        raise HTTPException(status_code=503, detail="Falta GOOGLE_API_KEY para conectar con Gemini.")
 
     try:
-        request = Request(f"{config.OLLAMA_BASE_URL}/api/tags", headers=headers)
-        with urlopen(request, timeout=config.OLLAMA_HEALTH_TIMEOUT_SECONDS) as response:
-            payload = json.load(response)
-    except HTTPError as error:
+        cliente = genai.Client(api_key=config.GOOGLE_API_KEY)
+        cliente.models.get(model=config.INVESTIGADOR_MODEL)
+    except genai_errors.APIError as error:
+        if error.code == 404:
+            detail = f"Gemini está disponible, pero no existe el modelo {config.INVESTIGADOR_MODEL}."
+        else:
+            detail = f"Gemini respondió HTTP {error.code}. Revisa GOOGLE_API_KEY y la cuota."
+        raise HTTPException(status_code=503, detail=detail) from error
+    except Exception as error:
         raise HTTPException(
             status_code=503,
-            detail=f"Ollama respondió HTTP {error.code}. Revisa la URL y el token del proxy.",
-        ) from error
-    except URLError as error:
-        raise HTTPException(
-            status_code=503,
-            detail="No fue posible conectar con Ollama. Revisa el túnel de Colab y OLLAMA_BASE_URL.",
+            detail="No fue posible conectar con Gemini. Revisa la conexión a internet y GOOGLE_API_KEY.",
         ) from error
 
-    installed_models = {model.get("name") for model in payload.get("models", [])}
-    if config.CHAT_MODEL not in installed_models:
-        raise HTTPException(
-            status_code=503,
-            detail=f"Ollama está disponible, pero no tiene instalado el modelo {config.CHAT_MODEL}.",
-        )
-
-    return {"status": "ok", "model": config.CHAT_MODEL}
+    return {"status": "ok", "model": config.INVESTIGADOR_MODEL}
 
 app.add_middleware(
     CORSMiddleware,
@@ -326,7 +318,7 @@ async def endpoint_chat(request: ChatRequest):
             config=config_graph
         )
         
-        respuesta = resultado["messages"][-1].content
+        respuesta = resultado["messages"][-1].text
         fuentes = fuentes_del_ultimo_turno(resultado["messages"])
         candidatos = candidatos_del_ultimo_turno(resultado["messages"])
         guardar_fuentes_como_contexto(request.thread_id, fuentes)
@@ -410,7 +402,7 @@ async def endpoint_chat_voz(audio: UploadFile = File(...), thread_id: str = Form
              "perfil": perfil},
             config=config_graph,    
         )
-        respuesta_texto = resultado["messages"][-1].content
+        respuesta_texto = resultado["messages"][-1].text
         fuentes = fuentes_del_ultimo_turno(resultado["messages"])
         candidatos = candidatos_del_ultimo_turno(resultado["messages"])
         guardar_fuentes_como_contexto(thread_id, fuentes)

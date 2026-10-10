@@ -1,7 +1,6 @@
 from typing import Annotated
 from typing_extensions import TypedDict
 
-from langchain_ollama import ChatOllama
 from langchain_core.messages import SystemMessage, BaseMessage
 from langchain_core.tools import tool
 from langgraph.graph import StateGraph, START, END
@@ -10,6 +9,7 @@ from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint.memory import MemorySaver
 
 from .config import config
+from .llm import crear_llm
 from .retrieval import (
     candidatos_referencia_ambigua,
     recuperar_sigem,
@@ -43,7 +43,7 @@ def buscar_en_sigem(consulta: str) -> str:
         return f"Error al buscar en SIGEM: {str(e)}"
 
 # ══════════════════════════════════════════════════════════════
-# AGENTE CON MEMORIA (LangGraph + Ollama)
+# AGENTE CON MEMORIA (LangGraph + Gemini)
 # ══════════════════════════════════════════════════════════════
 
 class EstadoAgente(TypedDict):
@@ -90,20 +90,9 @@ def construir_system_prompt(perfil: str) -> str:
 
 def crear_agente():
     """
-    Crea el agente RAG usando el modelo de Ollama configurado.
+    Crea el agente RAG usando el modelo de Gemini configurado (INVESTIGADOR_MODEL).
     """
-    client_kwargs = {}
-    if config.OLLAMA_PROXY_TOKEN:
-        client_kwargs["headers"] = {
-            "X-Ollama-Proxy-Token": config.OLLAMA_PROXY_TOKEN,
-        }
-
-    modelo = ChatOllama(
-        model=config.CHAT_MODEL,
-        base_url=config.OLLAMA_BASE_URL,
-        temperature=0.3,
-        client_kwargs=client_kwargs,
-    )
+    modelo = crear_llm(config.INVESTIGADOR_MODEL, 0.3)
     herramientas = [buscar_en_sigem]
     modelo_con_tools = modelo.bind_tools(herramientas)
 
