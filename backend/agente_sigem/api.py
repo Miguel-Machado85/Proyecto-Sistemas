@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import time
 from contextlib import asynccontextmanager
 
@@ -15,8 +16,13 @@ from .agent import construir_grafo
 from .audio import synthesize, transcribe
 from .checkpointer import crear_checkpointer
 from .config import config
+from .llm import es_error_de_cuota
+from .nodos.analista import LONGITUD_MINIMA_VOZ
+from .prompts import MENSAJE_AUDIO_POCO_CLARO, MENSAJE_SERVICIO_SATURADO
 from .retrieval import obtener_catalogo_documentos
 from .tracing import obtener_langfuse_handler
+
+logger = logging.getLogger(__name__)
 
 # ══════════════════════════════════════════════════════════════
 # MODELOS PYDANTIC (el contrato con el frontend no cambia)
@@ -243,6 +249,16 @@ async def endpoint_chat(request: ChatRequest, http_request: Request):
             tiempo_ms=round((time.time() - inicio) * 1000, 1),
         )
     except Exception as e:
+        if es_error_de_cuota(e):
+            # El frontend solo muestra un texto genérico ante un error HTTP; con 200 el usuario ve este mensaje.
+            # No se guarda el turno: el usuario puede reintentar el mismo mensaje.
+            logger.warning("Cuota de Gemini agotada en /chat: %s", str(e)[:200])
+            return ChatResponse(
+                respuesta=MENSAJE_SERVICIO_SATURADO,
+                thread_id=request.thread_id,
+                pasos=[],
+                tiempo_ms=round((time.time() - inicio) * 1000, 1),
+            )
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -269,34 +285,29 @@ async def endpoint_chat_voz(
     if len(data) > config.MAX_AUDIO_BYTES:
         raise HTTPException(413, f"El audio supera el límite de {config.MAX_AUDIO_BYTES // (1024 * 1024)} MB.")
 
+    transcripcion = ""
     try:
         transcripcion = transcribe(data, audio.content_type or "audio/webm")
+
+        # Silencio o envío accidental: no se gasta una llamada al agente ni se ensucia el historial del hilo.
+        if len(transcripcion.strip()) < LONGITUD_MINIMA_VOZ:
+            return _respuesta_alerta(data, audio.content_type, extension, thread_id, transcripcion, MENSAJE_AUDIO_POCO_CLARO)
 
         resultado = await run_in_threadpool(
             ejecutar_turno,
             http_request.app.state.agente,
             thread_id,
-            transcripcion or "",
+            transcripcion,
             perfil,
             "voz",
             [perfil, "voz"],
         )
         respuesta_texto = _texto_respuesta(resultado)
 
-        # US-09: si el analista determinó que el audio no es comprensible (silencio, ruido,
-        # envío accidental), avisamos al usuario sin sintetizar audio de respuesta.
+        # US-09: si el analista determinó que el audio no es comprensible (ruido, palabras sueltas),
+        # avisamos al usuario sin sintetizar audio de respuesta.
         if resultado.get("es_alerta"):
-            pregunta_key = storage.subir_audio(data, audio.content_type or "audio/webm", extension, thread_id)
-            db.guardar_turno(thread_id, "usuario", transcripcion or "[audio no comprensible]", audio_key=pregunta_key)
-            db.guardar_turno(thread_id, "alerta", respuesta_texto)
-            return ChatVozResponse(
-                transcripcion=transcripcion or "",
-                respuesta=respuesta_texto,
-                thread_id=thread_id,
-                pregunta_audio_url=storage.url_firmada(pregunta_key),
-                respuesta_audio_url=None,
-                alerta=True,
-            )
+            return _respuesta_alerta(data, audio.content_type, extension, thread_id, transcripcion, respuesta_texto)
 
         audio_respuesta = synthesize(respuesta_texto)
 
@@ -310,6 +321,16 @@ async def endpoint_chat_voz(
     except HTTPException:
         raise
     except Exception as e:
+        if es_error_de_cuota(e):
+            logger.warning("Cuota de Gemini agotada en /chat-voz: %s", str(e)[:200])
+            return ChatVozResponse(
+                transcripcion=transcripcion,
+                respuesta=MENSAJE_SERVICIO_SATURADO,
+                thread_id=thread_id,
+                pregunta_audio_url=None,
+                respuesta_audio_url=None,
+                alerta=True,
+            )
         raise HTTPException(502, f"No fue posible procesar el turno de voz: {e}")
 
     return ChatVozResponse(
@@ -320,6 +341,23 @@ async def endpoint_chat_voz(
         respuesta_audio_url=storage.url_firmada(respuesta_key),
         fuentes=_fuentes(resultado),
         candidatos=_candidatos(resultado),
+    )
+
+
+def _respuesta_alerta(
+    data: bytes, content_type: str | None, extension: str, thread_id: str, transcripcion: str, texto: str
+) -> ChatVozResponse:
+    """Audio no comprensible: se conserva la pregunta, se guarda el turno con rol `alerta` y no hay TTS."""
+    pregunta_key = storage.subir_audio(data, content_type or "audio/webm", extension, thread_id)
+    db.guardar_turno(thread_id, "usuario", transcripcion or "[audio no comprensible]", audio_key=pregunta_key)
+    db.guardar_turno(thread_id, "alerta", texto)
+    return ChatVozResponse(
+        transcripcion=transcripcion or "",
+        respuesta=texto,
+        thread_id=thread_id,
+        pregunta_audio_url=storage.url_firmada(pregunta_key),
+        respuesta_audio_url=None,
+        alerta=True,
     )
 
 

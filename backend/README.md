@@ -126,7 +126,7 @@ El servicio `backend` usa `CHECKPOINTER=postgres`, el volumen `hf-cache` para el
   proxy o antivirus que intercepta TLS. La API **sigue funcionando** con el respaldo léxico (un aviso en el log) y la
   precarga corre en segundo plano, sin bloquear el arranque. Opciones: precargar el volumen `hf-cache` con la caché del
   host (`~/.cache/huggingface`), usar `HF_HUB_OFFLINE=1` una vez poblado, o `RERANKER_HABILITADO=false`.
-- **`429 RESOURCE_EXHAUSTED`**: cuota de Gemini agotada (ver el aviso de cuota arriba). `/chat` responde 500 hasta que se reinicie.
+- **`429 RESOURCE_EXHAUSTED`**: cuota de Gemini agotada (ver el aviso de cuota arriba). `/chat` responde 200 con un mensaje de "mucha demanda" y `/chat-voz` con `alerta=true`; el turno no se guarda, así que el usuario puede reintentar. El detalle queda en el log del backend.
 
 ## Pruebas
 Los tests **no llaman a Gemini ni al Chroma real** (LLM falsos, Chroma en memoria con embeddings falsos).

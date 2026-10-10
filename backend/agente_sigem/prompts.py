@@ -14,6 +14,11 @@ MENSAJE_AUDIO_POCO_CLARO = (
     "hablando cerca del micrófono."
 )
 
+MENSAJE_SERVICIO_SATURADO = (
+    "En este momento hay mucha demanda y no puedo procesar tu consulta. "
+    "Por favor, inténtalo de nuevo en unos minutos."
+)
+
 RESPUESTA_SALUDO = (
     "¡Hola! Soy el asistente virtual de la Alcaldía de Marinilla. "
     "Puedo ayudarte con información disponible en los documentos de SIGEM. "

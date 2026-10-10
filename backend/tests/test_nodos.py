@@ -426,6 +426,18 @@ def test_el_analista_distingue_codigo_de_archivo_en_su_prompt():
     assert FiltrosSigem(codigo="18399").codigo == "18399"
 
 
+def test_investigador_no_traga_un_error_de_cuota(monkeypatch):
+    class ModeloSinCuota(ModeloFalso):
+        def _generate(self, *args, **kwargs):
+            raise RuntimeError("429 RESOURCE_EXHAUSTED. You exceeded your current quota")
+
+    instalar(monkeypatch, m_investigador, ModeloSinCuota())
+    monkeypatch.setattr(tools, "HERRAMIENTAS_INVESTIGADOR", herramientas_dobles({"buscar_fragmentos": {}}))
+
+    with pytest.raises(Exception, match="RESOURCE_EXHAUSTED"):
+        m_investigador.investigador(estado_base(analisis=analisis_dict(), consulta_actual="taxi"))
+
+
 # ══════════════════════════════════════════════════════════════
 # EVALUADOR
 # ══════════════════════════════════════════════════════════════
@@ -643,3 +655,70 @@ def test_redactor_propaga_el_config(monkeypatch):
     m_redactor.redactor(estado_base(analisis=analisis_dict(), evidencia=[FRAGMENTO_TAXI]), {"tags": ["lf"]})
 
     assert "lf" in modelo.etiquetas[0]
+
+
+# ══════════════════════════════════════════════════════════════
+# FUENTES CITADAS (redactor)
+# ══════════════════════════════════════════════════════════════
+
+FUENTES_VARIAS = [
+    {"titulo": "Decreto 001 de 2019", "archivo": "a.pdf", "pagina": "1"},
+    {"titulo": "Decreto 001 de 2019", "archivo": "a.pdf", "pagina": "2"},
+    {"titulo": "Decreto 159 de 2018", "archivo": "b.pdf", "pagina": "1"},
+    {"titulo": "Decreto 004 de 2019", "archivo": "c.pdf", "pagina": "3"},
+]
+
+
+def paginas(fuentes):
+    return [(f["archivo"], f["pagina"]) for f in fuentes]
+
+
+def test_fuentes_citadas_deja_solo_lo_que_la_respuesta_cita():
+    texto = "La tarifa es $5.500 [Decreto 001 de 2019, p. 2]."
+
+    assert paginas(m_redactor.fuentes_citadas(texto, FUENTES_VARIAS)) == [("a.pdf", "2")]
+
+
+def test_fuentes_citadas_entiende_varias_paginas_y_varios_documentos():
+    texto = "Uno [Decreto 001 de 2019, p. 1, 2] y dos [Decreto 004 de 2019, p. 3]; también [Decreto 159 de 2018]."
+
+    assert paginas(m_redactor.fuentes_citadas(texto, FUENTES_VARIAS)) == [
+        ("a.pdf", "1"), ("a.pdf", "2"), ("c.pdf", "3"), ("b.pdf", "1"),
+    ]
+
+
+def test_cita_sin_pagina_conserva_todas_las_paginas_del_documento():
+    assert paginas(m_redactor.fuentes_citadas("Ver [Decreto 001 de 2019].", FUENTES_VARIAS)) == [
+        ("a.pdf", "1"), ("a.pdf", "2"),
+    ]
+
+
+def test_pagina_inexistente_conserva_el_documento():
+    assert paginas(m_redactor.fuentes_citadas("Ver [Decreto 004 de 2019, p. 9].", FUENTES_VARIAS)) == [("c.pdf", "3")]
+
+
+def test_sin_citas_utilizables_se_conservan_todas_las_fuentes():
+    assert m_redactor.fuentes_citadas("Respuesta sin citas.", FUENTES_VARIAS) == FUENTES_VARIAS
+    assert m_redactor.fuentes_citadas("Cita rara [Decreto 999 de 2000, p. 1].", FUENTES_VARIAS) == FUENTES_VARIAS
+
+
+def test_redactor_devuelve_las_fuentes_citadas_y_activa_ese_documento(monkeypatch):
+    otro = {"fuente": {**FUENTE_TAXI, "titulo": "Decreto 159 de 2018", "archivo": "b.pdf", "pagina": "1"}, "contenido": "Cobro municipal"}
+    estado = estado_base(
+        analisis=analisis_dict(),
+        evidencia=[otro, FRAGMENTO_TAXI],  # el primer fragmento NO es el citado
+        fuentes=[otro["fuente"], FUENTE_TAXI],
+    )
+
+    resultado, _, _ = correr_redactor(monkeypatch, estado, "Tarifa $5.500 [Decreto 001 de 2019, p. 1].")
+
+    assert resultado["fuentes"] == [FUENTE_TAXI]
+    assert resultado["documento_activo"]["archivo"] == FUENTE_TAXI["archivo"]
+
+
+def test_redactor_en_modo_aclaracion_no_toca_las_fuentes(monkeypatch):
+    estado = estado_base(analisis=analisis_dict(), candidatos=CANDIDATOS, fuentes=[])
+
+    resultado, _, _ = correr_redactor(monkeypatch, estado, "¿Cuál? [Resolución 4397 de 2018]")
+
+    assert resultado["fuentes"] == []

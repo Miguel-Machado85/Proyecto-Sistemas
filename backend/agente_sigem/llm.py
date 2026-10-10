@@ -19,3 +19,16 @@ def crear_llm(nombre_modelo: str, temperature: float = 0.0) -> ChatGoogleGenerat
         temperature=temperature,
         max_retries=config.LLM_MAX_RETRIES,
     )
+
+
+def es_error_de_cuota(error: BaseException | None) -> bool:
+    """True si el error (o su causa) es un límite de uso de Gemini (HTTP 429 / RESOURCE_EXHAUSTED)."""
+    visitados = 0
+    while error is not None and visitados < 5:
+        texto = f"{type(error).__name__} {error}"
+        codigo = getattr(error, "code", None) or getattr(error, "status_code", None)
+        if codigo == 429 or "RESOURCE_EXHAUSTED" in texto or "TooManyRequests" in texto:
+            return True
+        error = error.__cause__ or error.__context__
+        visitados += 1
+    return False

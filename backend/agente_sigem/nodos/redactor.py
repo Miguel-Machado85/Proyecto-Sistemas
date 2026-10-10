@@ -1,5 +1,8 @@
 """Nodo redactor: arma la respuesta final al ciudadano según el perfil y la evidencia."""
 
+import re
+import unicodedata
+
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 
@@ -9,6 +12,11 @@ from ..prompts import construir_prompt_redactor
 from ._comun import paso, respuesta_ai, texto_de, ultimo_mensaje_usuario
 
 MAX_FRAGMENTOS_REDACCION = 12
+
+# Formato de cita que el prompt le exige al redactor: [Decreto 001 de 2019, p. 3]. Se analiza el texto
+# que genera nuestro propio modelo (formato controlado), no lo que escribe el usuario.
+PATRON_CITA = re.compile(r"\[([^\[\]]{3,250})\]")
+PATRON_TITULO_Y_PAGINAS = re.compile(r"^(.*?)(?:,\s*p[^\d,]*(\d.*))?$", re.DOTALL)
 
 
 def elegir_modo(estado: dict) -> str:
@@ -56,11 +64,59 @@ def construir_entrada(estado: dict, modo: str) -> str:
     return "\n\n".join(partes)
 
 
-def _documento_activo_desde(estado: dict) -> dict | None:
-    """Documento de la primera fuente que tiene fragmentos; None si solo hubo listados o no hubo fuentes."""
-    for fragmento in estado.get("evidencia", []):
-        if fragmento.get("tipo") == "listado":
-            continue
+def _normalizar_titulo(texto: str) -> str:
+    texto = unicodedata.normalize("NFD", texto.lower())
+    texto = "".join(c for c in texto if unicodedata.category(c) != "Mn")
+    return re.sub(r"\s+", " ", texto).strip(" .")
+
+
+def _citas(texto: str) -> list[tuple[str, set[str]]]:
+    """Lista de (título normalizado, páginas citadas) encontradas en la respuesta."""
+    citas = []
+    for contenido in PATRON_CITA.findall(texto):
+        for parte in contenido.split(";"):
+            coincidencia = PATRON_TITULO_Y_PAGINAS.match(parte.strip())
+            if not coincidencia or not coincidencia.group(1).strip():
+                continue
+            paginas = set(re.findall(r"\d+", coincidencia.group(2) or ""))
+            citas.append((_normalizar_titulo(coincidencia.group(1)), paginas))
+    return citas
+
+
+def _coincide_titulo(titulo_fuente: str, titulo_cita: str) -> bool:
+    fuente = _normalizar_titulo(titulo_fuente)
+    return bool(fuente) and (fuente == titulo_cita or fuente in titulo_cita or titulo_cita in fuente)
+
+
+def fuentes_citadas(texto: str, fuentes: list[dict]) -> list[dict]:
+    """Deja solo las fuentes que la respuesta cita; si no se puede determinar, conserva todas.
+
+    Una cita sin página conserva todas las páginas de ese documento; una cita con página que no
+    coincide con ninguna fuente conserva el documento (mejor mostrar de más que perder la fuente).
+    """
+    citas = _citas(texto)
+    if not citas or not fuentes:
+        return fuentes
+    seleccionadas = []
+    claves = set()
+    for titulo_cita, paginas in citas:
+        del_documento = [f for f in fuentes if _coincide_titulo(f.get("titulo", ""), titulo_cita)]
+        exactas = [f for f in del_documento if not paginas or str(f.get("pagina")) in paginas]
+        for fuente in exactas or del_documento:
+            clave = (fuente.get("archivo"), fuente.get("pagina"))
+            if clave not in claves:
+                claves.add(clave)
+                seleccionadas.append(fuente)
+    return seleccionadas or fuentes
+
+
+def _documento_activo_desde(estado: dict, citadas: list[dict] | None = None) -> dict | None:
+    """Documento de la primera fuente citada que tiene fragmentos; None si solo hubo listados o no hubo fuentes."""
+    archivos_citados = {f.get("archivo") for f in citadas or []}
+    fragmentos = [f for f in estado.get("evidencia", []) if f.get("tipo") != "listado"]
+    # Primero los fragmentos de documentos que la respuesta cita; si no, el más relevante.
+    preferidos = [f for f in fragmentos if (f.get("fuente") or {}).get("archivo") in archivos_citados]
+    for fragmento in preferidos + fragmentos:
         fuente = fragmento.get("fuente") or {}
         if fuente.get("archivo"):
             return {
@@ -85,10 +141,15 @@ def redactor(estado: dict, config: RunnableConfig | None = None) -> dict:
         config,
     )
 
+    texto = texto_de(respuesta)
+    # Las fuentes que se muestran al usuario son las que la respuesta cita, no todo lo buscado.
+    fuentes = fuentes_citadas(texto, estado.get("fuentes", [])) if modo == "respuesta" else estado.get("fuentes", [])
+
     # Un listado (solo fuentes, sin fragmentos) no convierte ningún documento en "activo".
-    documento_activo = _documento_activo_desde(estado) or estado.get("documento_activo")
+    documento_activo = _documento_activo_desde(estado, fuentes) or estado.get("documento_activo")
     return {
-        "messages": [respuesta_ai(texto_de(respuesta))],
+        "messages": [respuesta_ai(texto)],
+        "fuentes": fuentes,
         "documento_activo": documento_activo,
         "pasos": estado.get("pasos", []) + [paso("redactor", f"Redactando respuesta para perfil {perfil}", "✍️")],
     }

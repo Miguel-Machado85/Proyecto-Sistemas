@@ -13,6 +13,8 @@ services:
       CHECKPOINTER: postgres
       # Caché de Hugging Face del reranker (montada como volumen hf-cache).
       HF_HOME: /app/.cache/huggingface
+      # 1 = no consultar huggingface.co (útil cuando el volumen hf-cache ya tiene el modelo, o en redes con proxy TLS).
+      HF_HUB_OFFLINE: ${HF_HUB_OFFLINE:-0}
       # Carga el reranker al arrancar para que la primera consulta no tarde ~30 s.
       RERANKER_PRECARGAR: "true"
     extra_hosts:

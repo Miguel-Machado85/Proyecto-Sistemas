@@ -11,7 +11,7 @@ from langgraph.errors import GraphRecursionError
 from .. import tools
 from ..config import config as configuracion
 from ..estado import PREFIJO_REINTENTO
-from ..llm import crear_llm
+from ..llm import crear_llm, es_error_de_cuota
 from ..prompts import PROMPT_INVESTIGADOR
 from ._comun import paso
 
@@ -162,6 +162,9 @@ def _ejecutar_subagente(encargo: str, config: RunnableConfig | None) -> list:
     except GraphRecursionError:
         logger.warning("El investigador alcanzó el límite de pasos; se usa la evidencia recolectada.")
     except Exception as error:
+        if es_error_de_cuota(error):
+            # Sin cuota no hay búsqueda posible: responder "sin resultados" sería engañoso.
+            raise
         logger.warning("El investigador falló; se usa la evidencia recolectada: %s", error)
     return mensajes
 

@@ -41,7 +41,7 @@ cd backend && uv run python evaluacion/evaluar_recuperacion.py
 - [x] **Fase 4** — Estado, prompts y nodos: `estado.py`, `prompts.py`, `nodos/*` (módulos probados por separado)
 - [x] **Fase 5** — Grafo conectado: `agent.py` (`construir_grafo`), `checkpointer.py`, `api.py` simplificado + lifespan, `db.py`; eliminados `contexto.py`, `calidad.py`, `referencias.py`, `test_contexto.py`
 - [x] **Fase 6** — Despliegue y documentación: Dockerfile/Compose (torch CPU, `hf-cache`), `evaluar_agente.py` (escrito; **sin correr**), READMEs, sección 15 de la spec
-- [ ] **Fase 7** — Evaluación final con cuota suficiente y ajustes (reranker, few-shot, `fuentes` citadas, error 429 amable)
+- [~] **Fase 7** — Ajustes hechos sin cuota: error 429 amable, `fuentes` solo las citadas, audio vacío fuera del grafo, `HF_HUB_OFFLINE`. **Pendiente:** correr `evaluar_agente.py` y decidir reranker/few-shot
 
 > Las fases 1–6 son la agrupación de los entregables de la sección 11 de la especificación;
 > la especificación no numera fases, así que esta división es la que usamos como guía.
@@ -190,6 +190,18 @@ langchain-google-genai 4.3.7 · google-genai 2.21.0 · langchain-chroma 1.1.0 ·
   (los `print` que quedan son de los scripts de evaluación); sin secretos versionados (`.env` ignorado; `.env.example` sin valores).
 - **`evaluar_agente.py`:** ~55 turnos / ~240 llamadas a Gemini; `--estimar`, `--categorias`, `--max-casos`, `--pausa`; aborta si detecta cuota diaria agotada.
   `tests/test_evaluacion.py` cubre su lógica sin Gemini. Total tests: 132.
+
+### Fase 7 (parcial) — robustez sin gastar cuota
+- **429 de Gemini:** `llm.es_error_de_cuota(error)` (mira código 429, `RESOURCE_EXHAUSTED`, `TooManyRequests` y la cadena de causas). El investigador la **propaga** (antes la
+  tragaba y producía un "sin resultados" falso). `/chat` responde **200** con `prompts.MENSAJE_SERVICIO_SATURADO` y `/chat-voz` con `alerta=true` y sin TTS, sin guardar el turno:
+  el frontend ignora `detail` (muestra siempre "Hubo un problema al contactar al agente") y no se puede modificar.
+- **`fuentes` citadas:** `nodos.redactor.fuentes_citadas(texto, fuentes)` filtra por las citas `[Título, p. N]` (varias páginas y `;` soportados); sin citas utilizables se conservan
+  todas. `documento_activo` prioriza el primer documento citado. El redactor ahora devuelve `fuentes` en su actualización de estado.
+- **Audio vacío:** transcripción de menos de `LONGITUD_MINIMA_VOZ` (3) caracteres → alerta en la API sin invocar el grafo (no entra al historial del hilo).
+- **Hugging Face:** `HF_HUB_OFFLINE` pasa por Compose/.env. Tras agregar la excepción en el antivirus, `huggingface.co` es alcanzable desde el contenedor (HTTP 200).
+- **Camino de referencias sin LLM** (tool con los filtros que daría un analista perfecto): 15/15 casos con referencia (línea base 12/15; recuperación pura 10/15). Es un techo,
+  no una medición del analista real; los casos que la línea base fallaba (mal-01, voz-num-01, voz-num-03) quedan cubiertos si el analista extrae bien los filtros.
+- Tests: 144.
 
 ### Estado de tests al iniciar (Fase 0)
 `13 passed, 1 failed` (**corregido en la Fase 2**: 26 passed). Fallaba `tests/test_retrieval_diversidad.py::test_limita_fragmentos_por_documento_en_consulta_amplia`:

@@ -202,6 +202,60 @@ def test_chat_voz_con_transcripcion_vacia_es_alerta(monkeypatch, cliente, entorn
     assert entorno.turnos[0][2] == "[audio no comprensible]"
 
 
+def test_transcripcion_vacia_no_invoca_el_grafo_ni_entra_al_historial(monkeypatch, cliente, entorno):
+    entorno.transcripcion = "  "
+    monkeypatch.setattr(api, "ejecutar_turno", lambda *a, **k: pytest.fail("no debe ejecutarse el grafo"))
+
+    cuerpo = cliente.post("/chat-voz", files=audio_de_prueba(), data={"thread_id": "v3"}).json()
+
+    assert cuerpo["alerta"] is True and cuerpo["respuesta"] == prompts.MENSAJE_AUDIO_POCO_CLARO
+    assert [t[1] for t in entorno.turnos] == ["usuario", "alerta"]
+    assert entorno.sintetizados == []
+
+
+def test_chat_con_cuota_agotada_responde_un_mensaje_amable_sin_guardar_el_turno(monkeypatch, cliente, entorno):
+    def sin_cuota(*args, **kwargs):
+        raise RuntimeError("Error calling model 'gemini-3.5-flash' (RESOURCE_EXHAUSTED): 429 You exceeded your quota")
+
+    monkeypatch.setattr(api, "ejecutar_turno", sin_cuota)
+
+    respuesta = cliente.post("/chat", json={"mensaje": "¿cuánto cuesta el taxi?", "thread_id": "q1"})
+
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.json()
+    assert set(cuerpo) == CLAVES_CHAT
+    assert cuerpo["respuesta"] == prompts.MENSAJE_SERVICIO_SATURADO
+    assert cuerpo["fuentes"] == [] and cuerpo["pasos"] == []
+    assert "RESOURCE_EXHAUSTED" not in respuesta.text  # no se filtra el mensaje del proveedor
+    assert entorno.turnos == []
+
+
+def test_chat_voz_con_cuota_agotada_responde_con_alerta_y_sin_tts(monkeypatch, cliente, entorno):
+    def sin_cuota(*args, **kwargs):
+        raise RuntimeError("429 RESOURCE_EXHAUSTED")
+
+    monkeypatch.setattr(api, "ejecutar_turno", sin_cuota)
+
+    cuerpo = cliente.post("/chat-voz", files=audio_de_prueba(), data={"thread_id": "q2"}).json()
+
+    assert set(cuerpo) == CLAVES_VOZ
+    assert cuerpo["alerta"] is True and cuerpo["respuesta"] == prompts.MENSAJE_SERVICIO_SATURADO
+    assert cuerpo["transcripcion"] == "¿cuánto cuesta el taxi?"
+    assert entorno.sintetizados == [] and entorno.turnos == []
+
+
+def test_es_error_de_cuota_reconoce_el_error_y_su_causa():
+    from agente_sigem.llm import es_error_de_cuota
+
+    assert es_error_de_cuota(RuntimeError("429 RESOURCE_EXHAUSTED. quota"))
+    causa = RuntimeError("429 RESOURCE_EXHAUSTED")
+    envuelto = ValueError("fallo en el modelo")
+    envuelto.__cause__ = causa
+    assert es_error_de_cuota(envuelto)
+    assert not es_error_de_cuota(RuntimeError("503 Service Unavailable"))
+    assert not es_error_de_cuota(None)
+
+
 def test_chat_voz_rechaza_formatos_no_permitidos_y_audio_vacio(cliente):
     assert cliente.post("/chat-voz", files={"audio": ("nota.txt", b"x", "text/plain")}).status_code == 415
     assert cliente.post("/chat-voz", files={"audio": ("vacio.webm", b"", "audio/webm")}).status_code == 400
