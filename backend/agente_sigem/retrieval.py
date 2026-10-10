@@ -226,7 +226,8 @@ def recuperar_sigem(consulta: str, archivo: str | None = None) -> list[Document]
     """Búsqueda híbrida (texto + semántica) → reranker → diversificación → top 8.
 
     Con `archivo` la búsqueda se limita a ese PDF y no se diversifica.
-    Las referencias explícitas ("Decreto 83 de 2018") ya no se resuelven aquí: ver referencias.py.
+    Las referencias explícitas ("Decreto 83 de 2018") ya no se resuelven aquí: las resuelve la tool
+    buscar_documento_por_referencia con los atributos que extrae el analista.
     """
     vector_store = obtener_vector_store()
     textuales = buscar_por_texto(vector_store, consulta, archivo)

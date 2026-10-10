@@ -1,32 +1,24 @@
 import time
-import re
-import unicodedata
-import json
+from contextlib import asynccontextmanager
 
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from google import genai
 from google.genai import errors as genai_errors
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
+from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
-from langchain_core.messages import HumanMessage, ToolMessage
+from starlette.concurrency import run_in_threadpool
 
-from . import db, storage
-from .agent import agente_sigem
-from .retrieval import obtener_catalogo_documentos
+from . import db, reranker, storage
+from .agent import construir_grafo
 from .audio import synthesize, transcribe
-from .calidad import es_audio_comprensible
+from .checkpointer import crear_checkpointer
 from .config import config
-from .prompts import (
-    MENSAJE_AUDIO_POCO_CLARO,
-    RESPUESTA_CONSULTA_AMBIGUA,
-    RESPUESTA_FUERA_DE_CONTEXTO,
-    RESPUESTA_SALUDO,
-)
-from .contexto import enriquecer_consulta_con_contexto, es_pregunta_de_seguimiento
+from .retrieval import obtener_catalogo_documentos
 from .tracing import obtener_langfuse_handler
 
 # ══════════════════════════════════════════════════════════════
-# MODELOS PYDANTIC
+# MODELOS PYDANTIC (el contrato con el frontend no cambia)
 # ══════════════════════════════════════════════════════════════
 
 class ChatRequest(BaseModel):
@@ -81,141 +73,89 @@ class TurnoOut(BaseModel):
     creado_en: str
 
 
-PALABRAS_SALUDO = {
-    "hola", "buenas", "buenos", "dias", "tardes", "noches", "saludos",
-    "hey", "ola", "que tal", "como estas", "como vas",
-}
+# ══════════════════════════════════════════════════════════════
+# EJECUCIÓN DE UN TURNO
+# ══════════════════════════════════════════════════════════════
 
-PALABRAS_CONSULTA_GENERICA = {
-    "busco", "buscar", "necesito", "quiero", "consultar", "consulta", "informacion",
-    "dame", "dar", "saber", "ver", "encontrar", "un", "una", "el", "la", "sobre",
-    "tramite", "tramites", "proceso", "procesos", "procedimiento", "procedimientos",
-    "formato", "formatos", "documento", "documentos", "norma", "normas",
-    "normativa", "ley", "leyes", "decreto", "decretos", "resolucion", "resoluciones",
-    "acuerdo", "acuerdos", "clausula", "clausulas",
-}
+def ejecutar_turno(agente, thread_id: str, mensaje: str, perfil: str, origen: str, tags: list[str]) -> dict:
+    """Invoca el grafo para un turno y devuelve el estado final.
 
-PALABRAS_DOMINIO_SIGEM = {
-    "sigem", "marinilla", "alcaldia", "municipio", "municipal", "ciudadano",
-    "tramite", "tramites", "proceso", "procesos", "procedimiento", "procedimientos",
-    "formato", "formatos", "documento", "documentos", "norma", "normas",
-    "normativa", "ley", "leyes", "decreto", "decretos", "resolucion", "resoluciones",
-    "acuerdo", "acuerdos", "clausula", "clausulas", "requisito", "requisitos",
-    "permiso", "permisos", "solicitud", "solicitudes", "certificado", "certificados",
-    "impuesto", "impuestos", "catastro", "predial", "movilidad", "vial",
-    "contratacion", "licencia", "licencias", "peticion", "pqrs", "queja",
-    "reclamo", "reclamos", "alcalde", "secretaria", "dependencia",
-}
-
-
-def normalizar_texto(texto: str) -> str:
-    texto = unicodedata.normalize("NFD", texto.lower())
-    texto = "".join(c for c in texto if unicodedata.category(c) != "Mn")
-    return re.sub(r"\s+", " ", texto).strip()
-
-
-def respuesta_directa_si_aplica(mensaje: str) -> str | None:
-    texto = normalizar_texto(mensaje)
-    palabras = set(re.findall(r"[a-z0-9]+", texto))
-
-    if not texto:
-        return RESPUESTA_SALUDO
-
-    es_saludo_corto = len(palabras) <= 4 and any(saludo in texto for saludo in PALABRAS_SALUDO)
-    if es_saludo_corto:
-        return RESPUESTA_SALUDO
-
-    tiene_contexto_sigem = any(palabra in palabras for palabra in PALABRAS_DOMINIO_SIGEM)
-    if not tiene_contexto_sigem:
-        return RESPUESTA_FUERA_DE_CONTEXTO
-
-    consulta_muy_generica = len(palabras) <= 5 and palabras.issubset(PALABRAS_CONSULTA_GENERICA)
-    if consulta_muy_generica:
-        return RESPUESTA_CONSULTA_AMBIGUA
-
-    return None
-
-
-def respuesta_chat_directa(request: ChatRequest, inicio: float, respuesta: str) -> ChatResponse:
-    db.guardar_turno(request.thread_id, "usuario", request.mensaje)
-    db.guardar_turno(request.thread_id, "agente", respuesta)
-    return ChatResponse(
-        respuesta=respuesta,
-        thread_id=request.thread_id,
-        pasos=[],
-        fuentes=[],
-        tiempo_ms=round((time.time() - inicio) * 1000, 1),
+    Los campos por turno se pasan reiniciados: el checkpointer conserva `messages` y
+    `documento_activo` del hilo, pero el resto empieza vacío en cada turno.
+    """
+    langfuse_handler = obtener_langfuse_handler()
+    config_graph = {
+        "configurable": {"thread_id": thread_id},
+        "callbacks": [langfuse_handler] if langfuse_handler else [],
+        "metadata": {
+            # Agrupa los turnos del hilo en una sesión de Langfuse y etiqueta el trace con el
+            # perfil (P0-P3) para comparar el desempeño por perfil en el dashboard.
+            "langfuse_session_id": thread_id,
+            "langfuse_tags": tags,
+        },
+    }
+    return agente.invoke(
+        {
+            "messages": [HumanMessage(content=mensaje)],
+            "perfil": perfil,
+            "origen": origen,
+            "analisis": None,
+            "evidencia": [],
+            "fuentes": [],
+            "candidatos": [],
+            "intentos_busqueda": 0,
+            "consulta_actual": "",
+            "pasos": [],
+            "es_alerta": False,
+        },
+        config=config_graph,
     )
 
 
-def fuentes_del_ultimo_turno(mensajes) -> list[FuenteSigem]:
-    """Extrae las fuentes de las herramientas ejecutadas después de la última pregunta."""
-    ultimo_usuario = max(
-        (indice for indice, mensaje in enumerate(mensajes) if isinstance(mensaje, HumanMessage)),
-        default=-1,
-    )
-    fuentes = []
-    vistas = set()
-    for mensaje in mensajes[ultimo_usuario + 1:]:
-        if not isinstance(mensaje, ToolMessage):
-            continue
-        try:
-            contenido = json.loads(str(mensaje.content))
-        except (TypeError, json.JSONDecodeError):
-            continue
-        for fuente in contenido.get("fuentes", []):
-            fuente_sigem = FuenteSigem(**fuente)
-            clave = (fuente_sigem.archivo, fuente_sigem.pagina)
-            if clave not in vistas:
-                vistas.add(clave)
-                fuentes.append(fuente_sigem)
-    return fuentes
+def _texto_respuesta(resultado: dict) -> str:
+    return resultado["messages"][-1].text
 
 
-def candidatos_del_ultimo_turno(mensajes) -> list[CandidatoDocumento]:
-    candidatos = []
-    vistos = set()
-    for mensaje in mensajes:
-        if not isinstance(mensaje, ToolMessage):
-            continue
-        try:
-            contenido = json.loads(str(mensaje.content))
-        except (TypeError, json.JSONDecodeError):
-            continue
-        for candidato in contenido.get("candidatos", []):
-            candidato_documento = CandidatoDocumento(**candidato)
-            if candidato_documento.archivo not in vistos:
-                vistos.add(candidato_documento.archivo)
-                candidatos.append(candidato_documento)
-    return candidatos
+def _fuentes(resultado: dict) -> list[FuenteSigem]:
+    return [FuenteSigem(**fuente) for fuente in resultado.get("fuentes", [])]
 
 
-def guardar_fuentes_como_contexto(thread_id: str, fuentes: list[FuenteSigem]) -> None:
-    if fuentes:
-        db.guardar_contexto_sigem(thread_id, [fuente.model_dump() for fuente in fuentes])
+def _candidatos(resultado: dict) -> list[CandidatoDocumento]:
+    return [CandidatoDocumento(**candidato) for candidato in resultado.get("candidatos", [])]
 
 
-def mensaje_para_agente(thread_id: str, mensaje: str) -> tuple[str, bool]:
-    fuentes_activas = db.obtener_contexto_sigem(thread_id)
-    if es_pregunta_de_seguimiento(mensaje, fuentes_activas):
-        return enriquecer_consulta_con_contexto(mensaje, fuentes_activas), True
-    return mensaje, False
+def _pasos(resultado: dict) -> list[PasoAgente]:
+    return [PasoAgente(**paso) for paso in resultado.get("pasos", [])]
+
 
 # ══════════════════════════════════════════════════════════════
 # FASTAPI APP
 # ══════════════════════════════════════════════════════════════
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Arranque: tablas de historial, checkpointer, grafo y (opcional) precarga del reranker.
+
+    El grafo no se construye al importar este módulo: así los tests y las herramientas
+    pueden importar la API sin Postgres.
+    """
+    await run_in_threadpool(db.init_db)
+    checkpointer, cerrar_checkpointer = await run_in_threadpool(crear_checkpointer)
+    app.state.agente = construir_grafo(checkpointer)
+    if config.RERANKER_PRECARGAR:
+        await run_in_threadpool(reranker.precargar)
+    try:
+        yield
+    finally:
+        cerrar_checkpointer()
+
+
 app = FastAPI(
     title="Agente de respuesta ciudadana - SIGEM",
-    description="API del agente RAG (LangGraph + Gemini) que responde preguntas sobre procesos, formatos y normatividad del municipio de Marinilla, con base en el repositorio SIGEM.",
-    version="0.1.0",
+    description="API del sistema multi-agente (LangGraph + Gemini) que responde preguntas sobre procesos, formatos y normatividad del municipio de Marinilla, con base en el repositorio SIGEM.",
+    version="0.2.0",
+    lifespan=lifespan,
 )
-
-
-@app.on_event("startup")
-def crear_tablas():
-    """Crea la tabla de historial en Postgres si todavía no existe."""
-    db.init_db()
 
 
 @app.get("/health", tags=["sistema"])
@@ -270,52 +210,22 @@ def sugerencias_documentos(q: str = ""):
     ]
 
 @app.post("/chat", response_model=ChatResponse)
-async def endpoint_chat(request: ChatRequest):
+async def endpoint_chat(request: ChatRequest, http_request: Request):
     """
     Chatea con el agente pasándole un thread_id para mantener la memoria conversacional.
     """
     inicio = time.time()
     try:
-        mensaje_agente, es_seguimiento = mensaje_para_agente(request.thread_id, request.mensaje)
-        respuesta_directa = None if es_seguimiento else respuesta_directa_si_aplica(request.mensaje)
-        if respuesta_directa:
-            return respuesta_chat_directa(request, inicio, respuesta_directa)
-
-        langfuse_handler = obtener_langfuse_handler()
-        config_graph = {
-            "configurable": {"thread_id": request.thread_id},
-            "callbacks": [langfuse_handler] if langfuse_handler else [],
-            "metadata": {
-                # Agrupa todos los turnos de este hilo en una misma sesión en Langfuse,
-                # y etiqueta el trace con el perfil: así se puede filtrar/comparar
-                # desempeño del agente por perfil de usuario (P0-P3) en el dashboard.
-                "langfuse_session_id": request.thread_id,
-                "langfuse_tags": [request.perfil],
-            },
-        }
-
-        resultado = agente_sigem.invoke(
-            {"messages": [HumanMessage(content=mensaje_agente)],
-             "perfil":request.perfil},
-            config=config_graph
+        resultado = await run_in_threadpool(
+            ejecutar_turno,
+            http_request.app.state.agente,
+            request.thread_id,
+            request.mensaje,
+            request.perfil,
+            "texto",
+            [request.perfil],
         )
-        
-        respuesta = resultado["messages"][-1].text
-        fuentes = fuentes_del_ultimo_turno(resultado["messages"])
-        candidatos = candidatos_del_ultimo_turno(resultado["messages"])
-        guardar_fuentes_como_contexto(request.thread_id, fuentes)
-        
-        pasos = []
-        for msg in resultado["messages"]:
-            if type(msg).__name__ == "AIMessage" and hasattr(msg, "tool_calls") and msg.tool_calls:
-                for tc in msg.tool_calls:
-                    pasos.append(PasoAgente(
-                        agente="herramienta",
-                        accion=f"Buscando en SIGEM: {tc.get('args', {}).get('consulta', '')}",
-                        icono="🔎"
-                    ))
-        
-        tiempo_ms = (time.time() - inicio) * 1000
+        respuesta = _texto_respuesta(resultado)
 
         # Persistimos ambos lados del intercambio (sin audio, este endpoint es texto).
         db.guardar_turno(request.thread_id, "usuario", request.mensaje)
@@ -324,17 +234,22 @@ async def endpoint_chat(request: ChatRequest):
         return ChatResponse(
             respuesta=respuesta,
             thread_id=request.thread_id,
-            pasos=pasos,
-            fuentes=fuentes,
-            candidatos=candidatos,
-            tiempo_ms=round(tiempo_ms, 1)
+            pasos=_pasos(resultado),
+            fuentes=_fuentes(resultado),
+            candidatos=_candidatos(resultado),
+            tiempo_ms=round((time.time() - inicio) * 1000, 1),
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/chat-voz", response_model=ChatVozResponse, tags=["voz"])
-async def endpoint_chat_voz(audio: UploadFile = File(...), thread_id: str = Form(default="default_user"), perfil: str = Form(default="P0")):
+async def endpoint_chat_voz(
+    http_request: Request,
+    audio: UploadFile = File(...),
+    thread_id: str = Form(default="default_user"),
+    perfil: str = Form(default="P0"),
+):
     """Recibe audio, lo transcribe, lo pasa al agente SIGEM y responde en texto + audio.
 
     Ambos audios (la pregunta grabada y la respuesta sintetizada) se suben a S3
@@ -354,40 +269,31 @@ async def endpoint_chat_voz(audio: UploadFile = File(...), thread_id: str = Form
     try:
         transcripcion = transcribe(data, audio.content_type or "audio/webm")
 
-        # US-09: si el audio llegó sin voz clara (silencio, ruido, envío
-        # accidental), avisamos al usuario en vez de mandarle eso al agente.
-        if not es_audio_comprensible(transcripcion):
+        resultado = await run_in_threadpool(
+            ejecutar_turno,
+            http_request.app.state.agente,
+            thread_id,
+            transcripcion or "",
+            perfil,
+            "voz",
+            [perfil, "voz"],
+        )
+        respuesta_texto = _texto_respuesta(resultado)
+
+        # US-09: si el analista determinó que el audio no es comprensible (silencio, ruido,
+        # envío accidental), avisamos al usuario sin sintetizar audio de respuesta.
+        if resultado.get("es_alerta"):
             pregunta_key = storage.subir_audio(data, audio.content_type or "audio/webm", extension, thread_id)
             db.guardar_turno(thread_id, "usuario", transcripcion or "[audio no comprensible]", audio_key=pregunta_key)
-            db.guardar_turno(thread_id, "alerta", MENSAJE_AUDIO_POCO_CLARO)
+            db.guardar_turno(thread_id, "alerta", respuesta_texto)
             return ChatVozResponse(
                 transcripcion=transcripcion or "",
-                respuesta=MENSAJE_AUDIO_POCO_CLARO,
+                respuesta=respuesta_texto,
                 thread_id=thread_id,
                 pregunta_audio_url=storage.url_firmada(pregunta_key),
                 respuesta_audio_url=None,
                 alerta=True,
             )
-
-        mensaje_agente, _ = mensaje_para_agente(thread_id, transcripcion)
-        langfuse_handler = obtener_langfuse_handler()
-        config_graph = {
-            "configurable": {"thread_id": thread_id},
-            "callbacks": [langfuse_handler] if langfuse_handler else [],
-            "metadata": {
-                "langfuse_session_id": thread_id,
-                "langfuse_tags": [perfil, "voz"],
-            },
-        }
-        resultado = agente_sigem.invoke(
-            {"messages": [HumanMessage(content=mensaje_agente)],
-             "perfil": perfil},
-            config=config_graph,    
-        )
-        respuesta_texto = resultado["messages"][-1].text
-        fuentes = fuentes_del_ultimo_turno(resultado["messages"])
-        candidatos = candidatos_del_ultimo_turno(resultado["messages"])
-        guardar_fuentes_como_contexto(thread_id, fuentes)
 
         audio_respuesta = synthesize(respuesta_texto)
 
@@ -409,8 +315,8 @@ async def endpoint_chat_voz(audio: UploadFile = File(...), thread_id: str = Form
         thread_id=thread_id,
         pregunta_audio_url=storage.url_firmada(pregunta_key),
         respuesta_audio_url=storage.url_firmada(respuesta_key),
-        fuentes=fuentes,
-        candidatos=candidatos,
+        fuentes=_fuentes(resultado),
+        candidatos=_candidatos(resultado),
     )
 
 

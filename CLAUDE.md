@@ -39,8 +39,7 @@ cd backend && uv run python evaluacion/evaluar_recuperacion.py
 - [x] **Fase 2** — Recuperación: `retrieval.py` refactor, `reranker.py`, `catalogo.py` (`buscar_por_atributos`, `similares`)
 - [x] **Fase 3** — Tools: `tools.py` (4 tools, sin conectar al grafo)
 - [x] **Fase 4** — Estado, prompts y nodos: `estado.py`, `prompts.py`, `nodos/*` (módulos probados por separado)
-- [ ] **Fase 4b** — Grafo: `agent.py` reescrito (`construir_grafo`), `checkpointer.py`
-- [ ] **Fase 5** — API y persistencia: `api.py` simplificado + lifespan, `db.py`, eliminar `contexto.py`/`calidad.py`/`test_contexto.py`
+- [x] **Fase 5** — Grafo conectado: `agent.py` (`construir_grafo`), `checkpointer.py`, `api.py` simplificado + lifespan, `db.py`; eliminados `contexto.py`, `calidad.py`, `referencias.py`, `test_contexto.py`
 - [ ] **Fase 6** — Evaluación final y despliegue: `evaluar_agente.py`, Dockerfile/Compose (torch CPU, `hf-cache`), README
 
 > Las fases 1–6 son la agrupación de los entregables de la sección 11 de la especificación;
@@ -145,6 +144,29 @@ langchain-google-genai 4.3.7 · google-genai 2.21.0 · langchain-chroma 1.1.0 ·
 - Constantes de respuesta directa y `ESTILO_POR_PERFIL` ahora viven en `prompts.py`; `agent.py` y `api.py` las importan.
 - `tests/test_nodos.py`: 53 casos (fakes `FakeEstructurado`/`ModeloFalso`, tools dobles y un grafo mínimo con `MemorySaver`
   que verifica persistencia de `documento_activo` y reinicio de `pasos`/`fuentes`/`candidatos`).
+
+### Fase 5 — grafo conectado y API simplificada
+- **Grafo:** `agent.construir_grafo(checkpointer)`: START → analista → (respuesta_directa | investigador) → evaluador → (investigador | redactor) → END.
+  No se compila al importar; `api.lifespan` hace `init_db` → `crear_checkpointer()` → `app.state.agente` → precarga del reranker si `RERANKER_PRECARGAR`.
+- **`checkpointer.crear_checkpointer() -> (saver, cerrar)`:** `PostgresSaver` + `ConnectionPool(autocommit, prepare_threshold=0, dict_row)` o `MemorySaver`.
+- **`api.ejecutar_turno(agente, thread_id, mensaje, perfil, origen, tags)`** (corre en `run_in_threadpool`): pasa los campos por turno vacíos.
+  Respuesta desde el estado. `/chat-voz`: si `es_alerta` → turno con rol `alerta`, `alerta=True`, sin TTS.
+- **Eliminado:** `buscar_en_sigem`, `INSTRUCCIONES_BASE`, `contexto.py`, `calidad.py`, `referencias.py`, `tests/test_contexto.py`, y de `api.py` todas las
+  funciones/constantes de la sección 10; de `db.py` el contexto SIGEM y el modelo `ContextoSigem` (la tabla `contextos_sigem` no se toca).
+  `evaluar_recuperacion.py` ya no tiene `--con-referencia`.
+- **Regex que quedan (solo datos propios / léxico):** `catalogo.py` (`PATRON_REFERENCIA`, `PATRON_CODIGO_ARCHIVO`, `PATRON_ANIO`, `re.match` del código de archivo,
+  `re.findall` en `sugerencias`), usados para parsear títulos/nombres de archivo y por `resolver()`/`extraer_referencia()` del autocompletado;
+  `retrieval.py` (`normalizar`, `terminos_textuales` y las stopwords `PALABRAS_NO_SIGNIFICATIVAS`/`PALABRAS_BUSQUEDA_GENERICAS`, que tokenizan la consulta ya reescrita).
+- **Tests:** `tests/fakes_llm.py` y `tests/grafo_falso.py` (dobles compartidos), `test_grafo.py` (18), `test_api.py` (13). Total: 117.
+  `httpx` es dependencia de desarrollo (TestClient).
+- **Humo con la API real (CHECKPOINTER=memory, `db` en memoria):** hola, taxi, "decreto 83", "qué dice el decrto 1 dl 2019" + "explícame más", inventario 2019 y
+  fuera de dominio respondieron bien y con citas. **Latencia alta: 10–60 s por turno** (taxi: 61 s con 3 llamadas del investigador + evaluador + redactor).
+- **Hallazgos abiertos para la Fase 6 / siguiente iteración:**
+  1. **Código de archivo:** "Necesito el documento 18399" → el analista lo clasifica `ambigua` (antes lo resolvía el regex `documento N`). Ninguna tool busca por código.
+  2. **Cuota de Gemini:** al agotarse (`429 RESOURCE_EXHAUSTED`) `/chat` responde 500 con el texto crudo del proveedor en `detail`; conviene un mensaje amable.
+  3. **`fuentes` acumula todas las búsquedas** del turno (taxi devolvió 12 fuentes, solo una citada); se podría filtrar a las realmente citadas por el redactor.
+  4. Una transcripción vacía queda en `messages` como `HumanMessage("")` + la alerta; inocuo pero ensucia el historial del hilo.
+  5. `VERIFICACION_MODEL` quedó huérfano en `config.py` (lo usaba `calidad.py`).
 
 ### Estado de tests al iniciar (Fase 0)
 `13 passed, 1 failed` (**corregido en la Fase 2**: 26 passed). Fallaba `tests/test_retrieval_diversidad.py::test_limita_fragmentos_por_documento_en_consulta_amplia`:

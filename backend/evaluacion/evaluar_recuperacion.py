@@ -1,5 +1,8 @@
 """Evaluación de recuperación (sin LLM): hit@8 y MRR por categoría usando recuperar_sigem.
 
+Mide solo la búsqueda por contenido; las referencias a documentos las resuelve la tool
+buscar_documento_por_referencia (ver evaluar_agente.py).
+
 Solo usa embeddings (GOOGLE_API_KEY) y el Chroma local (chroma_db/). No llama a ningún chat LLM.
 Sirve para medir la versión actual (línea base) y, más adelante, la versión con reranker.
 
@@ -88,9 +91,6 @@ def main() -> int:
     parser.add_argument("--salida", default=str(RAIZ_BACKEND / "evaluacion" / "linea_base_recuperacion.json"))
     parser.add_argument("--sin-reranker", action="store_true",
                         help="Apaga el reranker (RERANKER_HABILITADO=false). Sin efecto en el código anterior a la migración.")
-    parser.add_argument("--con-referencia", action="store_true",
-                        help="Usa referencias.recuperar_con_referencia (la referencia exacta gana, como en el código anterior). "
-                             "Equivale al comportamiento de buscar_en_sigem y es comparable con la línea base.")
     args = parser.parse_args()
 
     # config.py usa rutas relativas (./chroma_db): se ejecuta siempre desde backend/.
@@ -109,10 +109,7 @@ def main() -> int:
         print(f"ERROR: no hay un Chroma local en {chroma.resolve()}. No se calculó nada.")
         return 2
 
-    if args.con_referencia:
-        from agente_sigem.referencias import recuperar_con_referencia as recuperar_sigem
-    else:
-        from agente_sigem.retrieval import recuperar_sigem
+    from agente_sigem.retrieval import recuperar_sigem
 
     if args.sin_reranker is False:
         # Carga el modelo antes de medir para que el tiempo por consulta no incluya la descarga/carga.
@@ -121,7 +118,7 @@ def main() -> int:
         print(f"Reranker precargado: {reranker.precargar()} ({time.perf_counter() - inicio:.1f}s)")
 
     casos = [c for c in cargar_casos(Path(args.dataset)) if c.get("archivos_esperados")]
-    print(f"Evaluando {len(casos)} casos con archivos_esperados (k={K}, reranker={'no' if args.sin_reranker else 'según config'}, con_referencia={args.con_referencia})")
+    print(f"Evaluando {len(casos)} casos con archivos_esperados (k={K}, reranker={'no' if args.sin_reranker else 'según config'})")
 
     resultados = []
     for caso in casos:
@@ -139,7 +136,6 @@ def main() -> int:
         "fecha": datetime.now().isoformat(timespec="seconds"),
         "k": K,
         "sin_reranker": args.sin_reranker,
-        "con_referencia": args.con_referencia,
         "embedding_model": config.EMBEDDING_MODEL,
         "resumen": resumen,
         "casos": resultados,

@@ -1,24 +1,23 @@
 """Pruebas unitarias de los nodos del grafo con LLM falsos (sin Gemini ni Chroma)."""
 
 import importlib
-import json
 
 import pytest
-from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage
-from langchain_core.outputs import ChatGeneration, ChatResult
-from langchain_core.tools import tool
-from langgraph.checkpoint.memory import MemorySaver
-from langgraph.graph import END, START, StateGraph
-from pydantic import Field
 
 from agente_sigem import prompts, tools
 from agente_sigem.config import config
-from agente_sigem.estado import (
-    AnalisisConsulta,
-    EstadoAgente,
-    EvaluacionEvidencia,
-    FiltrosSigem,
+from agente_sigem.estado import AnalisisConsulta, EvaluacionEvidencia, FiltrosSigem
+
+from fakes_llm import (  # noqa: E402
+    CANDIDATOS,
+    FRAGMENTO_TAXI,
+    FUENTE_TAXI,
+    FakeEstructurado,
+    ModeloFalso,
+    herramientas_dobles,
+    instalar,
+    llamada,
 )
 
 m_analista = importlib.import_module("agente_sigem.nodos.analista")
@@ -26,102 +25,6 @@ m_respuesta = importlib.import_module("agente_sigem.nodos.respuesta_directa")
 m_investigador = importlib.import_module("agente_sigem.nodos.investigador")
 m_evaluador = importlib.import_module("agente_sigem.nodos.evaluador")
 m_redactor = importlib.import_module("agente_sigem.nodos.redactor")
-
-
-# ══════════════════════════════════════════════════════════════
-# FAKES
-# ══════════════════════════════════════════════════════════════
-
-class FakeEstructurado:
-    """Sustituye a un chat model con `with_structured_output`: devuelve salidas predefinidas o lanza."""
-
-    def __init__(self, salidas=None, error: Exception | None = None):
-        self.salidas = list(salidas or [])
-        self.error = error
-        self.entradas = []
-        self.configs = []
-
-    def with_structured_output(self, esquema, **kwargs):
-        self.esquema = esquema
-        return self
-
-    def invoke(self, entrada, config=None, **kwargs):
-        self.entradas.append(entrada)
-        self.configs.append(config)
-        if self.error:
-            raise self.error
-        return self.salidas.pop(0) if len(self.salidas) > 1 else self.salidas[0]
-
-    @property
-    def llamadas(self) -> int:
-        return len(self.entradas)
-
-
-class ModeloFalso(BaseChatModel):
-    """Chat model falso: devuelve `respuestas` en orden y acepta bind_tools (para create_agent)."""
-
-    respuestas: list = Field(default_factory=list)
-    entradas: list = Field(default_factory=list)
-    etiquetas: list = Field(default_factory=list)
-
-    def _generate(self, messages, stop=None, run_manager=None, **kwargs):
-        self.entradas.append(list(messages))
-        self.etiquetas.append(list(getattr(run_manager, "tags", []) or []))
-        mensaje = self.respuestas.pop(0) if self.respuestas else AIMessage(content="Fin.")
-        return ChatResult(generations=[ChatGeneration(message=mensaje)])
-
-    def bind_tools(self, tools, **kwargs):
-        return self
-
-    @property
-    def _llm_type(self) -> str:
-        return "modelo-falso"
-
-
-def llamada(nombre: str, **args) -> AIMessage:
-    return AIMessage(content="", tool_calls=[{"name": nombre, "args": args, "id": f"id-{nombre}-{len(args)}"}])
-
-
-def instalar(monkeypatch, modulo, falso) -> list:
-    """Reemplaza crear_llm del módulo; devuelve la lista de (modelo, temperatura) solicitados."""
-    pedidos = []
-
-    def crear(nombre_modelo, temperature=0.0):
-        pedidos.append((nombre_modelo, temperature))
-        return falso
-
-    monkeypatch.setattr(modulo, "crear_llm", crear)
-    return pedidos
-
-
-FUENTE_TAXI = {
-    "titulo": "Decreto 001 de 2019",
-    "archivo": "22598_decreto-no-0012019.pdf",
-    "pagina": "1",
-    "fecha_expedicion": "2019-01-03T08:00:00",
-    "descripcion": "Tarifas de taxis y buses",
-}
-FRAGMENTO_TAXI = {"fuente": FUENTE_TAXI, "contenido": "La tarifa mínima del taxi es de $5.500."}
-CANDIDATOS = [
-    {"titulo": "Resolución 4397 de 2018", "archivo": "23655.pdf", "fecha_expedicion": "2018-12-13", "descripcion": None},
-    {"titulo": "Resolución 4397 de 2017", "archivo": "23661.pdf", "fecha_expedicion": "2018-12-19", "descripcion": None},
-]
-
-
-def herramientas_dobles(salidas: dict[str, dict]):
-    """Tools con los nombres reales que devuelven JSON fijo (el investigador no toca Chroma)."""
-
-    def crear(nombre, salida):
-        @tool(nombre)
-        def doble(consulta: str = "", archivo: str | None = None, tipo: str | None = None,
-                  numero: int | None = None, anio: int | None = None, pregunta: str | None = None,
-                  tema: str | None = None) -> str:
-            """Doble de prueba."""
-            return json.dumps(salida, ensure_ascii=False)
-
-        return doble
-
-    return [crear(nombre, salida) for nombre, salida in salidas.items()]
 
 
 def estado_base(**cambios) -> dict:
@@ -330,13 +233,6 @@ def test_respuesta_directa_ambigua_sin_pregunta_usa_el_texto_generico():
     estado = estado_base(analisis=analisis_dict(intencion="ambigua"))
 
     assert m_respuesta.respuesta_directa(estado)["messages"][0].content == prompts.RESPUESTA_CONSULTA_AMBIGUA
-
-
-def test_las_constantes_de_prompts_son_las_que_usa_la_api():
-    from agente_sigem import api
-
-    assert api.RESPUESTA_SALUDO is prompts.RESPUESTA_SALUDO
-    assert api.MENSAJE_AUDIO_POCO_CLARO is prompts.MENSAJE_AUDIO_POCO_CLARO
 
 
 # ══════════════════════════════════════════════════════════════
@@ -728,141 +624,3 @@ def test_redactor_propaga_el_config(monkeypatch):
     m_redactor.redactor(estado_base(analisis=analisis_dict(), evidencia=[FRAGMENTO_TAXI]), {"tags": ["lf"]})
 
     assert "lf" in modelo.etiquetas[0]
-
-
-# ══════════════════════════════════════════════════════════════
-# INTEGRACIÓN DE NODOS EN UN GRAFO MÍNIMO (sección 12: persistencia entre turnos)
-# ══════════════════════════════════════════════════════════════
-
-def construir_grafo_minimo():
-    grafo = StateGraph(EstadoAgente)
-    grafo.add_node("analista", m_analista.analista)
-    grafo.add_node("respuesta_directa", m_respuesta.respuesta_directa)
-    grafo.add_node("investigador", m_investigador.investigador)
-    grafo.add_node("evaluador", m_evaluador.evaluador)
-    grafo.add_node("redactor", m_redactor.redactor)
-    grafo.add_edge(START, "analista")
-    grafo.add_conditional_edges(
-        "analista", m_analista.ruta_despues_analista, {"investigador": "investigador", "respuesta_directa": "respuesta_directa"}
-    )
-    grafo.add_edge("investigador", "evaluador")
-    grafo.add_conditional_edges(
-        "evaluador", m_evaluador.ruta_despues_evaluador, {"investigador": "investigador", "redactor": "redactor"}
-    )
-    grafo.add_edge("redactor", END)
-    grafo.add_edge("respuesta_directa", END)
-    return grafo.compile(checkpointer=MemorySaver())
-
-
-def entrada_turno(mensaje: str, origen: str = "texto") -> dict:
-    """Lo que api.py pasa en cada invoke: los campos por turno van vacíos para reiniciarlos."""
-    return {
-        "messages": [HumanMessage(content=mensaje)], "perfil": "P0", "origen": origen, "analisis": None,
-        "evidencia": [], "fuentes": [], "candidatos": [], "intentos_busqueda": 0, "consulta_actual": "",
-        "pasos": [], "es_alerta": False,
-    }
-
-
-def instalar_grafo(monkeypatch, analisis, evaluaciones, investigador_msgs, redactor_msgs, salidas_tools):
-    instalar(monkeypatch, m_analista, FakeEstructurado(analisis))
-    instalar(monkeypatch, m_evaluador, FakeEstructurado(evaluaciones))
-    instalar(monkeypatch, m_investigador, ModeloFalso(respuestas=list(investigador_msgs)))
-    instalar(monkeypatch, m_redactor, ModeloFalso(respuestas=list(redactor_msgs)))
-    monkeypatch.setattr(tools, "HERRAMIENTAS_INVESTIGADOR", herramientas_dobles(salidas_tools))
-
-
-def test_grafo_minimo_consulta_con_reintento_y_estado_por_turno(monkeypatch):
-    instalar_grafo(
-        monkeypatch,
-        analisis=[
-            AnalisisConsulta(intencion="consulta_sigem", consulta_autonoma="tarifa del taxi", razonamiento="x"),
-            AnalisisConsulta(intencion="saludo", consulta_autonoma="gracias", razonamiento="x"),
-        ],
-        evaluaciones=[
-            EvaluacionEvidencia(suficiente=False, motivo="otro tema", consulta_reformulada="tarifas de taxi 2019"),
-            EvaluacionEvidencia(suficiente=True, motivo="ok"),
-        ],
-        investigador_msgs=[
-            llamada("buscar_fragmentos", consulta="tarifa del taxi"), AIMessage(content="Nada claro."),
-            llamada("buscar_fragmentos", consulta="tarifas de taxi 2019"), AIMessage(content="Listo."),
-        ],
-        redactor_msgs=[AIMessage(content="La tarifa mínima es $5.500 [Decreto 001 de 2019, p. 1].")],
-        salidas_tools={"buscar_fragmentos": {"fuentes": [FUENTE_TAXI], "fragmentos": [FRAGMENTO_TAXI]}},
-    )
-    grafo = construir_grafo_minimo()
-    hilo = {"configurable": {"thread_id": "t1"}}
-
-    turno1 = grafo.invoke(entrada_turno("¿cuánto cuesta el taxi?"), hilo)
-
-    assert turno1["intentos_busqueda"] == 2  # el investigador corrió dos veces
-    assert turno1["consulta_actual"] == "tarifas de taxi 2019"
-    assert [p["agente"] for p in turno1["pasos"]] == [
-        "analista", "investigador", "evaluador", "investigador", "evaluador", "redactor"
-    ]
-    assert turno1["fuentes"] == [FUENTE_TAXI] and len(turno1["evidencia"]) == 1  # sin duplicados entre intentos
-    assert turno1["documento_activo"]["archivo"] == FUENTE_TAXI["archivo"]
-    # messages queda limpio: solo la pregunta y la respuesta final.
-    assert [type(m).__name__ for m in turno1["messages"]] == ["HumanMessage", "AIMessage"]
-
-    turno2 = grafo.invoke(entrada_turno("gracias"), hilo)
-
-    assert turno2["messages"][-1].content == prompts.RESPUESTA_SALUDO
-    assert [p["agente"] for p in turno2["pasos"]] == ["analista", "respuesta_directa"]  # no se acumulan
-    assert turno2["fuentes"] == [] and turno2["candidatos"] == [] and turno2["evidencia"] == []
-    assert turno2["intentos_busqueda"] == 0
-    assert turno2["documento_activo"]["archivo"] == FUENTE_TAXI["archivo"]  # persiste entre turnos
-    assert len(turno2["messages"]) == 4
-
-
-def test_grafo_minimo_candidatos_van_al_redactor_en_modo_aclaracion(monkeypatch):
-    instalar_grafo(
-        monkeypatch,
-        analisis=[AnalisisConsulta(intencion="consulta_sigem", consulta_autonoma="Resolución 4397", razonamiento="x")],
-        evaluaciones=[EvaluacionEvidencia(suficiente=True, motivo="no debe usarse")],
-        investigador_msgs=[
-            llamada("buscar_documento_por_referencia", tipo="resolucion", numero=4397), AIMessage(content="Dos."),
-        ],
-        redactor_msgs=[AIMessage(content="¿Cuál de las dos?")],
-        salidas_tools={"buscar_documento_por_referencia": {"fuentes": [], "fragmentos": [], "candidatos": CANDIDATOS}},
-    )
-    grafo = construir_grafo_minimo()
-
-    resultado = grafo.invoke(entrada_turno("Resolución 4397"), {"configurable": {"thread_id": "t2"}})
-
-    assert resultado["candidatos"] == CANDIDATOS
-    assert resultado["intentos_busqueda"] == 1
-    assert resultado["documento_activo"] is None
-    assert [p["agente"] for p in resultado["pasos"]] == ["analista", "investigador", "evaluador", "redactor"]
-
-
-def test_grafo_minimo_voz_no_comprensible_marca_alerta(monkeypatch):
-    instalar_grafo(
-        monkeypatch,
-        analisis=[AnalisisConsulta(intencion="no_comprensible", consulta_autonoma="eh mm", razonamiento="ruido")],
-        evaluaciones=[EvaluacionEvidencia(suficiente=True, motivo="")],
-        investigador_msgs=[], redactor_msgs=[], salidas_tools={"buscar_fragmentos": {}},
-    )
-    grafo = construir_grafo_minimo()
-
-    resultado = grafo.invoke(entrada_turno("eh mm ajá", origen="voz"), {"configurable": {"thread_id": "t3"}})
-
-    assert resultado["es_alerta"] is True
-    assert resultado["messages"][-1].content == prompts.MENSAJE_AUDIO_POCO_CLARO
-
-
-def test_grafo_minimo_analista_con_excepcion_busca_igual(monkeypatch):
-    instalar_grafo(
-        monkeypatch,
-        analisis=[AnalisisConsulta(intencion="consulta_sigem", consulta_autonoma="x", razonamiento="x")],
-        evaluaciones=[EvaluacionEvidencia(suficiente=True, motivo="ok")],
-        investigador_msgs=[llamada("buscar_fragmentos", consulta="x"), AIMessage(content="ok")],
-        redactor_msgs=[AIMessage(content="Respuesta.")],
-        salidas_tools={"buscar_fragmentos": {"fuentes": [FUENTE_TAXI], "fragmentos": [FRAGMENTO_TAXI]}},
-    )
-    instalar(monkeypatch, m_analista, FakeEstructurado(error=RuntimeError("Gemini caído")))
-    grafo = construir_grafo_minimo()
-
-    resultado = grafo.invoke(entrada_turno("¿cuánto cuesta el taxi?"), {"configurable": {"thread_id": "t4"}})
-
-    assert resultado["analisis"]["intencion"] == "consulta_sigem"
-    assert resultado["messages"][-1].content == "Respuesta."
