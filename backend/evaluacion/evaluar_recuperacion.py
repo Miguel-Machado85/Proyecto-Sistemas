@@ -12,6 +12,7 @@ import argparse
 import json
 import os
 import sys
+import time
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -43,7 +44,9 @@ def archivos_en_orden(documentos) -> list[str]:
 
 def evaluar_caso(recuperar, caso: dict) -> dict:
     consulta = consulta_del_caso(caso)
+    inicio = time.perf_counter()
     documentos = recuperar(consulta)[:K]
+    tiempo_ms = (time.perf_counter() - inicio) * 1000
     archivos = archivos_en_orden(documentos)
     esperados = set(caso["archivos_esperados"])
     posiciones = [i for i, archivo in enumerate(archivos, start=1) if archivo in esperados]
@@ -57,6 +60,7 @@ def evaluar_caso(recuperar, caso: dict) -> dict:
         "recuperados": archivos,
         "hit": primera is not None,
         "rr": (1.0 / primera) if primera else 0.0,
+        "tiempo_ms": round(tiempo_ms),
     }
 
 
@@ -70,6 +74,7 @@ def resumir(resultados: list[dict]) -> dict:
             "casos": len(grupo),
             f"hit@{K}": round(sum(r["hit"] for r in grupo) / len(grupo), 3),
             "mrr": round(sum(r["rr"] for r in grupo) / len(grupo), 3),
+            "tiempo_ms_promedio": round(sum(r["tiempo_ms"] for r in grupo) / len(grupo)),
         }
 
     resumen = {categoria: metricas(grupo) for categoria, grupo in sorted(por_categoria.items())}
@@ -83,6 +88,9 @@ def main() -> int:
     parser.add_argument("--salida", default=str(RAIZ_BACKEND / "evaluacion" / "linea_base_recuperacion.json"))
     parser.add_argument("--sin-reranker", action="store_true",
                         help="Apaga el reranker (RERANKER_HABILITADO=false). Sin efecto en el código anterior a la migración.")
+    parser.add_argument("--con-referencia", action="store_true",
+                        help="Usa referencias.recuperar_con_referencia (la referencia exacta gana, como en el código anterior). "
+                             "Equivale al comportamiento de buscar_en_sigem y es comparable con la línea base.")
     args = parser.parse_args()
 
     # config.py usa rutas relativas (./chroma_db): se ejecuta siempre desde backend/.
@@ -101,10 +109,19 @@ def main() -> int:
         print(f"ERROR: no hay un Chroma local en {chroma.resolve()}. No se calculó nada.")
         return 2
 
-    from agente_sigem.retrieval import recuperar_sigem
+    if args.con_referencia:
+        from agente_sigem.referencias import recuperar_con_referencia as recuperar_sigem
+    else:
+        from agente_sigem.retrieval import recuperar_sigem
+
+    if args.sin_reranker is False:
+        # Carga el modelo antes de medir para que el tiempo por consulta no incluya la descarga/carga.
+        from agente_sigem import reranker
+        inicio = time.perf_counter()
+        print(f"Reranker precargado: {reranker.precargar()} ({time.perf_counter() - inicio:.1f}s)")
 
     casos = [c for c in cargar_casos(Path(args.dataset)) if c.get("archivos_esperados")]
-    print(f"Evaluando {len(casos)} casos con archivos_esperados (k={K}, reranker={'no' if args.sin_reranker else 'según config'})")
+    print(f"Evaluando {len(casos)} casos con archivos_esperados (k={K}, reranker={'no' if args.sin_reranker else 'según config'}, con_referencia={args.con_referencia})")
 
     resultados = []
     for caso in casos:
@@ -116,12 +133,13 @@ def main() -> int:
     resumen = resumir(resultados)
     print("\nResumen por categoría")
     for categoria, m in resumen.items():
-        print(f"  {categoria:<34} n={m['casos']:<3} hit@{K}={m[f'hit@{K}']:.2f}  mrr={m['mrr']:.2f}")
+        print(f"  {categoria:<34} n={m['casos']:<3} hit@{K}={m[f'hit@{K}']:.2f}  mrr={m['mrr']:.2f}  {m['tiempo_ms_promedio']} ms")
 
     salida = {
         "fecha": datetime.now().isoformat(timespec="seconds"),
         "k": K,
         "sin_reranker": args.sin_reranker,
+        "con_referencia": args.con_referencia,
         "embedding_model": config.EMBEDDING_MODEL,
         "resumen": resumen,
         "casos": resultados,

@@ -10,12 +10,12 @@ from langgraph.checkpoint.memory import MemorySaver
 
 from .config import config
 from .llm import crear_llm
-from .retrieval import (
+from .referencias import (
     candidatos_referencia_ambigua,
-    recuperar_sigem,
-    respuesta_de_recuperacion,
+    recuperar_con_referencia,
     respuesta_referencia_ambigua,
 )
+from .retrieval import respuesta_de_recuperacion
 
 # ══════════════════════════════════════════════════════════════
 # RETRIEVER (Herramienta)
@@ -33,7 +33,7 @@ def buscar_en_sigem(consulta: str) -> str:
         if candidatos:
             return respuesta_referencia_ambigua(candidatos)
 
-        resultados = recuperar_sigem(consulta)
+        resultados = recuperar_con_referencia(consulta)
 
         if not resultados:
             return "No se encontró información relevante en el repositorio SIGEM."

@@ -5,6 +5,8 @@ from dataclasses import dataclass
 import re
 import unicodedata
 
+from rapidfuzz import fuzz
+
 
 TIPOS_DOCUMENTO = "decreto|resolucion|acuerdo|ley|formato"
 PATRON_REFERENCIA = re.compile(
@@ -166,6 +168,34 @@ class CatalogoDocumentos:
             if puntaje:
                 candidatos.append((documento, puntaje))
         return [documento for documento, _ in sorted(candidatos, key=lambda item: item[1], reverse=True)[:limite]]
+
+    def buscar_por_atributos(self, tipo: str, numero: int, anio: int | None = None) -> ResolucionCatalogo:
+        """Busca por campos ya interpretados (p. ej. por el analista); no analiza texto libre."""
+        tipo_normalizado = tipo_canonico(tipo.strip())
+        candidatos = [
+            documento
+            for documento in self.documentos
+            if documento.tipo == tipo_normalizado
+            and documento.numero == numero
+            and (anio is None or documento.anio == anio)
+        ]
+        return self._resultado(candidatos)
+
+    def similares(self, texto: str, limite: int = 5, puntaje_minimo: float = 60.0) -> list[DocumentoCatalogado]:
+        """Documentos con título o descripción parecidos al texto (tolera errores de ortografía)."""
+        consulta = normalizar(texto).strip()
+        if len(consulta) < 3:
+            return []
+        puntuados = []
+        for documento in self.documentos:
+            puntaje = fuzz.WRatio(consulta, normalizar(documento.titulo))
+            if documento.descripcion:
+                # La descripción pesa menos que el título para que "decreto 83" no se pierda entre temas.
+                puntaje = max(puntaje, 0.9 * fuzz.token_set_ratio(consulta, normalizar(documento.descripcion)))
+            if puntaje >= puntaje_minimo:
+                puntuados.append((puntaje, documento))
+        puntuados.sort(key=lambda par: (-par[0], par[1].titulo))
+        return [documento for _, documento in puntuados[:limite]]
 
     @staticmethod
     def _resultado(candidatos: list[DocumentoCatalogado]) -> ResolucionCatalogo:

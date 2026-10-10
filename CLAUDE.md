@@ -36,7 +36,7 @@ cd backend && uv run python evaluacion/evaluar_recuperacion.py
 ## Fases
 - [x] **Fase 0** — Preparación: rama, CLAUDE.md, dependencias, verificación del entorno, dataset y línea base de recuperación
 - [x] **Fase 1** — Configuración y LLM: `config.py`, `llm.py`, variables Gemini, `.env.example`, retirar Ollama
-- [ ] **Fase 2** — Recuperación: `retrieval.py` refactor, `reranker.py`, `catalogo.py` (`buscar_por_atributos`, `similares`)
+- [x] **Fase 2** — Recuperación: `retrieval.py` refactor, `reranker.py`, `catalogo.py` (`buscar_por_atributos`, `similares`)
 - [ ] **Fase 3** — Tools y estado: `estado.py`, `tools.py`, `prompts.py`
 - [ ] **Fase 4** — Nodos y grafo: `nodos/*`, `agent.py`, `checkpointer.py`
 - [ ] **Fase 5** — API y persistencia: `api.py` simplificado + lifespan, `db.py`, eliminar `contexto.py`/`calidad.py`/`test_contexto.py`
@@ -82,8 +82,30 @@ langchain-google-genai 4.3.7 · google-genai 2.21.0 · langchain-chroma 1.1.0 ·
   Prueba de humo con `gemini-3.5-flash` + `bind_tools` correcta (llamó a `buscar_en_sigem` y respondió con citas del decreto).
 - **Consola Windows:** imprimir texto con tildes/`​` desde Python puede fallar por cp1252; usar `PYTHONIOENCODING=utf-8`.
 
+### Fase 2 — recuperación y reranker
+- **torch CPU confirmado:** `torch 2.14.1+cpu` (`torch.version.cuda is None`), `sentence-transformers 6.1.0`, `rapidfuzz 3.14.6`.
+  Hay wheel para Python 3.13 en el índice `pytorch-cpu`; Dockerfile (3.14) aún por revisar en la Fase 6.
+- **Reglas de recuperación:** `recuperar_sigem(consulta, archivo=None)` = texto + semántica → unión → reranker → `diversificar`
+  (sin tope por documento si hay `archivo`) → top 8. Si el reranker no aplica (`reranker.reordenar_si_aplica` devuelve `None`),
+  se usa `combinar_y_diversificar` como respaldo. `recuperar_sigem` **ya no resuelve referencias**.
+- **Referencias:** viven en `agente_sigem/referencias.py` (`buscar_por_referencia`, `candidatos_referencia_ambigua`,
+  `respuesta_referencia_ambigua`, `fragmentos_de_archivo`, `recuperar_con_referencia`). Siguen usando `resolver()` (regex);
+  `buscar_en_sigem` llama a `recuperar_con_referencia` hasta que la Fase 3 las reemplace por las tools con `buscar_por_atributos`.
+- `evaluar_recuperacion.py` tiene `--sin-reranker` y `--con-referencia` (esta última es comparable con la línea base).
+- **Resultados (33 casos, hit@8 / MRR / ms por consulta):**
+  | Configuración | hit@8 | MRR | ms/consulta |
+  |---|---|---|---|
+  | Línea base (código viejo) | 0.88 | 0.77 | — |
+  | Nuevo, sin reranker, con referencia | 0.91 | 0.79 | 327 |
+  | Nuevo, con reranker, con referencia | 0.88 | 0.79 | 1706 |
+  | Nuevo, con reranker, `recuperar_sigem` puro | 0.82 | 0.68 | 2308 |
+  El reranker mmarco **mejora** `tema_sin_palabras_clave` (MRR 0.90→1.00) e inventario, pero **empeora** voz con números en
+  palabras (MRR 0.33→0.06), `mal_escrita` y `glob-02`. En conjunto no supera al respaldo; revisar tras el analista (Fase 4),
+  que reescribe la consulta, antes de decidir si se deja activo o se prueba `BAAI/bge-reranker-v2-m3`.
+  Archivos: `evaluacion/fase2_*.json`.
+
 ### Estado de tests al iniciar (Fase 0)
-`13 passed, 1 failed`. Falla `tests/test_retrieval_diversidad.py::test_limita_fragmentos_por_documento_en_consulta_amplia`:
+`13 passed, 1 failed` (**corregido en la Fase 2**: 26 passed). Fallaba `tests/test_retrieval_diversidad.py::test_limita_fragmentos_por_documento_en_consulta_amplia`:
 `clave_documento` (retrieval.py) construye la clave con `metadata["source"]`, pero el fixture del test solo trae
 `nombre_archivo`; los fragmentos de `principal.pdf` y `secundario.pdf` con la misma página y contenido colisionan y se
 descarta `secundario.pdf`. Es un fallo preexistente (introducido en `9dd88aa`), **no** de esta fase. Arreglo previsto en

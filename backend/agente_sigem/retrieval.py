@@ -8,12 +8,13 @@ from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
+from . import reranker
 from .config import config
 from .catalogo import CatalogoDocumentos
 
 
-RESULTADOS_SEMANTICOS = 8
-RESULTADOS_CANDIDATOS = 24
+RESULTADOS_FINALES = 8
+RESULTADOS_SEMANTICOS = RESULTADOS_FINALES  # nombre histórico, conservado por compatibilidad
 RESULTADOS_POR_ESTRATEGIA = 24
 MAX_FRAGMENTOS_POR_DOCUMENTO = 2
 PALABRAS_NO_SIGNIFICATIVAS = {
@@ -32,8 +33,9 @@ def normalizar(texto: str) -> str:
     return re.sub(r"\s+", " ", texto).strip()
 
 
+@lru_cache(maxsize=1)
 def obtener_vector_store() -> Chroma:
-    """Abre Chroma con el modelo de embeddings que generó sus vectores existentes."""
+    """Abre Chroma (una sola vez) con el modelo de embeddings que generó sus vectores existentes."""
     embeddings = GoogleGenerativeAIEmbeddings(
         model=config.EMBEDDING_MODEL,
         google_api_key=config.GOOGLE_API_KEY,
@@ -43,12 +45,6 @@ def obtener_vector_store() -> Chroma:
         embedding_function=embeddings,
         persist_directory=config.CHROMA_PERSIST_DIR,
     )
-
-
-def obtener_retriever():
-    vector_store = obtener_vector_store()
-    # Se recuperan más candidatos que los ocho finales para poder reordenarlos y diversificarlos.
-    return vector_store.as_retriever(search_kwargs={"k": RESULTADOS_CANDIDATOS})
 
 
 def documentos_desde_resultado(resultado: dict) -> list[Document]:
@@ -65,39 +61,6 @@ def obtener_catalogo_documentos() -> CatalogoDocumentos:
     vector_store = obtener_vector_store()
     resultado = vector_store.get(include=["metadatas"])
     return CatalogoDocumentos.desde_metadatas(resultado["metadatas"])
-
-
-def buscar_por_referencia(vector_store: Chroma, consulta: str) -> list[Document]:
-    resolucion = obtener_catalogo_documentos().resolver(consulta)
-    if resolucion.estado != "exacta":
-        return []
-
-    # El catálogo resuelve aliases y metadatos; Chroma recupera todos los fragmentos del PDF elegido.
-    documentos = []
-    for documento in resolucion.documentos:
-        resultado = vector_store.get(
-            where={"nombre_archivo": documento.archivo},
-            include=["documents", "metadatas"],
-            limit=RESULTADOS_POR_ESTRATEGIA,
-        )
-        documentos.extend(documentos_desde_resultado(resultado))
-    return documentos
-
-
-def candidatos_referencia_ambigua(consulta: str) -> list[dict]:
-    """Devuelve candidatos para pedir precisión cuando tipo y número no identifican un único PDF."""
-    resolucion = obtener_catalogo_documentos().resolver(consulta)
-    if resolucion.estado != "ambigua":
-        return []
-    return [
-        {
-            "titulo": documento.titulo,
-            "archivo": documento.archivo,
-            "fecha_expedicion": str(documento.anio) if documento.anio else None,
-            "descripcion": documento.descripcion,
-        }
-        for documento in resolucion.documentos[:3]
-    ]
 
 
 def terminos_textuales(consulta: str) -> list[str]:
@@ -123,7 +86,7 @@ def puntaje_textual(documento: Document, consulta: str) -> int:
     return puntaje
 
 
-def buscar_por_texto(vector_store: Chroma, consulta: str) -> list[Document]:
+def buscar_por_texto(vector_store: Chroma, consulta: str, archivo: str | None = None) -> list[Document]:
     terminos = terminos_textuales(consulta)
     if not terminos:
         return []
@@ -132,37 +95,21 @@ def buscar_por_texto(vector_store: Chroma, consulta: str) -> list[Document]:
     terminos_especificos = sorted(terminos, key=lambda termino: (termino.isdigit(), len(termino)), reverse=True)[:2]
     filtros = [{"$contains": termino} for termino in terminos_especificos]
     where_document = filtros[0] if len(filtros) == 1 else {"$and": filtros}
+    # Con archivo, `where` (metadatos) se combina con `where_document` (contenido literal).
+    filtro_metadatos = {"where": {"nombre_archivo": archivo}} if archivo else {}
     resultado = vector_store.get(
         where_document=where_document,
         include=["documents", "metadatas"],
         limit=RESULTADOS_POR_ESTRATEGIA,
+        **filtro_metadatos,
     )
     documentos = documentos_desde_resultado(resultado)
     return sorted(documentos, key=lambda documento: puntaje_textual(documento, consulta), reverse=True)
 
 
-def clave_documento(documento: Document) -> tuple[str, str, str]:
-    metadata = documento.metadata
-    return (
-        str(metadata.get("source", "")),
-        str(metadata.get("page_label", metadata.get("page", ""))),
-        documento.page_content[:160],
-    )
-
-
-def combinar_sin_duplicados(*grupos: list[Document]) -> list[Document]:
-    """Conserva el orden recibido; se usa para un único documento de referencia exacta."""
-    combinados = []
-    vistos = set()
-    for grupo in grupos:
-        for documento in grupo:
-            clave = clave_documento(documento)
-            if clave not in vistos:
-                vistos.add(clave)
-                combinados.append(documento)
-            if len(combinados) >= RESULTADOS_SEMANTICOS:
-                return combinados
-    return combinados
+def buscar_por_semantica(vector_store: Chroma, consulta: str, archivo: str | None = None) -> list[Document]:
+    filtro = {"nombre_archivo": archivo} if archivo else None
+    return vector_store.similarity_search(consulta, k=RESULTADOS_POR_ESTRATEGIA, filter=filtro)
 
 
 def archivo_documento(documento: Document) -> str:
@@ -170,10 +117,66 @@ def archivo_documento(documento: Document) -> str:
     return str(metadata.get("nombre_archivo") or metadata.get("source") or "sin_archivo")
 
 
-def combinar_y_diversificar(
-    consulta: str, resultados_textuales: list[Document], resultados_semanticos: list[Document]
+def clave_documento(documento: Document) -> tuple[str, str, str]:
+    """Identifica un fragmento: archivo, página y arranque del contenido."""
+    metadata = documento.metadata
+    return (
+        archivo_documento(documento),
+        str(metadata.get("page_label", metadata.get("page", ""))),
+        documento.page_content[:160],
+    )
+
+
+def unir_sin_duplicados(*grupos: list[Document], limite: int | None = None) -> list[Document]:
+    """Une grupos conservando el orden recibido y descartando fragmentos repetidos."""
+    unidos = []
+    vistos = set()
+    for grupo in grupos:
+        for documento in grupo:
+            clave = clave_documento(documento)
+            if clave in vistos:
+                continue
+            vistos.add(clave)
+            unidos.append(documento)
+            if limite is not None and len(unidos) >= limite:
+                return unidos
+    return unidos
+
+
+def combinar_sin_duplicados(*grupos: list[Document]) -> list[Document]:
+    """Conserva el orden recibido, con tope de resultados finales."""
+    return unir_sin_duplicados(*grupos, limite=RESULTADOS_FINALES)
+
+
+def diversificar(
+    documentos: list[Document],
+    max_por_documento: int | None = MAX_FRAGMENTOS_POR_DOCUMENTO,
+    limite: int = RESULTADOS_FINALES,
 ) -> list[Document]:
-    """Prioriza coincidencias textuales y evita que un PDF ocupe toda una consulta amplia."""
+    """Toma los primeros `limite` fragmentos evitando que un PDF ocupe toda la consulta.
+
+    Con `max_por_documento=None` no hay tope por archivo (búsqueda dentro de un documento).
+    """
+    por_archivo = defaultdict(int)
+    seleccionados = []
+    for documento in documentos:
+        archivo = archivo_documento(documento)
+        if max_por_documento is not None and por_archivo[archivo] >= max_por_documento:
+            continue
+        por_archivo[archivo] += 1
+        seleccionados.append(documento)
+        if len(seleccionados) >= limite:
+            break
+    return seleccionados
+
+
+def combinar_y_diversificar(
+    consulta: str,
+    resultados_textuales: list[Document],
+    resultados_semanticos: list[Document],
+    max_por_documento: int | None = MAX_FRAGMENTOS_POR_DOCUMENTO,
+) -> list[Document]:
+    """Respaldo sin reranker: prioriza coincidencias textuales y diversifica por documento."""
     candidatos = {}
     for posicion, documento in enumerate(resultados_textuales):
         clave = clave_documento(documento)
@@ -186,17 +189,7 @@ def combinar_y_diversificar(
             candidatos[clave] = (documento, puntaje)
 
     ordenados = sorted(candidatos.values(), key=lambda candidato: candidato[1], reverse=True)
-    por_archivo = defaultdict(int)
-    seleccionados = []
-    for documento, _ in ordenados:
-        archivo = archivo_documento(documento)
-        if por_archivo[archivo] >= MAX_FRAGMENTOS_POR_DOCUMENTO:
-            continue
-        por_archivo[archivo] += 1
-        seleccionados.append(documento)
-        if len(seleccionados) >= RESULTADOS_SEMANTICOS:
-            break
-    return seleccionados
+    return diversificar([documento for documento, _ in ordenados], max_por_documento)
 
 
 def fuente_de_documento(documento: Document) -> dict:
@@ -229,29 +222,20 @@ def respuesta_de_recuperacion(documentos: list[Document]) -> str:
     return json.dumps({"fuentes": fuentes, "fragmentos": fragmentos}, ensure_ascii=False)
 
 
-def respuesta_referencia_ambigua(candidatos: list[dict]) -> str:
-    opciones = "; ".join(
-        f"{candidato['titulo']} ({candidato['fecha_expedicion'] or 'sin año'})" for candidato in candidatos
-    )
-    return json.dumps(
-        {
-            "fuentes": [],
-            "fragmentos": [],
-            "candidatos": candidatos,
-            "aclaracion": f"Encontré varios documentos posibles: {opciones}. Pide al usuario que indique el año o tema.",
-        },
-        ensure_ascii=False,
-    )
+def recuperar_sigem(consulta: str, archivo: str | None = None) -> list[Document]:
+    """Búsqueda híbrida (texto + semántica) → reranker → diversificación → top 8.
 
-
-def recuperar_sigem(consulta: str) -> list[Document]:
+    Con `archivo` la búsqueda se limita a ese PDF y no se diversifica.
+    Las referencias explícitas ("Decreto 83 de 2018") ya no se resuelven aquí: ver referencias.py.
+    """
     vector_store = obtener_vector_store()
-    resultados_referencia = buscar_por_referencia(vector_store, consulta)
-    if resultados_referencia:
-        # Una referencia explícita identifica el documento pedido; no se mezclan vecinos semánticos ajenos.
-        return combinar_sin_duplicados(resultados_referencia)
+    textuales = buscar_por_texto(vector_store, consulta, archivo)
+    semanticos = buscar_por_semantica(vector_store, consulta, archivo)
+    max_por_documento = None if archivo else MAX_FRAGMENTOS_POR_DOCUMENTO
 
-    resultados_textuales = buscar_por_texto(vector_store, consulta)
-    # La similitud semántica es el respaldo cuando una referencia o texto literal no bastan.
-    resultados_semanticos = obtener_retriever().invoke(consulta)
-    return combinar_y_diversificar(consulta, resultados_textuales, resultados_semanticos)
+    candidatos = unir_sin_duplicados(textuales, semanticos)
+    reordenados = reranker.reordenar_si_aplica(consulta, candidatos)
+    if reordenados is None:
+        # Sin reranker (apagado o con error): estrategia léxica + posición semántica.
+        return combinar_y_diversificar(consulta, textuales, semanticos, max_por_documento)
+    return diversificar(reordenados, max_por_documento)
