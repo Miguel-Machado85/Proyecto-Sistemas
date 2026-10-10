@@ -11,6 +11,19 @@ MARCADORES_SEGUIMIENTO = {
 }
 INICIOS_PREGUNTA = {"como", "cuando", "cual", "cuales", "donde", "por", "porque", "que"}
 MARCADORES_AMPLIACION = {"amplia", "ampliame", "cuentame", "explicame", "hablame", "mas", "profundiza"}
+PATRONES_BUSQUEDA_GLOBAL = (
+    re.compile(
+        r"\b(?:que|cuales)\s+(?:normas|documentos|decretos|resoluciones|acuerdos|formatos|tramites)\b"
+    ),
+    re.compile(
+        r"\b(?:normas|documentos|decretos|resoluciones|acuerdos|formatos|tramites)\s+(?:de\s+)?sigem\b"
+    ),
+    re.compile(r"\b(?:busca|buscar|muestra|muestrame|lista|listame|encuentra)\b"),
+)
+PATRON_REFERENCIA_DOCUMENTO = re.compile(
+    r"\b(?:decreto|resolucion|acuerdo|ley|formato)\s*(?:n(?:o|ro)?\.?\s*)?\d{1,5}\b"
+    r"|\b(?:documento|archivo|codigo)\s*(?:no\.?\s*)?\d{3,8}\b"
+)
 
 
 def normalizar_texto(texto: str) -> str:
@@ -31,12 +44,23 @@ def fuentes_por_documento(fuentes: list[dict]) -> list[dict]:
     return documentos
 
 
+def es_busqueda_global_o_nueva_referencia(texto_normalizado: str) -> bool:
+    """Evita que una nueva búsqueda herede por error el documento anterior."""
+    return any(patron.search(texto_normalizado) for patron in PATRONES_BUSQUEDA_GLOBAL) or bool(
+        PATRON_REFERENCIA_DOCUMENTO.search(texto_normalizado)
+    )
+
+
 def es_pregunta_de_seguimiento(mensaje: str, fuentes_activas: list[dict]) -> bool:
     """Identifica una referencia corta al documento recuperado en el turno previo."""
     if not fuentes_activas:
         return False
 
-    palabras = re.findall(r"[a-z0-9]+", normalizar_texto(mensaje))
+    texto_normalizado = normalizar_texto(mensaje)
+    if es_busqueda_global_o_nueva_referencia(texto_normalizado):
+        return False
+
+    palabras = re.findall(r"[a-z0-9]+", texto_normalizado)
     if not palabras or set(palabras).issubset(PALABRAS_SOCIALES):
         return False
     if set(palabras) & MARCADORES_SEGUIMIENTO:
