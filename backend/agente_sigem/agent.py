@@ -10,6 +10,7 @@ from langgraph.checkpoint.memory import MemorySaver
 
 from .config import config
 from .llm import crear_llm
+from .prompts import ESTILO_POR_PERFIL
 from .referencias import (
     candidatos_referencia_ambigua,
     recuperar_con_referencia,
@@ -64,24 +65,6 @@ REGLAS IMPORTANTES:
 8. Si el usuario pide ampliar, explicar o hablar más sobre el documento activo y la herramienta devuelve fragmentos, sintetiza detalles de esos fragmentos; nunca respondas que no hay contenido relevante.
 9. Si la herramienta devuelve `aclaracion` y `candidatos`, pide al usuario que seleccione el año o tema del documento. No respondas usando documentos distintos a esos candidatos.
 """
-
-ESTILO_POR_PERFIL = {
-    "P0": """
-ESTILO DE RESPUESTA (Perfil 0 - Neutro):
-Usa un lenguaje intermedio: ni muy técnico ni muy básico. Responde en texto, de forma clara y respetuosa, explicando brevemente cualquier término que no sea de uso común.""",
-
-    "P1": """
-ESTILO DE RESPUESTA (Perfil 1 - Sin experiencia digital):
-Usa frases muy cortas y lenguaje muy sencillo. No uses tecnicismos ni jerga jurídica. Evita párrafos largos: prefiere listas de pasos simples. Explica todo como si fuera la primera vez que la persona hace un trámite.""",
-
-    "P2": """
-ESTILO DE RESPUESTA (Perfil 2 - Ciudadano general):
-Usa lenguaje sencillo y cercano. Si necesitas usar un término legal o técnico, explícalo brevemente antes de usarlo. Responde en texto, de forma clara y organizada.""",
-
-    "P3": """
-ESTILO DE RESPUESTA (Perfil 3 - Funcionario/técnico):
-Puedes usar lenguaje técnico y citar artículos o normas directamente cuando el repositorio SIGEM los mencione. No es necesario explicar términos jurídicos básicos.""",
-}
 
 def construir_system_prompt(perfil: str) -> str:
     estilo = ESTILO_POR_PERFIL.get(perfil, ESTILO_POR_PERFIL["P0"])

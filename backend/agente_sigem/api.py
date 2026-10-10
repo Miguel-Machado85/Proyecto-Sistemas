@@ -16,6 +16,12 @@ from .retrieval import obtener_catalogo_documentos
 from .audio import synthesize, transcribe
 from .calidad import es_audio_comprensible
 from .config import config
+from .prompts import (
+    MENSAJE_AUDIO_POCO_CLARO,
+    RESPUESTA_CONSULTA_AMBIGUA,
+    RESPUESTA_FUERA_DE_CONTEXTO,
+    RESPUESTA_SALUDO,
+)
 from .contexto import enriquecer_consulta_con_contexto, es_pregunta_de_seguimiento
 from .tracing import obtener_langfuse_handler
 
@@ -68,36 +74,12 @@ class ChatVozResponse(BaseModel):
     alerta: bool = False
 
 
-MENSAJE_AUDIO_POCO_CLARO = (
-    "No logré entender bien tu audio. Puede que se haya grabado sin voz, con "
-    "mucho ruido de fondo, o que se haya enviado sin querer. Intenta de nuevo "
-    "hablando cerca del micrófono."
-)
-
 class TurnoOut(BaseModel):
     rol: str
     texto: str
     audio_url: str | None
     creado_en: str
 
-
-RESPUESTA_SALUDO = (
-    "¡Hola! Soy el asistente virtual de la Alcaldía de Marinilla. "
-    "Puedo ayudarte con información disponible en los documentos de SIGEM. "
-    "Cuéntame qué trámite, norma, formato o proceso quieres consultar."
-)
-
-RESPUESTA_FUERA_DE_CONTEXTO = (
-    "Soy especialista en el conocimiento de los documentos de SIGEM de la Alcaldía de Marinilla. "
-    "No puedo responder sobre temas que estén por fuera de ese repositorio. "
-    "Si tienes una pregunta sobre trámites, normas, formatos o procesos municipales, con gusto te ayudo."
-)
-
-RESPUESTA_CONSULTA_AMBIGUA = (
-    "Claro, puedo ayudarte a buscar en los documentos de SIGEM. "
-    "Para orientarte mejor, dime algún dato adicional: el tema, número, año, dependencia "
-    "o trámite relacionado con el documento que necesitas."
-)
 
 PALABRAS_SALUDO = {
     "hola", "buenas", "buenos", "dias", "tardes", "noches", "saludos",

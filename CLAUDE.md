@@ -38,8 +38,8 @@ cd backend && uv run python evaluacion/evaluar_recuperacion.py
 - [x] **Fase 1** — Configuración y LLM: `config.py`, `llm.py`, variables Gemini, `.env.example`, retirar Ollama
 - [x] **Fase 2** — Recuperación: `retrieval.py` refactor, `reranker.py`, `catalogo.py` (`buscar_por_atributos`, `similares`)
 - [x] **Fase 3** — Tools: `tools.py` (4 tools, sin conectar al grafo)
-- [ ] **Fase 3b** — Estado y prompts: `estado.py`, `prompts.py` (pendiente; necesarios para la Fase 4)
-- [ ] **Fase 4** — Nodos y grafo: `nodos/*`, `agent.py`, `checkpointer.py`
+- [x] **Fase 4** — Estado, prompts y nodos: `estado.py`, `prompts.py`, `nodos/*` (módulos probados por separado)
+- [ ] **Fase 4b** — Grafo: `agent.py` reescrito (`construir_grafo`), `checkpointer.py`
 - [ ] **Fase 5** — API y persistencia: `api.py` simplificado + lifespan, `db.py`, eliminar `contexto.py`/`calidad.py`/`test_contexto.py`
 - [ ] **Fase 6** — Evaluación final y despliegue: `evaluar_agente.py`, Dockerfile/Compose (torch CPU, `hf-cache`), README
 
@@ -122,6 +122,29 @@ langchain-google-genai 4.3.7 · google-genai 2.21.0 · langchain-chroma 1.1.0 ·
 - `test_salida_es_compatible_con_fuente_y_candidato_de_la_api` importa `agente_sigem.api`, que hoy construye el agente al
   importarse (necesita `GOOGLE_API_KEY`); si falla el import, el test se salta. Deja de ser necesario cuando la Fase 5
   construya el grafo en el lifespan.
+
+### Fase 4 — estado, prompts y nodos (aún sin conectar a `agent.py`/`api.py`)
+- **Módulos:** `estado.py`, `prompts.py`, `nodos/{analista,respuesta_directa,investigador,evaluador,redactor}.py` (+ `_comun.py`).
+  `nodos/__init__.py` no reexporta funciones, para que `agente_sigem.nodos.analista` siga siendo el módulo (monkeypatch de `crear_llm`).
+- **Rutas:** `nodos.analista.ruta_despues_analista` → `"investigador" | "respuesta_directa"`;
+  `nodos.evaluador.ruta_despues_evaluador` → `"investigador" | "redactor"`.
+- **Decisiones tomadas (confirmadas):**
+  1. `intentos_busqueda` lo incrementa el **investigador** en cada ejecución; el evaluador solo reformula `consulta_actual`.
+     `MAX_INTENTOS_BUSQUEDA=2` = máximo 2 pasadas del investigador. (Evita bucles con evidencia vacía.)
+  2. Un listado (`listar_documentos`) no activa ningún `documento_activo`: el investigador lo vuelve evidencia con `"tipo": "listado"`
+     y el redactor lo ignora para `documento_activo`.
+- **Señal de reintento sin campo extra:** el evaluador deja el paso `"Reintentando: <motivo>"` (`estado.PREFIJO_REINTENTO`);
+  `ruta_despues_evaluador` mira el **último** paso y el investigador lo lee para incluir el motivo en su encargo.
+- **Subagente:** `create_agent(..., checkpointer=False)` para que cada intento empiece sin historial aunque el grafo padre tenga
+  checkpointer; se consume con `stream(stream_mode="values")` para conservar lo recolectado si salta `GraphRecursionError`.
+- **Fails:** analista y evaluador son fail-open; el investigador no lanza (usa lo recolectado); el redactor **sí propaga** sus errores
+  (decisión pendiente para la capa API de la Fase 5: mensaje de error o 500).
+- **Campos extra de salida:** nodos devuelven solo las claves que cambian; `respuesta_directa` añade un paso (`💬`) que la spec no pide.
+- **Prompt del analista validado con Gemini real** (flash-lite, 7 casos distintos a los few-shot): taxi/licor, voz con números en
+  palabras, ruido, seguimiento, búsqueda global con doc activo, fuera de dominio y ambigua → todos correctos.
+- Constantes de respuesta directa y `ESTILO_POR_PERFIL` ahora viven en `prompts.py`; `agent.py` y `api.py` las importan.
+- `tests/test_nodos.py`: 53 casos (fakes `FakeEstructurado`/`ModeloFalso`, tools dobles y un grafo mínimo con `MemorySaver`
+  que verifica persistencia de `documento_activo` y reinicio de `pasos`/`fuentes`/`candidatos`).
 
 ### Estado de tests al iniciar (Fase 0)
 `13 passed, 1 failed` (**corregido en la Fase 2**: 26 passed). Fallaba `tests/test_retrieval_diversidad.py::test_limita_fragmentos_por_documento_en_consulta_amplia`:
