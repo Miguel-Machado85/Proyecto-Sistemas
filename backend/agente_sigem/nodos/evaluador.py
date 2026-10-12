@@ -14,6 +14,7 @@ from ._comun import paso
 logger = logging.getLogger(__name__)
 
 MAX_FRAGMENTOS_EVALUACION = 8
+PASO_EVALUACION_NO_DISPONIBLE = "Evaluación no disponible: se continúa con la evidencia recuperada"
 MAX_CARACTERES_FRAGMENTO = 600
 
 
@@ -66,7 +67,7 @@ def evaluador(estado: dict, config: RunnableConfig | None = None) -> dict:
     except Exception as error:
         # Fail-open: ante un error se redacta con lo que hay.
         logger.warning("El evaluador falló; se continúa al redactor: %s", error)
-        return resultado("Evidencia suficiente")
+        return resultado(PASO_EVALUACION_NO_DISPONIBLE)
 
     if evaluacion.suficiente or intentos >= configuracion.MAX_INTENTOS_BUSQUEDA:
         return resultado("Evidencia suficiente")

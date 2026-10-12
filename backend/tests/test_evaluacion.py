@@ -91,7 +91,7 @@ def test_resumen_por_categoria_ignora_los_errores_en_los_porcentajes():
     resumen = evaluar_agente.resumir(resultados)
 
     assert resumen["saludo"] == {
-        "casos": 3, "errores": 1, "intencion": 0.5, "archivos": None, "candidatos": None, "alerta": None,
+        "casos": 3, "errores": 1, "degradados": 0, "intencion": 0.5, "archivos": None, "candidatos": None, "alerta": None,
         "tiempo_s_promedio": 3.0,
     }
     assert resumen["GLOBAL"]["casos"] == 3
@@ -103,3 +103,50 @@ def test_detecta_cuota_diaria_y_estima_llamadas():
 
     estimacion = evaluar_agente.estimar([caso(), caso(intencion_esperada="saludo", archivos_esperados=[])])
     assert estimacion == {"casos": 2, "turnos": 2, "llamadas_aprox": 6}
+
+
+def test_detecta_resultados_degradados_por_fail_open():
+    sano = {"analisis": {"razonamiento": "Pregunta sobre tarifas"}, "pasos": [{"agente": "evaluador", "accion": "Evidencia suficiente"}]}
+    degradado = {
+        "analisis": {"razonamiento": "Análisis no disponible (RuntimeError); se busca con el mensaje original."},
+        "pasos": [{"agente": "evaluador", "accion": "Evaluación no disponible: se continúa con la evidencia recuperada"}],
+    }
+
+    assert evaluar_agente.motivos_de_degradacion(sano) == []
+    assert evaluar_agente.motivos_de_degradacion(degradado) == ["analista_fail_open", "evaluador_fail_open"]
+
+
+def test_reintenta_el_caso_si_la_cuota_por_minuto_se_agota(monkeypatch):
+    monkeypatch.setattr(evaluar_agente.time, "sleep", lambda s: None)
+    llamadas = []
+
+    def ejecutar(*args):
+        llamadas.append(1)
+        if len(llamadas) == 1:
+            raise RuntimeError("429 RESOURCE_EXHAUSTED GenerateRequestsPerMinutePerProjectPerModel-FreeTier")
+        return estado_final("consulta_sigem", fuentes=["a.pdf"])
+
+    resultado = evaluar_agente.evaluar_con_reintentos(None, ejecutar, caso(), pausa=0, sello="x")
+
+    assert len(llamadas) == 2 and resultado["intentos"] == 2 and resultado["metricas"]["archivos_ok"] is True
+
+
+def test_no_reintenta_la_cuota_diaria():
+    import pytest
+
+    def ejecutar(*args):
+        raise RuntimeError("429 RESOURCE_EXHAUSTED GenerateRequestsPerDayPerProjectPerModel-FreeTier")
+
+    with pytest.raises(RuntimeError):
+        evaluar_agente.evaluar_con_reintentos(None, ejecutar, caso(), pausa=0, sello="x")
+
+
+def test_el_resumen_excluye_los_degradados_de_los_porcentajes():
+    resultados = [
+        {"id": "1", "categoria": "x", "metricas": {"intencion_ok": True}, "tiempo_s": 1.0, "degradado": []},
+        {"id": "2", "categoria": "x", "metricas": {"intencion_ok": False}, "tiempo_s": 1.0, "degradado": ["analista_fail_open"]},
+    ]
+
+    resumen = evaluar_agente.resumir(resultados)["x"]
+
+    assert resumen["degradados"] == 1 and resumen["intencion"] == 1.0

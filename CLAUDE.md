@@ -41,7 +41,7 @@ cd backend && uv run python evaluacion/evaluar_recuperacion.py
 - [x] **Fase 4** — Estado, prompts y nodos: `estado.py`, `prompts.py`, `nodos/*` (módulos probados por separado)
 - [x] **Fase 5** — Grafo conectado: `agent.py` (`construir_grafo`), `checkpointer.py`, `api.py` simplificado + lifespan, `db.py`; eliminados `contexto.py`, `calidad.py`, `referencias.py`, `test_contexto.py`
 - [x] **Fase 6** — Despliegue y documentación: Dockerfile/Compose (torch CPU, `hf-cache`), `evaluar_agente.py` (escrito; **sin correr**), READMEs, sección 15 de la spec
-- [~] **Fase 7** — Ajustes hechos sin cuota: error 429 amable, `fuentes` solo las citadas, audio vacío fuera del grafo, `HF_HUB_OFFLINE`. **Pendiente:** correr `evaluar_agente.py` y decidir reranker/few-shot
+- [x] **Fase 7** — Ajustes sin cuota (429 amable, `fuentes` citadas, audio vacío, `HF_HUB_OFFLINE`) y **evaluación de extremo a extremo ejecutada** (ver abajo). Pendientes: ver "Hallazgos de la evaluación"
 
 > Las fases 1–6 son la agrupación de los entregables de la sección 11 de la especificación;
 > la especificación no numera fases, así que esta división es la que usamos como guía.
@@ -202,6 +202,22 @@ langchain-google-genai 4.3.7 · google-genai 2.21.0 · langchain-chroma 1.1.0 ·
 - **Camino de referencias sin LLM** (tool con los filtros que daría un analista perfecto): 15/15 casos con referencia (línea base 12/15; recuperación pura 10/15). Es un techo,
   no una medición del analista real; los casos que la línea base fallaba (mal-01, voz-num-01, voz-num-03) quedan cubiertos si el analista extrae bien los filtros.
 - Tests: 144.
+
+### Evaluación de extremo a extremo (2026-10-11)
+- **Límites de Gemini medidos:** `gemini-3.5-flash` 20 solicitudes/día (plan gratuito) y `gemini-3.5-flash-lite` **15 por minuto** (`GenerateRequestsPerMinutePerProjectPerModel-FreeTier`).
+  Una corrida sin pausas produjo 15 errores y varios *fail-open* silenciosos del analista/evaluador que invalidaban la medición.
+- **`evaluar_agente.py` endurecido:** marca resultados `degradado` (razonamiento "Análisis no disponible…" o paso "Evaluación no disponible…"), los excluye de los porcentajes,
+  reintenta el caso esperando 65 s si la cuota por minuto se agota, y aborta ante cuota diaria. `evaluador` deja ahora el paso `PASO_EVALUACION_NO_DISPONIBLE` al hacer fail-open.
+  Usar `--pausa 20` con flash-lite.
+- **Resultado (43 casos; búsqueda con flash-lite en los 4 agentes):** intención 1.00 y archivos 1.00 en todas las categorías, 0 errores, 0 degradados; mediana 13 s, p90 48 s.
+  Tabla completa en la sección 15 de `docs/MIGRACION_AGENTICA.md`. Archivos: `evaluacion/resultados_fase7_*.json`.
+- **Hallazgos de la evaluación (leyendo las respuestas; NO corregidos, pendientes de aprobación):**
+  1. `inv-04` falso negativo: dijo "no hay información" sobre horarios de atención aunque el Decreto 083 de 2018 existe. Causas: `listar(tema=...)` demasiado laxo
+     (`partial_token_set_ratio` coincide por palabras vacías como "de"/"al") y los listados ocupan los primeros 12 lugares de `evidencia`, desplazando los fragmentos reales
+     (el evaluador ve 8 y el redactor 12).
+  2. `inex-01/02`: respuesta correcta ("no se encuentra") pero con 5 y 12 fuentes irrelevantes mostradas.
+  3. La métrica "archivo esperado en fuentes" es generosa; conviene añadir una de "no dice que no hay información" para casos que sí tienen documento.
+  4. El reranker no se puede juzgar con esta evaluación (todo da 1.00).
 
 ### Estado de tests al iniciar (Fase 0)
 `13 passed, 1 failed` (**corregido en la Fase 2**: 26 passed). Fallaba `tests/test_retrieval_diversidad.py::test_limita_fragmentos_por_documento_en_consulta_amplia`:

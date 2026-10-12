@@ -1,0 +1,278 @@
+{
+  "fecha": "2026-10-11T22:24:44",
+  "modelos": {
+    "analista": "gemini-3.5-flash-lite",
+    "investigador": "gemini-3.5-flash",
+    "evaluador": "gemini-3.5-flash-lite",
+    "redactor": "gemini-3.5-flash"
+  },
+  "reranker": true,
+  "pausa_s": 3.0,
+  "abortado": null,
+  "resumen": {
+    "fuera_de_dominio": {
+      "casos": 3,
+      "errores": 0,
+      "intencion": 1.0,
+      "archivos": null,
+      "candidatos": null,
+      "alerta": null,
+      "tiempo_s_promedio": 1.0
+    },
+    "saludo": {
+      "casos": 3,
+      "errores": 0,
+      "intencion": 1.0,
+      "archivos": null,
+      "candidatos": null,
+      "alerta": null,
+      "tiempo_s_promedio": 10.7
+    },
+    "voz_ruido": {
+      "casos": 2,
+      "errores": 0,
+      "intencion": 1.0,
+      "archivos": null,
+      "candidatos": null,
+      "alerta": 1.0,
+      "tiempo_s_promedio": 0.9
+    },
+    "GLOBAL": {
+      "casos": 8,
+      "errores": 0,
+      "intencion": 1.0,
+      "archivos": null,
+      "candidatos": null,
+      "alerta": 1.0,
+      "tiempo_s_promedio": 4.6
+    }
+  },
+  "casos": [
+    {
+      "id": "tc-sal-01",
+      "categoria": "saludo",
+      "perfil": "P0",
+      "mensaje": "Gracias",
+      "intencion_esperada": "saludo",
+      "intencion_obtenida": "saludo",
+      "archivos_esperados": [],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "respuesta": "¡Hola! Soy el asistente virtual de la Alcaldía de Marinilla. Puedo ayudarte con información disponible en los documentos de SIGEM. Cuéntame qué trámite, norma, formato o proceso quieres consultar.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: saludo",
+          "icono": "🧭"
+        },
+        {
+          "agente": "respuesta_directa",
+          "accion": "Respuesta directa: saludo",
+          "icono": "💬"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true
+      },
+      "tiempo_s": 30.4
+    },
+    {
+      "id": "voz-ruido-01",
+      "categoria": "voz_ruido",
+      "perfil": "P0",
+      "mensaje": "eh... mm... ajá",
+      "intencion_esperada": "no_comprensible",
+      "intencion_obtenida": "no_comprensible",
+      "archivos_esperados": [],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "respuesta": "No logré entender bien tu audio. Puede que se haya grabado sin voz, con mucho ruido de fondo, o que se haya enviado sin querer. Intenta de nuevo hablando cerca del micrófono.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: no_comprensible",
+          "icono": "🧭"
+        },
+        {
+          "agente": "respuesta_directa",
+          "accion": "Respuesta directa: no_comprensible",
+          "icono": "💬"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "alerta_ok": true
+      },
+      "tiempo_s": 0.8
+    },
+    {
+      "id": "voz-ruido-02",
+      "categoria": "voz_ruido",
+      "perfil": "P1",
+      "mensaje": "ss tk el la",
+      "intencion_esperada": "no_comprensible",
+      "intencion_obtenida": "no_comprensible",
+      "archivos_esperados": [],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "respuesta": "No logré entender bien tu audio. Puede que se haya grabado sin voz, con mucho ruido de fondo, o que se haya enviado sin querer. Intenta de nuevo hablando cerca del micrófono.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: no_comprensible",
+          "icono": "🧭"
+        },
+        {
+          "agente": "respuesta_directa",
+          "accion": "Respuesta directa: no_comprensible",
+          "icono": "💬"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "alerta_ok": true
+      },
+      "tiempo_s": 1.0
+    },
+    {
+      "id": "sal-01",
+      "categoria": "saludo",
+      "perfil": "P0",
+      "mensaje": "Hola, buenos días",
+      "intencion_esperada": "saludo",
+      "intencion_obtenida": "saludo",
+      "archivos_esperados": [],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "respuesta": "¡Hola! Soy el asistente virtual de la Alcaldía de Marinilla. Puedo ayudarte con información disponible en los documentos de SIGEM. Cuéntame qué trámite, norma, formato o proceso quieres consultar.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: saludo",
+          "icono": "🧭"
+        },
+        {
+          "agente": "respuesta_directa",
+          "accion": "Respuesta directa: saludo",
+          "icono": "💬"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true
+      },
+      "tiempo_s": 0.7
+    },
+    {
+      "id": "sal-02",
+      "categoria": "saludo",
+      "perfil": "P3",
+      "mensaje": "Buenas, ¿cómo estás?",
+      "intencion_esperada": "saludo",
+      "intencion_obtenida": "saludo",
+      "archivos_esperados": [],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "respuesta": "¡Hola! Soy el asistente virtual de la Alcaldía de Marinilla. Puedo ayudarte con información disponible en los documentos de SIGEM. Cuéntame qué trámite, norma, formato o proceso quieres consultar.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: saludo",
+          "icono": "🧭"
+        },
+        {
+          "agente": "respuesta_directa",
+          "accion": "Respuesta directa: saludo",
+          "icono": "💬"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true
+      },
+      "tiempo_s": 0.9
+    },
+    {
+      "id": "fuera-01",
+      "categoria": "fuera_de_dominio",
+      "perfil": "P0",
+      "mensaje": "¿Cómo preparo un sancocho antioqueño?",
+      "intencion_esperada": "fuera_de_dominio",
+      "intencion_obtenida": "fuera_de_dominio",
+      "archivos_esperados": [],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "respuesta": "Soy especialista en el conocimiento de los documentos de SIGEM de la Alcaldía de Marinilla. No puedo responder sobre temas que estén por fuera de ese repositorio. Si tienes una pregunta sobre trámites, normas, formatos o procesos municipales, con gusto te ayudo.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: fuera_de_dominio",
+          "icono": "🧭"
+        },
+        {
+          "agente": "respuesta_directa",
+          "accion": "Respuesta directa: fuera_de_dominio",
+          "icono": "💬"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true
+      },
+      "tiempo_s": 1.1
+    },
+    {
+      "id": "fuera-02",
+      "categoria": "fuera_de_dominio",
+      "perfil": "P1",
+      "mensaje": "¿Quién ganó el partido de Nacional ayer?",
+      "intencion_esperada": "fuera_de_dominio",
+      "intencion_obtenida": "fuera_de_dominio",
+      "archivos_esperados": [],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "respuesta": "Soy especialista en el conocimiento de los documentos de SIGEM de la Alcaldía de Marinilla. No puedo responder sobre temas que estén por fuera de ese repositorio. Si tienes una pregunta sobre trámites, normas, formatos o procesos municipales, con gusto te ayudo.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: fuera_de_dominio",
+          "icono": "🧭"
+        },
+        {
+          "agente": "respuesta_directa",
+          "accion": "Respuesta directa: fuera_de_dominio",
+          "icono": "💬"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true
+      },
+      "tiempo_s": 1.0
+    },
+    {
+      "id": "fuera-03",
+      "categoria": "fuera_de_dominio",
+      "perfil": "P2",
+      "mensaje": "Escríbeme un script en Python para ordenar una lista",
+      "intencion_esperada": "fuera_de_dominio",
+      "intencion_obtenida": "fuera_de_dominio",
+      "archivos_esperados": [],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "respuesta": "Soy especialista en el conocimiento de los documentos de SIGEM de la Alcaldía de Marinilla. No puedo responder sobre temas que estén por fuera de ese repositorio. Si tienes una pregunta sobre trámites, normas, formatos o procesos municipales, con gusto te ayudo.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: fuera_de_dominio",
+          "icono": "🧭"
+        },
+        {
+          "agente": "respuesta_directa",
+          "accion": "Respuesta directa: fuera_de_dominio",
+          "icono": "💬"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true
+      },
+      "tiempo_s": 0.9
+    }
+  ]
+}

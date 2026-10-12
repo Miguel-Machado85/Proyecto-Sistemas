@@ -91,6 +91,8 @@ def evaluar_caso(agente, ejecutar_turno, caso: dict, pausa: float, sello: str) -
         "id": caso["id"],
         "categoria": caso["categoria"],
         "perfil": perfil,
+        "razonamiento_analista": analisis.get("razonamiento"),
+        "degradado": motivos_de_degradacion(resultado),
         "mensaje": caso["turnos"][-1]["mensaje"],
         "intencion_esperada": caso["intencion_esperada"],
         "intencion_obtenida": analisis.get("intencion"),
@@ -109,6 +111,44 @@ def es_cuota_diaria(error: Exception) -> bool:
     return "RESOURCE_EXHAUSTED" in texto and ("PerDay" in texto or "per day" in texto.lower())
 
 
+def es_cuota_por_minuto(error: Exception) -> bool:
+    return "RESOURCE_EXHAUSTED" in str(error) and not es_cuota_diaria(error)
+
+
+def motivos_de_degradacion(resultado: dict) -> list[str]:
+    """Señales de que algún agente cayó en su modo fail-open: la medición no representa al sistema sano."""
+    motivos = []
+    if str((resultado.get("analisis") or {}).get("razonamiento", "")).startswith("Análisis no disponible"):
+        motivos.append("analista_fail_open")
+    if any(
+        p.get("agente") == "evaluador" and p.get("accion", "").startswith("Evaluación no disponible")
+        for p in resultado.get("pasos", [])
+    ):
+        motivos.append("evaluador_fail_open")
+    return motivos
+
+
+def evaluar_con_reintentos(
+    agente, ejecutar_turno, caso: dict, pausa: float, sello: str, espera_cuota: float = 65.0, reintentos: int = 2
+) -> dict:
+    """Reintenta el caso (esperando a que se renueve la cuota por minuto) si falló o quedó degradado."""
+    for intento in range(reintentos + 1):
+        try:
+            resultado = evaluar_caso(agente, ejecutar_turno, caso, pausa, f"{sello}-{intento}")
+        except Exception as error:
+            if es_cuota_por_minuto(error) and intento < reintentos:
+                print(f"    cuota por minuto agotada en {caso['id']}: espero {espera_cuota:.0f}s y reintento", flush=True)
+                time.sleep(espera_cuota)
+                continue
+            raise
+        if resultado["degradado"] and intento < reintentos:
+            print(f"    {caso['id']} degradado ({', '.join(resultado['degradado'])}): espero {espera_cuota:.0f}s y reintento", flush=True)
+            time.sleep(espera_cuota)
+            continue
+        resultado["intentos"] = intento + 1
+        return resultado
+
+
 def resumir(resultados: list[dict]) -> dict:
     grupos = defaultdict(list)
     for resultado in resultados:
@@ -120,10 +160,12 @@ def resumir(resultados: list[dict]) -> dict:
 
     def resumen_grupo(grupo: list[dict]) -> dict:
         con_error = [r for r in grupo if "error" in r]
-        sin_error = [r for r in grupo if "error" not in r]
+        degradados = [r for r in grupo if r.get("degradado")]
+        sin_error = [r for r in grupo if "error" not in r and not r.get("degradado")]
         return {
             "casos": len(grupo),
             "errores": len(con_error),
+            "degradados": len(degradados),
             "intencion": porcentaje(sin_error, "intencion_ok"),
             "archivos": porcentaje(sin_error, "archivos_ok"),
             "candidatos": porcentaje(sin_error, "candidatos_ok"),
@@ -140,13 +182,13 @@ def mostrar_resumen(resumen: dict, linea_base: dict | None) -> None:
     def fmt(valor):
         return "  -  " if valor is None else f"{valor:5.2f}"
 
-    print(f"\n{'categoría':<34}{'n':>3}{'err':>4}{'intención':>11}{'archivos':>10}{'candid.':>9}{'alerta':>8}{'seg':>7}{'base hit@8':>12}")
+    print(f"\n{'categoría':<34}{'n':>3}{'err':>4}{'degr':>5}{'intención':>11}{'archivos':>10}{'candid.':>9}{'alerta':>8}{'seg':>7}{'base hit@8':>12}")
     for categoria, m in resumen.items():
         base = ""
         if linea_base and categoria in linea_base:
             base = fmt(linea_base[categoria].get("hit@8"))
         print(
-            f"{categoria:<34}{m['casos']:>3}{m['errores']:>4}{fmt(m['intencion']):>11}{fmt(m['archivos']):>10}"
+            f"{categoria:<34}{m['casos']:>3}{m['errores']:>4}{m['degradados']:>5}{fmt(m['intencion']):>11}{fmt(m['archivos']):>10}"
             f"{fmt(m['candidatos']):>9}{fmt(m['alerta']):>8}{(m['tiempo_s_promedio'] or 0):>7.1f}{base:>12}"
         )
 
@@ -204,15 +246,16 @@ def main() -> int:
     abortado = None
     for caso in casos:
         try:
-            resultado = evaluar_caso(agente, ejecutar_turno, caso, args.pausa, sello)
+            resultado = evaluar_con_reintentos(agente, ejecutar_turno, caso, args.pausa, sello)
             marcas = " ".join(f"{k.replace('_ok', '')}={'OK' if v else 'NO'}" for k, v in resultado["metricas"].items())
-            print(f"  {caso['id']:<14} {resultado['tiempo_s']:>5.1f}s  {marcas}  ({resultado['intencion_obtenida']})")
+            aviso = f"  [DEGRADADO: {', '.join(resultado['degradado'])}]" if resultado["degradado"] else ""
+            print(f"  {caso['id']:<14} {resultado['tiempo_s']:>5.1f}s  {marcas}  ({resultado['intencion_obtenida']}){aviso}", flush=True)
         except Exception as error:
             resultado = {
                 "id": caso["id"], "categoria": caso["categoria"], "perfil": caso["perfil"],
                 "mensaje": caso["turnos"][-1]["mensaje"], "error": str(error)[:500], "metricas": {}, "tiempo_s": 0.0,
             }
-            print(f"  {caso['id']:<14} ERROR: {str(error)[:140]}")
+            print(f"  {caso['id']:<14} ERROR: {str(error)[:140]}", flush=True)
             if es_cuota_diaria(error):
                 resultados.append(resultado)
                 abortado = "Cuota diaria de Gemini agotada: se detuvo la corrida (resultados parciales guardados)."

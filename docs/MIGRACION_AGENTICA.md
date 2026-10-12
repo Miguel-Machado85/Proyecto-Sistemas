@@ -335,7 +335,7 @@ El frontend (`frontend/index.html`) usa estos campos y **no se modifica**:
 | 9 Persistencia | Implementada (`PostgresSaver` / `MemorySaver`; grafo construido en el `lifespan`). |
 | 10 Contrato de la API | Sin cambios de contrato; código basado en regex eliminado. |
 | 12 Pruebas | 131 tests, sin llamadas reales a Gemini ni a Chroma. |
-| 13 Evaluación | `evaluar_recuperacion.py` ejecutado; `evaluar_agente.py` escrito y probado en su lógica, **pendiente de correr** por la cuota (ver D14). |
+| 13 Evaluación | `evaluar_recuperacion.py` y `evaluar_agente.py` ejecutados (ver "Resultados de la evaluación" y D14). |
 
 ### Desviaciones y su razón
 | # | Desviación | Razón |
@@ -357,8 +357,36 @@ El frontend (`frontend/index.html`) usa estos campos y **no se modifica**:
 | D16 | Cuota de Gemini agotada (429): `/chat` responde **200** con un mensaje fijo (`MENSAJE_SERVICIO_SATURADO`) y `/chat-voz` responde con `alerta=true` y sin TTS; el turno no se guarda. El investigador no traga los errores de cuota (los propaga). | El frontend ignora `detail` y muestra siempre un texto genérico ante un error HTTP; con 200 el usuario ve el mensaje real. Y un "sin resultados" por cuota habría sido engañoso. |
 | D17 | `fuentes` del turno se reduce a las que el redactor **cita** (`[Título, p. N]`); si no hay citas utilizables se conservan todas. `documento_activo` toma el primer documento citado. | "Taxi" devolvía 12 fuentes con una sola citada. Es parseo de la salida del propio modelo, no de texto del usuario. |
 | D18 | Una transcripción de voz de menos de 3 caracteres se atiende en la API (alerta) sin invocar el grafo. | Evita una llamada innecesaria y que `HumanMessage("")` quede en el historial del hilo. |
-| D14 | `evaluar_agente.py` no se ejecutó en la Fase 6. | El plan gratuito de Gemini limita `gemini-3.5-flash` a ~20 solicitudes/día; el dataset implica ~240 llamadas. Ver "Pendientes". |
+| D14 | `evaluar_agente.py` se ejecutó con **flash-lite en los cuatro agentes** (no con la configuración por defecto: flash en investigador/redactor). | El plan gratuito limita `gemini-3.5-flash` a ~20 solicitudes/día y flash-lite a 15 por minuto; el dataset implica ~240 llamadas. |
+
+### Resultados de la evaluación (2026-10-11)
+`evaluar_agente.py`, 43 casos (8 baratas con la configuración por defecto + 35 con búsqueda con flash-lite en los cuatro agentes, reranker activo, `--pausa 20`).
+Archivos: `evaluacion/resultados_fase7_baratas.json` y `evaluacion/resultados_fase7_lite2.json`.
+
+| Categoría | n | Intención | Archivos esperados en fuentes/candidatos | Base Fase 0 (hit@8, solo recuperación) |
+|---|---|---|---|---|
+| referencia_exacta | 5 | 1.00 | 1.00 | 1.00 |
+| referencia_ambigua | 2 | 1.00 | 1.00 (candidatos 1.00) | 1.00 |
+| referencia_inexistente | 2 | 1.00 | — | — |
+| tema_sin_palabras_clave | 5 | 1.00 | 1.00 | 0.80 |
+| inventario | 4 | 1.00 | 1.00 | 1.00 |
+| seguimiento | 4 | 1.00 | 1.00 | 1.00 |
+| ampliacion | 2 | 1.00 | 1.00 | 1.00 |
+| busqueda_global_con_doc_activo | 5 | 1.00 | 1.00 | 1.00 |
+| mal_escrita | 3 | 1.00 | 1.00 | 0.67 |
+| voz_numeros_en_palabras | 3 | 1.00 | 1.00 | 0.33 |
+| voz_ruido | 2 | 1.00 (alerta 1.00) | — | — |
+| saludo / fuera_de_dominio | 6 | 1.00 | — | — |
+
+Tiempo por caso (con flash-lite): mediana 13 s, p90 48 s, máx. 60 s. Sin errores ni resultados degradados.
+
+**Límites de la métrica** (revisados a mano leyendo las respuestas): "archivo esperado en `fuentes`" no detecta una respuesta que dice "no hay información".
+Hallazgos que la métrica no ve: (a) **inv-04** ("¿qué normas hay sobre horarios de atención al público?") respondió que no hay información aunque el Decreto 083 de 2018 existe
+y estaba en las fuentes; causas: el `tema` de `listar_documentos` usa coincidencia difusa laxa (`partial_token_set_ratio` sobre palabras como "de"/"al") y los
+listados (hasta 15 entradas) ocupan los primeros 12 lugares de `evidencia` que ven el evaluador (8) y el redactor (12), desplazando los fragmentos reales;
+(b) en las referencias inexistentes (inex-01/02) la respuesta es correcta pero se muestran 5 y 12 fuentes irrelevantes.
 
 ### Pendientes conocidos
-1. **Correr `evaluar_agente.py`** con cuota suficiente (facturación, o `INVESTIGADOR_MODEL`/`REDACTOR_MODEL` en flash-lite) y decidir sobre el reranker y los few-shot del analista con esos números.
-2. Latencia de 10–60 s por turno con búsqueda (varias llamadas encadenadas + reranker en CPU); medir flash-lite en investigador/redactor.
+1. Corregir los hallazgos (a) y (b) de arriba (propuestas en la conversación; no aplicadas): endurecer `CatalogoDocumentos.listar(tema=...)`, ordenar la evidencia con fragmentos antes que listados, y no mostrar fuentes cuando la respuesta indica que no hay información.
+2. Decidir el reranker (la evaluación de extremo a extremo no discrimina: 100% con reranker activo) y medir la configuración por defecto (flash) cuando haya cuota.
+3. Latencia: con flash-lite, mediana 13 s y p90 48 s; con flash es mayor.
