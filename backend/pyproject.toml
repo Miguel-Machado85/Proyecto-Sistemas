@@ -10,7 +10,6 @@ dependencies = [
     "langchain-chroma>=1.1.0",
     "langchain-core>=1.4.8",
     "langchain-google-genai>=4.3.7",
-    "langchain-ollama>=1.1.0",
     "langgraph>=1.2.8",
     "pydantic>=2.12.0",
     "python-dotenv>=1.2.2",
@@ -23,4 +22,27 @@ dependencies = [
     "psycopg[binary]>=3.2",
     "langfuse>=3.0.0",
     "langchain>=1.0.0",
+    "sentence-transformers>=3.0.0",
+    "torch>=2.4.0",
+    "rapidfuzz>=3.9.0",
+    "langgraph-checkpoint-postgres>=3.1.2",
+    "psycopg-pool>=3.3.3",
 ]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
