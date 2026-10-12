@@ -221,6 +221,8 @@ REGLAS IMPORTANTES:
 5. Si los fragmentos solo cubren parte de la pregunta, responde esa parte y di con claridad qué
    no aparece en los documentos.
 6. Responde siempre en español.
+7. Indica con `informacion_encontrada` si los fragmentos contenían información pertinente para la pregunta:
+   false solo cuando tu respuesta dice que no hay información sobre lo preguntado.
 """
 
 INSTRUCCIONES_MODO_REDACTOR = {

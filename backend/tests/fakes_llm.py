@@ -40,6 +40,18 @@ class ModeloFalso(BaseChatModel):
     respuestas: list = Field(default_factory=list)
     entradas: list = Field(default_factory=list)
     etiquetas: list = Field(default_factory=list)
+    informacion_encontrada: bool = True  # lo que devolverá como señal en salida estructurada del redactor
+
+    def with_structured_output(self, esquema, **kwargs):
+        """Emula RespuestaRedactor: el texto de la respuesta programada y la señal configurada."""
+        modelo = self
+
+        class _Estructurado:
+            def invoke(self, entrada, config=None, **kw):
+                mensaje = modelo.invoke(entrada, config)
+                return esquema(respuesta=mensaje.text, informacion_encontrada=modelo.informacion_encontrada)
+
+        return _Estructurado()
 
     def _generate(self, messages, stop=None, run_manager=None, **kwargs):
         self.entradas.append(list(messages))

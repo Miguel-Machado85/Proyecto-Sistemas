@@ -4,7 +4,7 @@ from typing import Annotated, Literal
 
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
 
@@ -47,6 +47,18 @@ class AnalisisConsulta(BaseModel):
     usa_documento_activo: bool = False  # True si la pregunta se refiere al documento activo
     pregunta_aclaracion: str | None = None  # solo si intencion == "ambigua"
     razonamiento: str  # 1 frase, para depurar en Langfuse
+
+
+class RespuestaRedactor(BaseModel):
+    """Salida estructurada del redactor en modo respuesta."""
+
+    respuesta: str = Field(description="El texto de la respuesta para el ciudadano, con citas en línea.")
+    informacion_encontrada: bool = Field(
+        description=(
+            "true si los fragmentos entregados contenían información pertinente y la respuesta se apoya en ella; "
+            "false si la respuesta dice que no hay información sobre lo preguntado."
+        )
+    )
 
 
 class EvaluacionEvidencia(BaseModel):

@@ -722,3 +722,98 @@ def test_redactor_en_modo_aclaracion_no_toca_las_fuentes(monkeypatch):
     resultado, _, _ = correr_redactor(monkeypatch, estado, "¿Cuál? [Resolución 4397 de 2018]")
 
     assert resultado["fuentes"] == []
+
+
+# ══════════════════════════════════════════════════════════════
+# ORDEN DE EVIDENCIA (B) Y SEÑAL "SIN INFORMACIÓN" (C)
+# ══════════════════════════════════════════════════════════════
+
+def test_los_fragmentos_van_antes_que_los_listados():
+    evidencia = [
+        {"fuente": {"archivo": "a"}, "contenido": "listado 1", "tipo": "listado"},
+        {"fuente": {"archivo": "b"}, "contenido": "fragmento 1"},
+        {"fuente": {"archivo": "c"}, "contenido": "listado 2", "tipo": "listado"},
+        {"fuente": {"archivo": "d"}, "contenido": "fragmento 2"},
+    ]
+
+    ordenada = m_investigador.fragmentos_primero(evidencia)
+
+    assert [f["contenido"] for f in ordenada] == ["fragmento 1", "fragmento 2", "listado 1", "listado 2"]
+
+
+def test_un_listado_largo_no_desplaza_los_fragmentos_que_ve_el_redactor_ni_el_evaluador(monkeypatch):
+    documentos = [
+        {"titulo": f"Decreto {i:03d} de 2018", "archivo": f"{i}.pdf", "fecha_expedicion": "2018", "descripcion": "x"}
+        for i in range(15)
+    ]
+    salidas = {
+        "listar_documentos": {
+            "fuentes": [{**d, "pagina": None} for d in documentos], "fragmentos": [], "documentos": documentos, "total": 29,
+        },
+        "buscar_fragmentos": {"fuentes": [FUENTE_TAXI], "fragmentos": [FRAGMENTO_TAXI]},
+    }
+    respuestas = [
+        llamada("listar_documentos", tema="horarios"),
+        llamada("buscar_fragmentos", consulta="horario de atención"),
+        AIMessage(content="Listo."),
+    ]
+    resultado, _, _ = correr_investigador(monkeypatch, respuestas, salidas)
+
+    assert resultado["evidencia"][0] == FRAGMENTO_TAXI  # inv-04: antes quedaba en el lugar 16
+
+    entrada = m_redactor.construir_entrada({**estado_base(analisis=analisis_dict()), **resultado}, "respuesta")
+    assert "La tarifa mínima del taxi es de $5.500." in entrada
+
+    resumen = importlib.import_module("agente_sigem.nodos.evaluador")._resumen_evidencia(resultado["evidencia"])
+    assert "La tarifa mínima del taxi es de $5.500." in resumen
+
+
+def test_redactor_sin_informacion_no_muestra_fuentes_ni_cambia_el_documento_activo(monkeypatch):
+    anterior = {"titulo": "Resolución No. 3615", "archivo": "18399.pdf", "descripcion": None, "fecha_expedicion": None}
+    estado = estado_base(
+        analisis=analisis_dict(), evidencia=[FRAGMENTO_TAXI], fuentes=[FUENTE_TAXI], documento_activo=anterior
+    )
+    modelo = ModeloFalso(respuestas=[AIMessage(content="No hay información sobre eso en SIGEM.")], informacion_encontrada=False)
+    instalar(monkeypatch, m_redactor, modelo)
+
+    resultado = m_redactor.redactor(estado)
+
+    assert resultado["fuentes"] == []
+    assert resultado["documento_activo"] == anterior
+    assert resultado["pasos"][-1]["accion"].endswith("sin información pertinente en los fragmentos")
+    assert resultado["messages"][0].content == "No hay información sobre eso en SIGEM."
+
+
+def test_redactor_con_informacion_conserva_el_comportamiento_normal(monkeypatch):
+    estado = estado_base(analisis=analisis_dict(), evidencia=[FRAGMENTO_TAXI], fuentes=[FUENTE_TAXI])
+
+    resultado, _, _ = correr_redactor(monkeypatch, estado, "Tarifa $5.500 [Decreto 001 de 2019, p. 1].")
+
+    assert resultado["fuentes"] == [FUENTE_TAXI]
+    assert "sin información" not in resultado["pasos"][-1]["accion"]
+
+
+def test_redactor_cae_a_texto_libre_si_falla_la_salida_estructurada(monkeypatch):
+    class ModeloSinEstructura(ModeloFalso):
+        def with_structured_output(self, esquema, **kwargs):
+            raise ValueError("el modelo no soporta el esquema")
+
+    estado = estado_base(analisis=analisis_dict(), evidencia=[FRAGMENTO_TAXI], fuentes=[FUENTE_TAXI])
+    instalar(monkeypatch, m_redactor, ModeloSinEstructura(respuestas=[AIMessage(content="Respuesta libre.")]))
+
+    resultado = m_redactor.redactor(estado)
+
+    assert resultado["messages"][0].content == "Respuesta libre."
+    assert resultado["fuentes"] == [FUENTE_TAXI]
+
+
+def test_redactor_propaga_la_cuota_agotada_de_la_salida_estructurada(monkeypatch):
+    class ModeloSinCuota(ModeloFalso):
+        def with_structured_output(self, esquema, **kwargs):
+            raise RuntimeError("429 RESOURCE_EXHAUSTED")
+
+    estado = estado_base(analisis=analisis_dict(), evidencia=[FRAGMENTO_TAXI])
+    instalar(monkeypatch, m_redactor, ModeloSinCuota())
+
+    with pytest.raises(RuntimeError, match="RESOURCE_EXHAUSTED"):
+        m_redactor.redactor(estado)

@@ -1,6 +1,7 @@
 """Catálogo normalizado para resolver referencias a documentos SIGEM."""
 
 from collections import defaultdict
+import math
 from dataclasses import dataclass
 import re
 import unicodedata
@@ -29,6 +30,33 @@ def normalizar(texto: str) -> str:
     texto = "".join(caracter for caracter in texto if unicodedata.category(caracter) != "Mn")
     texto = texto.replace("n.º", "no").replace("nº", "no").replace("n°", "no").replace("n.o", "no")
     return texto.replace("º", "o").replace("°", "o").replace("#", " # ")
+
+
+# Palabras que no distinguen un tema (artículos, preposiciones y términos genéricos del repositorio).
+PALABRAS_VACIAS_TEMA = {
+    "acerca", "alcaldia", "algun", "alguna", "como", "cual", "cuales", "dame", "dime", "documento",
+    "documentos", "existe", "existen", "hay", "informacion", "norma", "normas", "para", "porque",
+    "quiero", "repositorio", "sigem", "sobre", "tiene", "tienen", "todos", "todas", "unos", "unas",
+    "decreto", "decretos", "resolucion", "resoluciones", "acuerdo", "acuerdos", "ley", "leyes",
+    # Aparecen en casi todas las descripciones del repositorio: no distinguen un tema de otro.
+    "municipal", "municipales", "municipio", "marinilla", "antioquia", "alcalde",
+}
+_PATRON_PALABRAS = re.compile(r"[a-z0-9]+")
+
+
+def _palabras_significativas(texto: str | None) -> list[str]:
+    """Palabras de un tema que sirven para filtrar: normalizadas, de 4+ letras y sin palabras vacías."""
+    palabras = _PATRON_PALABRAS.findall(normalizar(texto or ""))
+    return [p for p in dict.fromkeys(palabras) if len(p) >= 4 and p not in PALABRAS_VACIAS_TEMA]
+
+
+def _misma_palabra(palabra: str, candidata: str) -> bool:
+    """Igualdad tolerante: variantes de número/género o un error leve; o la misma raíz de 5+ letras."""
+    if palabra == candidata:
+        return True
+    if fuzz.ratio(palabra, candidata) >= 85:
+        return True
+    return len(palabra) >= 7 and len(candidata) >= 7 and palabra[:6] == candidata[:6]
 
 
 def tipo_canonico(tipo: str) -> str:
@@ -215,26 +243,32 @@ class CatalogoDocumentos:
         anio: int | None = None,
         tema: str | None = None,
         limite: int = 15,
-        puntaje_minimo: float = 80.0,
     ) -> tuple[list[DocumentoCatalogado], int]:
-        """Filtra por tipo y año (exactos) y por tema (coincidencia aproximada en título y descripción).
+        """Filtra por tipo y año (exactos) y por tema (palabras significativas en título y descripción).
 
+        El tema coincide si al menos la mitad de sus palabras significativas (sin palabras vacías)
+        aparece, con tolerancia a variantes y errores leves ("horarios" ~ "horario").
         Devuelve (documentos hasta `limite`, total de coincidencias).
         """
+        palabras_tema = _palabras_significativas(tema) if tema else []
+        minimo = math.ceil(len(palabras_tema) / 2)
         seleccionados = []
         for documento in self.documentos:
             if tipo and documento.tipo != tipo:
                 continue
             if anio is not None and documento.anio != anio:
                 continue
-            puntaje = 0.0
-            if tema:
+            afinidad = 0.0
+            if palabras_tema:  # un tema solo de palabras vacías ("decretos", "normas") no filtra
                 texto = normalizar(f"{documento.titulo} {documento.descripcion or ''}")
-                consulta = normalizar(tema).strip()
-                puntaje = max(fuzz.partial_token_set_ratio(consulta, texto), fuzz.partial_ratio(consulta, texto))
-                if puntaje < puntaje_minimo:
+                palabras_doc = set(_PATRON_PALABRAS.findall(texto))
+                coincidencias = sum(
+                    1 for palabra in palabras_tema if any(_misma_palabra(palabra, w) for w in palabras_doc)
+                )
+                if coincidencias < minimo:
                     continue
-            seleccionados.append((puntaje, documento))
+                afinidad = coincidencias / len(palabras_tema)
+            seleccionados.append((afinidad, documento))
         # Más afín al tema primero; sin tema, los más recientes primero.
         seleccionados.sort(key=lambda par: (-par[0], -(par[1].anio or 0), par[1].titulo))
         return [documento for _, documento in seleccionados[:limite]], len(seleccionados)

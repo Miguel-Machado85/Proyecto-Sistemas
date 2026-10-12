@@ -40,7 +40,7 @@ def test_evaluar_caso_mide_intencion_y_archivos():
 
     resultado = evaluar_agente.evaluar_caso(None, ejecutar, caso(), pausa=0, sello="x")
 
-    assert resultado["metricas"] == {"intencion_ok": True, "archivos_ok": True}
+    assert resultado["metricas"] == {"intencion_ok": True, "archivos_ok": True, "informacion_ok": True}
     assert llamadas == [("eval-c1-x", "¿qué dice el decreto?", "texto")]
 
 
@@ -92,6 +92,7 @@ def test_resumen_por_categoria_ignora_los_errores_en_los_porcentajes():
 
     assert resumen["saludo"] == {
         "casos": 3, "errores": 1, "degradados": 0, "intencion": 0.5, "archivos": None, "candidatos": None, "alerta": None,
+        "informacion": None, "negativa": None,
         "tiempo_s_promedio": 3.0,
     }
     assert resumen["GLOBAL"]["casos"] == 3
@@ -150,3 +151,46 @@ def test_el_resumen_excluye_los_degradados_de_los_porcentajes():
     resumen = evaluar_agente.resumir(resultados)["x"]
 
     assert resumen["degradados"] == 1 and resumen["intencion"] == 1.0
+
+
+def estado_con_respuesta(texto, fuentes=(), pasos=()):
+    estado = estado_final("consulta_sigem", fuentes=fuentes)
+    estado["messages"] = [HumanMessage(content="p"), AIMessage(content=texto)]
+    estado["pasos"] = list(pasos)
+    return estado
+
+
+def test_informacion_ok_detecta_un_falso_negativo_aunque_haya_fuentes():
+    # inv-04: el archivo esperado está en `fuentes`, pero la respuesta dice que no hay información.
+    def ejecutar(*args):
+        return estado_con_respuesta("No se encuentra información sobre horarios.", fuentes=["a.pdf"])
+
+    resultado = evaluar_agente.evaluar_caso(None, ejecutar, caso(), 0, "x")
+
+    assert resultado["metricas"]["archivos_ok"] is True
+    assert resultado["metricas"]["informacion_ok"] is False
+
+
+def test_informacion_ok_usa_la_senal_del_redactor():
+    pasos = [{"agente": "redactor", "accion": "Redactando respuesta para perfil P0 · sin información pertinente en los fragmentos"}]
+
+    def ejecutar(*args):
+        return estado_con_respuesta("Texto neutro.", fuentes=["a.pdf"], pasos=pasos)
+
+    resultado = evaluar_agente.evaluar_caso(None, ejecutar, caso(), 0, "x")
+
+    assert resultado["metricas"]["informacion_ok"] is False
+
+
+def test_negativa_ok_en_documentos_inexistentes_exige_decirlo_y_no_mostrar_fuentes():
+    inexistente = caso(categoria="referencia_inexistente", archivos_esperados=[])
+
+    bien = evaluar_agente.evaluar_caso(
+        None, lambda *a: estado_con_respuesta("El Decreto 999 no se encuentra en SIGEM."), inexistente, 0, "x"
+    )
+    con_relleno = evaluar_agente.evaluar_caso(
+        None, lambda *a: estado_con_respuesta("No se encuentra.", fuentes=["x.pdf"]), inexistente, 0, "x"
+    )
+
+    assert bien["metricas"]["negativa_ok"] is True
+    assert con_relleno["metricas"]["negativa_ok"] is False

@@ -43,7 +43,11 @@ def cargar_casos(ruta: Path) -> list[dict]:
         return [json.loads(linea) for linea in archivo if linea.strip()]
 
 
-def filtrar_casos(casos: list[dict], categorias: list[str] | None, maximo: int | None) -> list[dict]:
+def filtrar_casos(
+    casos: list[dict], categorias: list[str] | None, maximo: int | None, ids: list[str] | None = None
+) -> list[dict]:
+    if ids:
+        casos = [c for c in casos if c["id"] in ids]
     if categorias:
         casos = [c for c in casos if c["categoria"] in categorias]
     return casos[:maximo] if maximo else casos
@@ -87,6 +91,14 @@ def evaluar_caso(agente, ejecutar_turno, caso: dict, pausa: float, sello: str) -
     if caso["intencion_esperada"] == "no_comprensible":
         metricas["alerta_ok"] = bool(resultado.get("es_alerta"))
 
+    sin_informacion = respuesta_sin_informacion(resultado)
+    if caso["categoria"] == "referencia_inexistente":
+        # Documento que no existe: debe decirlo y no mostrar fuentes de relleno.
+        metricas["negativa_ok"] = sin_informacion and not resultado.get("fuentes")
+    elif esperados and not espera_candidatos:
+        # Documento que sí existe: la respuesta no puede decir que no hay información.
+        metricas["informacion_ok"] = not sin_informacion
+
     return {
         "id": caso["id"],
         "categoria": caso["categoria"],
@@ -104,6 +116,24 @@ def evaluar_caso(agente, ejecutar_turno, caso: dict, pausa: float, sello: str) -
         "metricas": metricas,
         "tiempo_s": round(time.time() - inicio, 1),
     }
+
+
+FRASES_NEGATIVAS = (
+    "no se encuentra", "no encuentro", "no hay información", "no hay informacion", "no está disponible",
+    "no esta disponible", "no cuento con", "no aparece", "no contienen", "no se encontr", "no existe",
+)
+MARCA_SIN_INFORMACION = "sin información pertinente"
+
+
+def respuesta_sin_informacion(resultado: dict) -> bool:
+    """True si el redactor lo declaró (paso del redactor) o la respuesta lo dice con frases típicas."""
+    if any(
+        p.get("agente") == "redactor" and MARCA_SIN_INFORMACION in p.get("accion", "")
+        for p in resultado.get("pasos", [])
+    ):
+        return True
+    texto = resultado["messages"][-1].text.lower()
+    return any(frase in texto for frase in FRASES_NEGATIVAS)
 
 
 def es_cuota_diaria(error: Exception) -> bool:
@@ -170,6 +200,8 @@ def resumir(resultados: list[dict]) -> dict:
             "archivos": porcentaje(sin_error, "archivos_ok"),
             "candidatos": porcentaje(sin_error, "candidatos_ok"),
             "alerta": porcentaje(sin_error, "alerta_ok"),
+            "informacion": porcentaje(sin_error, "informacion_ok"),
+            "negativa": porcentaje(sin_error, "negativa_ok"),
             "tiempo_s_promedio": round(sum(r["tiempo_s"] for r in sin_error) / len(sin_error), 1) if sin_error else None,
         }
 
@@ -182,14 +214,14 @@ def mostrar_resumen(resumen: dict, linea_base: dict | None) -> None:
     def fmt(valor):
         return "  -  " if valor is None else f"{valor:5.2f}"
 
-    print(f"\n{'categoría':<34}{'n':>3}{'err':>4}{'degr':>5}{'intención':>11}{'archivos':>10}{'candid.':>9}{'alerta':>8}{'seg':>7}{'base hit@8':>12}")
+    print(f"\n{'categoría':<34}{'n':>3}{'err':>4}{'degr':>5}{'intención':>11}{'archivos':>10}{'candid.':>9}{'alerta':>8}{'info':>6}{'neg.':>6}{'seg':>7}{'base hit@8':>12}")
     for categoria, m in resumen.items():
         base = ""
         if linea_base and categoria in linea_base:
             base = fmt(linea_base[categoria].get("hit@8"))
         print(
             f"{categoria:<34}{m['casos']:>3}{m['errores']:>4}{m['degradados']:>5}{fmt(m['intencion']):>11}{fmt(m['archivos']):>10}"
-            f"{fmt(m['candidatos']):>9}{fmt(m['alerta']):>8}{(m['tiempo_s_promedio'] or 0):>7.1f}{base:>12}"
+            f"{fmt(m['candidatos']):>9}{fmt(m['alerta']):>8}{fmt(m['informacion']):>6}{fmt(m['negativa']):>6}{(m['tiempo_s_promedio'] or 0):>7.1f}{base:>12}"
         )
 
 
@@ -198,12 +230,13 @@ def main() -> int:
     parser.add_argument("--dataset", default=str(RAIZ_BACKEND / "evaluacion" / "dataset.jsonl"))
     parser.add_argument("--pausa", type=float, default=5.0, help="Segundos entre turnos y entre casos (cuota). Default 5.")
     parser.add_argument("--categorias", nargs="*", help="Solo estas categorías.")
+    parser.add_argument("--ids", nargs="*", help="Solo estos casos (p. ej. inv-04 inex-01).")
     parser.add_argument("--max-casos", type=int, help="Máximo de casos a correr (los primeros tras filtrar).")
     parser.add_argument("--estimar", action="store_true", help="Solo muestra cuántos turnos/llamadas implica; no llama a Gemini.")
     parser.add_argument("--salida", help="Archivo de resultados (default: evaluacion/resultados_<fecha>.json).")
     args = parser.parse_args()
 
-    casos = filtrar_casos(cargar_casos(Path(args.dataset)), args.categorias, args.max_casos)
+    casos = filtrar_casos(cargar_casos(Path(args.dataset)), args.categorias, args.max_casos, args.ids)
     if not casos:
         print("No hay casos para esa selección.")
         return 2

@@ -1,5 +1,6 @@
 """Nodo redactor: arma la respuesta final al ciudadano según el perfil y la evidencia."""
 
+import logging
 import re
 import unicodedata
 
@@ -7,11 +8,15 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 
 from ..config import config as configuracion
-from ..llm import crear_llm
+from ..estado import RespuestaRedactor
+from ..llm import crear_llm, es_error_de_cuota
 from ..prompts import construir_prompt_redactor
 from ._comun import paso, respuesta_ai, texto_de, ultimo_mensaje_usuario
 
+logger = logging.getLogger(__name__)
+
 MAX_FRAGMENTOS_REDACCION = 12
+SUFIJO_SIN_INFORMACION = " · sin información pertinente en los fragmentos"
 
 # Formato de cita que el prompt le exige al redactor: [Decreto 001 de 2019, p. 3]. Se analiza el texto
 # que genera nuestro propio modelo (formato controlado), no lo que escribe el usuario.
@@ -128,28 +133,50 @@ def _documento_activo_desde(estado: dict, citadas: list[dict] | None = None) -> 
     return None
 
 
+def _redactar(llm, mensajes: list, config: RunnableConfig | None, estructurado: bool) -> tuple[str, bool]:
+    """Devuelve (texto, informacion_encontrada). En modo respuesta pide la señal explícita al modelo."""
+    if estructurado:
+        try:
+            salida = llm.with_structured_output(RespuestaRedactor).invoke(mensajes, config)
+            if isinstance(salida, dict):
+                salida = RespuestaRedactor(**salida)
+            if isinstance(salida, RespuestaRedactor) and salida.respuesta.strip():
+                return salida.respuesta, salida.informacion_encontrada
+        except Exception as error:
+            if es_error_de_cuota(error):
+                raise
+            logger.warning("Salida estructurada del redactor no disponible; se usa texto libre: %s", error)
+    return texto_de(llm.invoke(mensajes, config)), True
+
+
 def redactor(estado: dict, config: RunnableConfig | None = None) -> dict:
     perfil = estado.get("perfil", "P0")
     modo = elegir_modo(estado)
 
     llm = crear_llm(configuracion.REDACTOR_MODEL, 0.3)
-    respuesta = llm.invoke(
-        [
-            SystemMessage(content=construir_prompt_redactor(perfil, modo)),
-            HumanMessage(content=construir_entrada(estado, modo)),
-        ],
-        config,
-    )
+    mensajes = [
+        SystemMessage(content=construir_prompt_redactor(perfil, modo)),
+        HumanMessage(content=construir_entrada(estado, modo)),
+    ]
+    texto, informacion_encontrada = _redactar(llm, mensajes, config, estructurado=(modo == "respuesta"))
 
-    texto = texto_de(respuesta)
-    # Las fuentes que se muestran al usuario son las que la respuesta cita, no todo lo buscado.
-    fuentes = fuentes_citadas(texto, estado.get("fuentes", [])) if modo == "respuesta" else estado.get("fuentes", [])
+    fuentes_estado = estado.get("fuentes", [])
+    if modo == "respuesta" and not informacion_encontrada:
+        # La respuesta dice que no hay información: no se muestran fuentes ni cambia el documento activo.
+        fuentes = []
+        documento_activo = estado.get("documento_activo")
+    else:
+        # Las fuentes que se muestran al usuario son las que la respuesta cita, no todo lo buscado.
+        fuentes = fuentes_citadas(texto, fuentes_estado) if modo == "respuesta" else fuentes_estado
+        # Un listado (solo fuentes, sin fragmentos) no convierte ningún documento en "activo".
+        documento_activo = _documento_activo_desde(estado, fuentes) or estado.get("documento_activo")
 
-    # Un listado (solo fuentes, sin fragmentos) no convierte ningún documento en "activo".
-    documento_activo = _documento_activo_desde(estado, fuentes) or estado.get("documento_activo")
+    accion = f"Redactando respuesta para perfil {perfil}"
+    if modo == "respuesta" and not informacion_encontrada:
+        accion += SUFIJO_SIN_INFORMACION
     return {
         "messages": [respuesta_ai(texto)],
         "fuentes": fuentes,
         "documento_activo": documento_activo,
-        "pasos": estado.get("pasos", []) + [paso("redactor", f"Redactando respuesta para perfil {perfil}", "✍️")],
+        "pasos": estado.get("pasos", []) + [paso("redactor", accion, "✍️")],
     }

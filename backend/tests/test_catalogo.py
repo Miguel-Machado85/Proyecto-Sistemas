@@ -122,3 +122,41 @@ def test_buscar_por_codigo_de_archivo():
     assert catalogo.buscar_por_codigo(18399).estado == "exacta"
     assert catalogo.buscar_por_codigo("00000").estado == "sin_coincidencia"
     assert catalogo.buscar_por_codigo("sin digitos").estado == "sin_coincidencia"
+
+
+CATALOGO_TEMAS = CatalogoDocumentos.desde_metadatas(
+    [
+        {"nombre_archivo": "a.pdf", "titulo": "Decreto 083 de 2018", "fecha_expedicion": "2018-08-29",
+         "descripcion": "Por el cual se modifica el horario de atención al publico en la inspección municipal de policía"},
+        {"nombre_archivo": "b.pdf", "titulo": "Decreto 144 de 2018", "fecha_expedicion": "2018-12-10",
+         "descripcion": "Por el cual se suspende la atención al público el día catorce de diciembre"},
+        {"nombre_archivo": "c.pdf", "titulo": "Decreto 001 de 2019", "fecha_expedicion": "2019-01-03",
+         "descripcion": "Por medio del cual se fijan las tarifas para el servicio público de transporte de taxis"},
+        {"nombre_archivo": "d.pdf", "titulo": "Decreto 002 de 2019", "fecha_expedicion": "2019-01-11",
+         "descripcion": "Por medio del cual se realizan unos traslados al presupuesto de la actual vigencia"},
+    ]
+)
+
+
+def archivos_de(resultado):
+    return {d.archivo for d in resultado[0]}
+
+
+def test_listar_por_tema_ignora_palabras_vacias_como_de_o_al():
+    # Regresión inv-04: "de"/"al" hacían coincidir decretos de tarifas con una pregunta sobre horarios.
+    resultado = CATALOGO_TEMAS.listar(tema="horarios de atención al público")
+
+    assert archivos_de(resultado) == {"a.pdf", "b.pdf"}
+    assert resultado[1] == 2
+
+
+def test_listar_por_tema_tolera_variantes_y_exige_la_mitad_de_las_palabras():
+    assert archivos_de(CATALOGO_TEMAS.listar(tema="horario atencion")) == {"a.pdf", "b.pdf"}
+    assert archivos_de(CATALOGO_TEMAS.listar(tema="presupuestos")) == {"d.pdf"}
+    assert archivos_de(CATALOGO_TEMAS.listar(tema="tarifas de taxi")) == {"c.pdf"}
+    assert archivos_de(CATALOGO_TEMAS.listar(tema="cultura deporte")) == set()
+
+
+def test_listar_con_tema_solo_de_palabras_vacias_no_filtra():
+    assert archivos_de(CATALOGO_TEMAS.listar(tema="decretos", limite=10)) == {"a.pdf", "b.pdf", "c.pdf", "d.pdf"}
+    assert archivos_de(CATALOGO_TEMAS.listar(tipo="decreto", anio=2019, tema="normas sobre")) == {"c.pdf", "d.pdf"}

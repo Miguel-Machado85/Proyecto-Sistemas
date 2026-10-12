@@ -169,11 +169,20 @@ def _ejecutar_subagente(encargo: str, config: RunnableConfig | None) -> list:
     return mensajes
 
 
+def fragmentos_primero(evidencia: list[dict]) -> list[dict]:
+    """Orden estable: los fragmentos de contenido antes que las entradas de listado.
+
+    El evaluador y el redactor solo ven los primeros N elementos; un listado largo no debe
+    desplazar los fragmentos que sí responden la pregunta.
+    """
+    return [f for f in evidencia if f.get("tipo") != "listado"] + [f for f in evidencia if f.get("tipo") == "listado"]
+
+
 def investigador(estado: dict, config: RunnableConfig | None = None) -> dict:
     mensajes = _ejecutar_subagente(construir_encargo(estado), config)
     evidencia, fuentes, candidatos, pasos_nuevos = acumular_resultados(estado, mensajes)
     return {
-        "evidencia": evidencia,
+        "evidencia": fragmentos_primero(evidencia),
         "fuentes": fuentes,
         "candidatos": candidatos,
         # Cuenta ejecuciones del investigador: MAX_INTENTOS_BUSQUEDA es el máximo de pasadas.

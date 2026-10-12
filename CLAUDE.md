@@ -211,13 +211,15 @@ langchain-google-genai 4.3.7 · google-genai 2.21.0 · langchain-chroma 1.1.0 ·
   Usar `--pausa 20` con flash-lite.
 - **Resultado (43 casos; búsqueda con flash-lite en los 4 agentes):** intención 1.00 y archivos 1.00 en todas las categorías, 0 errores, 0 degradados; mediana 13 s, p90 48 s.
   Tabla completa en la sección 15 de `docs/MIGRACION_AGENTICA.md`. Archivos: `evaluacion/resultados_fase7_*.json`.
-- **Hallazgos de la evaluación (leyendo las respuestas; NO corregidos, pendientes de aprobación):**
-  1. `inv-04` falso negativo: dijo "no hay información" sobre horarios de atención aunque el Decreto 083 de 2018 existe. Causas: `listar(tema=...)` demasiado laxo
-     (`partial_token_set_ratio` coincide por palabras vacías como "de"/"al") y los listados ocupan los primeros 12 lugares de `evidencia`, desplazando los fragmentos reales
-     (el evaluador ve 8 y el redactor 12).
-  2. `inex-01/02`: respuesta correcta ("no se encuentra") pero con 5 y 12 fuentes irrelevantes mostradas.
-  3. La métrica "archivo esperado en fuentes" es generosa; conviene añadir una de "no dice que no hay información" para casos que sí tienen documento.
-  4. El reranker no se puede juzgar con esta evaluación (todo da 1.00).
+- **Hallazgos de la evaluación y correcciones (aprobadas y aplicadas):**
+  1. `inv-04` falso negativo → **A** `listar(tema=...)` por palabras significativas (`catalogo.PALABRAS_VACIAS_TEMA`, incluye "municipal", "marinilla"…; exige la mitad,
+     tolera variantes; un tema solo de palabras vacías no filtra) y **B** `investigador.fragmentos_primero` (los fragmentos antes que los listados en `evidencia`).
+  2. `inex-01/02` con fuentes de relleno → **C** `RespuestaRedactor.informacion_encontrada`: si es `false`, `fuentes=[]`, `documento_activo` intacto y paso
+     "… · sin información pertinente en los fragmentos". Salida estructurada solo en modo respuesta; si falla, texto libre; la cuota se propaga.
+  3. Métrica generosa → **D** `evaluar_agente.py` mide `informacion_ok` y `negativa_ok` (columnas `info` y `neg.`); `--ids` para correr casos sueltos.
+  4. Reranker: se mantiene activo (decisión del equipo); esta evaluación no lo discrimina.
+- **Cuota:** `gemini-3.5-flash-lite` 500/día y 15/min; `gemini-3.5-flash` 20/día. Tras las correcciones se repitieron 5 casos con Gemini (todos bien) y se agotó flash-lite.
+  Sin repetir con Gemini: seg-02, voz-num-03, glob-02. Tests: 160.
 
 ### Estado de tests al iniciar (Fase 0)
 `13 passed, 1 failed` (**corregido en la Fase 2**: 26 passed). Fallaba `tests/test_retrieval_diversidad.py::test_limita_fragmentos_por_documento_en_consulta_amplia`:

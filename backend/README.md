@@ -153,7 +153,10 @@ uv run python evaluacion/evaluar_agente.py --pausa 6 --categorias saludo voz_rui
 uv run python evaluacion/evaluar_agente.py --pausa 8                         # todo el dataset
 ```
 `evaluar_agente.py` mide, sobre el último turno de cada caso: acierto de intención, presencia de los archivos
-esperados en `fuentes` (o en `candidatos`), candidatos cuando se esperan y alerta de audio. Escribe
+esperados en `fuentes` (o en `candidatos`), candidatos cuando se esperan, alerta de audio, que la respuesta
+**no niegue** un documento que existe (`info`) y que diga "no existe" sin fuentes de relleno cuando no existe (`neg.`).
+Marca como *degradados* los casos en que el analista o el evaluador cayeron en fail-open y reintenta si se agota la
+cuota por minuto (usar `--pausa 20` con flash-lite; `--ids inv-04 inex-01` para casos sueltos). Escribe
 `evaluacion/resultados_<fecha>.json` y detiene la corrida si se agota la cuota diaria.
 La línea base previa a la migración está en `evaluacion/linea_base_recuperacion.json`.
 

@@ -357,6 +357,9 @@ El frontend (`frontend/index.html`) usa estos campos y **no se modifica**:
 | D16 | Cuota de Gemini agotada (429): `/chat` responde **200** con un mensaje fijo (`MENSAJE_SERVICIO_SATURADO`) y `/chat-voz` responde con `alerta=true` y sin TTS; el turno no se guarda. El investigador no traga los errores de cuota (los propaga). | El frontend ignora `detail` y muestra siempre un texto genérico ante un error HTTP; con 200 el usuario ve el mensaje real. Y un "sin resultados" por cuota habría sido engañoso. |
 | D17 | `fuentes` del turno se reduce a las que el redactor **cita** (`[Título, p. N]`); si no hay citas utilizables se conservan todas. `documento_activo` toma el primer documento citado. | "Taxi" devolvía 12 fuentes con una sola citada. Es parseo de la salida del propio modelo, no de texto del usuario. |
 | D18 | Una transcripción de voz de menos de 3 caracteres se atiende en la API (alerta) sin invocar el grafo. | Evita una llamada innecesaria y que `HumanMessage("")` quede en el historial del hilo. |
+| D19 | `CatalogoDocumentos.listar(tema=...)` coincide por **palabras significativas** (4+ letras, sin palabras vacías ni términos omnipresentes del repositorio como "municipal"): exige al menos la mitad, con tolerancia a variantes. Un tema solo de palabras vacías ("decretos") no filtra. | El filtro difuso anterior (`partial_token_set_ratio`) coincidía por "de"/"al" y devolvía decretos de tarifas para una pregunta de horarios (caso inv-04). |
+| D20 | El investigador entrega la evidencia con los **fragmentos antes que los listados** (`fragmentos_primero`). | El evaluador ve 8 y el redactor 12 elementos; un listado de 15 entradas desplazaba los fragmentos que sí respondían. |
+| D21 | El redactor, en modo respuesta, usa salida estructurada `RespuestaRedactor(respuesta, informacion_encontrada)`. Si `informacion_encontrada=false` no se muestran fuentes, no cambia el `documento_activo` y el paso del redactor lo indica ("· sin información pertinente en los fragmentos"). Si la salida estructurada falla, cae a texto libre. | Señal explícita en lugar de analizar el texto de la respuesta; evita mostrar fuentes de relleno cuando el documento no existe. |
 | D14 | `evaluar_agente.py` se ejecutó con **flash-lite en los cuatro agentes** (no con la configuración por defecto: flash en investigador/redactor). | El plan gratuito limita `gemini-3.5-flash` a ~20 solicitudes/día y flash-lite a 15 por minuto; el dataset implica ~240 llamadas. |
 
 ### Resultados de la evaluación (2026-10-11)
@@ -380,13 +383,16 @@ Archivos: `evaluacion/resultados_fase7_baratas.json` y `evaluacion/resultados_fa
 
 Tiempo por caso (con flash-lite): mediana 13 s, p90 48 s, máx. 60 s. Sin errores ni resultados degradados.
 
-**Límites de la métrica** (revisados a mano leyendo las respuestas): "archivo esperado en `fuentes`" no detecta una respuesta que dice "no hay información".
-Hallazgos que la métrica no ve: (a) **inv-04** ("¿qué normas hay sobre horarios de atención al público?") respondió que no hay información aunque el Decreto 083 de 2018 existe
-y estaba en las fuentes; causas: el `tema` de `listar_documentos` usa coincidencia difusa laxa (`partial_token_set_ratio` sobre palabras como "de"/"al") y los
-listados (hasta 15 entradas) ocupan los primeros 12 lugares de `evidencia` que ven el evaluador (8) y el redactor (12), desplazando los fragmentos reales;
-(b) en las referencias inexistentes (inex-01/02) la respuesta es correcta pero se muestran 5 y 12 fuentes irrelevantes.
+**Límites de la métrica y correcciones.** "Archivo esperado en `fuentes`" no detecta una respuesta que dice "no hay información". Al leer las respuestas se encontraron dos defectos,
+corregidos después (D19–D21): (a) **inv-04** respondía que no había información sobre horarios aunque el Decreto 083 de 2018 existe; (b) en las referencias inexistentes
+(inex-01/02) la respuesta era correcta pero se mostraban 5 y 12 fuentes irrelevantes. `evaluar_agente.py` ahora mide además `informacion_ok` (el documento existe: la
+respuesta no puede negarlo) y `negativa_ok` (el documento no existe: lo dice y no muestra fuentes).
+
+**Verificación posterior a las correcciones** (flash-lite, `resultados_fase7_abcd_lite.json`): ref-01, tema-02 e inv-04 → `informacion_ok`; inex-01 e inex-02 → `negativa_ok`
+(0 fuentes). inv-04 ahora lista Decreto 083, 144, 157, 191, 200 y 207 (todos de horarios). Sin LLM: glob-02 e inv-01..04 alcanzan sus archivos esperados con
+`listar` y los filtros ideales. Quedaron sin repetir con Gemini seg-02, voz-num-03 y glob-02 (se agotó la cuota diaria de flash-lite: 500/día).
 
 ### Pendientes conocidos
-1. Corregir los hallazgos (a) y (b) de arriba (propuestas en la conversación; no aplicadas): endurecer `CatalogoDocumentos.listar(tema=...)`, ordenar la evidencia con fragmentos antes que listados, y no mostrar fuentes cuando la respuesta indica que no hay información.
-2. Decidir el reranker (la evaluación de extremo a extremo no discrimina: 100% con reranker activo) y medir la configuración por defecto (flash) cuando haya cuota.
+1. Repetir `evaluar_agente.py` completo con cuota (facturación) tras las correcciones D19–D21, y medir también la configuración por defecto (flash en investigador/redactor).
+2. Decidir el reranker: la evaluación de extremo a extremo no lo discrimina (todo da 1.00 con reranker activo); se mantiene activo por decisión del equipo.
 3. Latencia: con flash-lite, mediana 13 s y p90 48 s; con flash es mayor.
