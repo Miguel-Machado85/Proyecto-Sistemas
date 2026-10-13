@@ -25,6 +25,19 @@ def metadata_base():
     }
 
 
+def test_guardar_manifiesto_reemplaza_el_archivo_de_forma_atomica(monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "UPLOAD_ROOT", tmp_path / "documentos")
+    lote_id = "12345678-1234-1234-1234-123456789abc"
+    ruta = ingest._ruta_lote(lote_id)
+    ruta.mkdir(parents=True)
+    (ruta / "manifest.json").write_text('{"estado": "anterior"}', encoding="utf-8")
+
+    ingest._guardar_manifiesto(lote_id, {"estado": "indexando", "progreso": 60})
+
+    assert ingest._leer_manifiesto(lote_id) == {"estado": "indexando", "progreso": 60}
+    assert not list(ruta.glob(".manifest.json.*.tmp"))
+
+
 def test_crear_lote_prepara_archivo_sin_indexarlo(monkeypatch, tmp_path):
     monkeypatch.setattr(config, "UPLOAD_ROOT", tmp_path / "documentos")
     monkeypatch.setattr(ingest, "extraer_documento", lambda ruta: (["Texto legal"], metadata_base()))

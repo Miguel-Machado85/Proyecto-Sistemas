@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import os
 import re
 import shutil
 import time
@@ -73,7 +74,19 @@ def _leer_manifiesto(lote_id: str) -> dict[str, Any]:
 
 def _guardar_manifiesto(lote_id: str, manifiesto: dict[str, Any]) -> None:
     ruta = _ruta_manifiesto(lote_id)
-    ruta.write_text(json.dumps(manifiesto, ensure_ascii=False, indent=2), encoding="utf-8")
+    temporal = ruta.with_name(f".{ruta.name}.{uuid.uuid4().hex}.tmp")
+    contenido = json.dumps(manifiesto, ensure_ascii=False, indent=2)
+
+    # El lector puede consultar el lote mientras la indexación actualiza su progreso.
+    # Reemplazar el archivo completo evita que llegue a observar un JSON a medio escribir.
+    try:
+        with temporal.open("w", encoding="utf-8") as archivo:
+            archivo.write(contenido)
+            archivo.flush()
+            os.fsync(archivo.fileno())
+        os.replace(temporal, ruta)
+    finally:
+        temporal.unlink(missing_ok=True)
 
 
 def _extension(nombre: str) -> str:

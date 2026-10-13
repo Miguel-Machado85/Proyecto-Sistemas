@@ -67,6 +67,7 @@
   .progress-track { width:100%; height:12px; overflow:hidden; background:#dce5ec; border-radius:999px; }
   .progress-fill { height:100%; width:0; background:var(--sky); transition:width .35s ease; }
   .progress-detail { min-height:20px; margin:10px 0 0; color:var(--muted); font-size:14px; }
+  .progress-status { margin:12px 0 0; }
   .results-list { margin-top:18px; border-top:1px solid var(--line); }
   .result-row { display:flex; gap:12px; align-items:flex-start; padding:13px 0; border-bottom:1px solid var(--line); }
   .result-row:last-child { border-bottom:0; }
@@ -119,6 +120,7 @@
         <div class="progress-label"><span id="progress-title">En espera</span><span id="progress-percent">0%</span></div>
         <div class="progress-track" role="progressbar" aria-label="Progreso de indexación" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="progress-fill" class="progress-fill"></div></div>
         <p id="progress-detail" class="progress-detail"></p>
+        <p id="progress-status" class="status progress-status" role="status"></p>
         <div id="results-list" class="results-list" hidden></div>
         <div id="rollback-actions" class="actions" hidden><button id="rollback" class="danger-button" type="button">Revertir indexación</button></div>
       </div>
@@ -144,6 +146,7 @@
     var progressPercent = document.getElementById('progress-percent');
     var progressFill = document.getElementById('progress-fill');
     var progressDetail = document.getElementById('progress-detail');
+    var progressStatus = document.getElementById('progress-status');
     var resultsList = document.getElementById('results-list');
     var rollbackActions = document.getElementById('rollback-actions');
     var rollback = document.getElementById('rollback');
@@ -153,6 +156,8 @@
 
     function headers() { return { 'X-Admin-Token': token.value.trim() }; }
     function setStatus(message, kind) { status.textContent = message; status.className = 'status ' + (kind || ''); status.style.display = 'block'; }
+    function setProgressStatus(message, kind) { progressStatus.textContent = message; progressStatus.className = 'status progress-status ' + (kind || ''); progressStatus.style.display = 'block'; }
+    function clearProgressStatus() { progressStatus.textContent = ''; progressStatus.style.display = 'none'; }
     function escapeHtml(value) { var node = document.createElement('div'); node.textContent = value == null ? '' : String(value); return node.innerHTML; }
     function labelState(state) { return state === 'listo' ? 'Listo para indexar' : state === 'indexado' ? 'Indexado' : state === 'omitido' ? 'Omitido' : state === 'error' || state === 'rechazado' ? 'Con error' : state; }
     function fileType(file) { return file.name.toLowerCase().endsWith('.png') ? 'image' : 'pdf'; }
@@ -183,6 +188,7 @@
       progressSection.hidden = true;
       resultsList.hidden = true;
       rollbackActions.hidden = true;
+      clearProgressStatus();
     }
 
     function stopPolling() { if (polling) { window.clearInterval(polling); polling = null; } }
@@ -203,7 +209,11 @@
           var updated = await request('/lotes/' + encodeURIComponent(lote.lote_id), { headers:headers() });
           render(updated);
           if (updated.estado !== 'indexando') stopPolling();
-        } catch (error) { stopPolling(); setStatus(error.message, 'error'); }
+        } catch (error) {
+          stopPolling();
+          status.style.display = 'none';
+          setProgressStatus(error.message, 'error');
+        }
       }, 1200);
     }
 
@@ -315,14 +325,18 @@
         var updated = await request('/lotes/' + encodeURIComponent(lote.lote_id) + '/indexar', { method:'POST', headers:Object.assign({ 'Content-Type':'application/json' }, headers()), body:JSON.stringify({ documentos:cambios }) });
         render(updated);
         status.style.display = 'none';
+        clearProgressStatus();
         startPolling();
-      } catch (error) { setStatus(error.message, 'error'); index.disabled = false; }
+      } catch (error) { status.style.display = 'none'; setProgressStatus(error.message, 'error'); index.disabled = false; }
     });
 
     reload.addEventListener('click', async function () {
       if (!lote) return;
       try { render(await request('/lotes/' + encodeURIComponent(lote.lote_id), { headers:headers() })); }
-      catch (error) { setStatus(error.message, 'error'); }
+      catch (error) {
+        if (lote.estado === 'indexando' || lote.estado === 'indexado') setProgressStatus(error.message, 'error');
+        else setStatus(error.message, 'error');
+      }
     });
 
     files.addEventListener('change', function () {
@@ -377,7 +391,7 @@
         var updated = await request('/lotes/' + encodeURIComponent(lote.lote_id) + '/revertir-indexacion', { method:'POST', headers:headers() });
         render(updated);
         setStatus('Indexación revertida. Los documentos volvieron a quedar pendientes.', 'ok');
-      } catch (error) { setStatus(error.message, 'error'); }
+      } catch (error) { setProgressStatus(error.message, 'error'); }
       finally { rollback.disabled = false; }
     });
   }());
