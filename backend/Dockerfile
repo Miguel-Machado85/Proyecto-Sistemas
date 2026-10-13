@@ -15,6 +15,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 RUN addgroup --system app && adduser --system --ingroup app app
 
+# OCR de documentos escaneados y PNG; el paquete spa permite leer texto en español.
+RUN apt-get update && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-spa \
+    && rm -rf /var/lib/apt/lists/*
+
 # Dependencias primero (capa cacheable). torch se instala desde el índice CPU declarado en
 # pyproject.toml ([[tool.uv.index]] pytorch-cpu): sin CUDA, la imagen es mucho más liviana.
 # uv.lock es opcional (está en .gitignore): si existe se respeta, si no uv resuelve desde pyproject.
@@ -28,7 +32,7 @@ RUN uv sync --no-dev
 
 # Solo la caché del reranker necesita ser escribible por `app`. NO usar `chown -R /app`: copiaría el
 # venv completo (~2 GB) en una capa nueva y duplicaría el tamaño de la imagen.
-RUN mkdir -p /app/.cache/huggingface && chown -R app:app /app/.cache
+RUN mkdir -p /app/.cache/huggingface /app/documentos && chown -R app:app /app/.cache /app/documentos
 USER app
 
 EXPOSE 8001

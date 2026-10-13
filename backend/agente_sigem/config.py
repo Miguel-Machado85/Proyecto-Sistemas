@@ -45,7 +45,19 @@ class Config:
     # CHROMA_PERSIST_DIR. 
     CHROMA_PERSIST_DIR = os.getenv("CHROMA_PERSIST_DIR", "./chroma_db")
 
-    COLLECTION_NAME = os.getenv("COLLECTION_NAME", "sigem_documentos")
+    # La colección existente se llama `langchain`; usar otro valor crea un índice vacío.
+    COLLECTION_NAME = os.getenv("COLLECTION_NAME", "langchain")
+
+    # ── Ingesta administrativa ──
+    UPLOAD_ROOT = Path(os.getenv("UPLOAD_ROOT", Path(__file__).resolve().parent.parent / "documentos"))
+    ALLOWED_DOCUMENT_EXTENSIONS = {"pdf", "png"}
+    MAX_DOCUMENT_BYTES = int(os.getenv("MAX_DOCUMENT_BYTES", 25 * 1024 * 1024))
+    MAX_DOCUMENTS_PER_BATCH = int(os.getenv("MAX_DOCUMENTS_PER_BATCH", "20"))
+    CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "1000"))
+    CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "200"))
+    EMBEDDING_BATCH_SIZE = int(os.getenv("EMBEDDING_BATCH_SIZE", "25"))
+    EMBEDDING_BATCH_PAUSE_SECONDS = float(os.getenv("EMBEDDING_BATCH_PAUSE_SECONDS", "20"))
+    ADMIN_UPLOAD_TOKEN = os.getenv("ADMIN_UPLOAD_TOKEN")
 
     DOCS_DIR = Path(os.getenv("DOCS_DIR", Path(__file__).resolve().parent.parent / "docs"))
 

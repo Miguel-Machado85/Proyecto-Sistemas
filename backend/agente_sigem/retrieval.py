@@ -62,6 +62,11 @@ def obtener_catalogo_documentos() -> CatalogoDocumentos:
     return CatalogoDocumentos.desde_metadatas(resultado["metadatas"])
 
 
+def invalidar_cache_documentos() -> None:
+    """Hace visible una indexación nueva para el catálogo y las tools del agente."""
+    obtener_catalogo_documentos.cache_clear()
+
+
 def terminos_textuales(consulta: str) -> list[str]:
     palabras = re.findall(r"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9]{3,}", consulta)
     return [

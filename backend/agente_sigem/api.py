@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 
 from . import db, reranker, storage
+from .admin import router as admin_router
 from .agent import construir_grafo
 from .audio import synthesize, transcribe
 from .checkpointer import crear_checkpointer
@@ -165,6 +166,7 @@ app = FastAPI(
     version="0.2.0",
     lifespan=lifespan,
 )
+app.include_router(admin_router)
 
 
 @app.get("/health", tags=["sistema"])

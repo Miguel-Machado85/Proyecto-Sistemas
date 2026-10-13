@@ -75,6 +75,11 @@ El reranker corre en CPU (torch CPU); la primera carga tarda ~30 s, por eso `RER
 | `POST /chat-voz` (form: `audio`, `thread_id`, `perfil`) | → `{transcripcion, respuesta, thread_id, pregunta_audio_url, respuesta_audio_url, fuentes, candidatos, alerta}`. Si el audio no es comprensible: `alerta=true` y sin audio de respuesta. |
 | `GET /historial/{thread_id}` | Turnos del hilo con URLs firmadas de audio. |
 | `GET /documentos/sugerencias?q=` | Autocompletado del catálogo. |
+| `POST /admin/lotes` | Recibe uno o varios PDF/PNG y prepara un lote sin generar embeddings. Requiere `X-Admin-Token`. |
+| `GET /admin/lotes/{lote_id}` | Consulta el estado y los errores por archivo de un lote administrativo. Requiere `X-Admin-Token`. |
+| `POST /admin/lotes/{lote_id}/indexar` | Confirma la metadata editable e indexa los documentos listos en Chroma. Requiere `X-Admin-Token`. |
+| `POST /admin/lotes/{lote_id}/cancelar` | Cancela un lote pendiente y elimina sus originales sin indexar. Requiere `X-Admin-Token`. |
+| `POST /admin/lotes/{lote_id}/revertir-indexacion` | Elimina de Chroma todo lo añadido por un lote indexado y lo devuelve a pendiente. Requiere `X-Admin-Token`. |
 | `GET /health`, `GET /health/llm` | Estado de la API y del modelo de Gemini. |
 
 ## Variables de entorno
@@ -93,7 +98,11 @@ Copia `.env.example` a `.env` (nunca se versiona). Las principales:
 | `CHECKPOINTER` | `postgres` | `postgres` o `memory`. |
 | `RERANKER_HABILITADO` / `RERANKER_MODEL` / `RERANKER_PRECARGAR` | `true` / `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` / `false` | Reranker. |
 | `DATABASE_URL` | `postgresql://sigem:sigem@db:5432/sigem` | Historial de turnos y checkpointer. |
-| `CHROMA_PERSIST_DIR`, `COLLECTION_NAME`, `EMBEDDING_MODEL` | `./chroma_db`, `sigem_documentos`, `models/gemini-embedding-2` | Índice vectorial (no reindexar). |
+| `CHROMA_PERSIST_DIR`, `COLLECTION_NAME`, `EMBEDDING_MODEL` | `./chroma_db`, `langchain`, `models/gemini-embedding-2` | Índice vectorial existente (no cambiar modelo ni colección). |
+| `ADMIN_UPLOAD_TOKEN` | — | Secreto obligatorio para los endpoints y la pantalla administrativa. |
+| `UPLOAD_ROOT` | `./documentos` | Carpeta persistente de lotes pendientes e indexados; no se versiona. |
+| `CHUNK_SIZE`, `CHUNK_OVERLAP` | `1000`, `200` | Particionado compatible con los documentos históricos. |
+| `EMBEDDING_BATCH_SIZE`, `EMBEDDING_BATCH_PAUSE_SECONDS` | `25`, `20` | Lotes y pausa de Gemini durante la indexación administrativa. |
 | `AWS_*`, `S3_BUCKET_NAME` | — | Audios en S3. |
 | `LANGFUSE_*` | — | Trazas (opcional). |
 
@@ -120,6 +129,18 @@ docker compose -f Compose.yml up --build
 ```
 El servicio `backend` usa `CHECKPOINTER=postgres`, el volumen `hf-cache` para el modelo del reranker
 (`HF_HOME=/app/.cache/huggingface`) y monta `backend/chroma_db`.
+
+## Carga administrativa
+
+Configura `ADMIN_UPLOAD_TOKEN` en `backend/.env`, inicia los contenedores y abre
+`http://localhost:8080/admin.html`. El token se mantiene solo en memoria del navegador y se envía en el encabezado
+`X-Admin-Token`; el backend lo valida en cada operación.
+
+La pantalla acepta hasta 20 PDF o PNG por lote. La primera acción guarda los archivos en
+`documentos/pendientes/<lote_id>/`, extrae texto (con OCR en español cuando hace falta) y propone la metadata.
+La segunda acción confirma la indexación: aplica chunks de 1000 caracteres con overlap de 200, genera embeddings
+con `models/gemini-embedding-2`, inserta los chunks y su metadata en la colección `langchain`, y mueve el original a
+`documentos/indexados/<lote_id>/`. Un manifiesto conserva el resultado individual de cada archivo.
 
 ## Solución de problemas
 - **El reranker no se descarga en Docker** (`CERTIFICATE_VERIFY_FAILED ... self-signed certificate`): ocurre en redes con un

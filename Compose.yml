@@ -21,6 +21,8 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - ./backend/chroma_db:/app/chroma_db
+      # Originales y lotes administrativos: persisten fuera de Chroma para auditoría/reindexación.
+      - ./backend/documentos:/app/documentos
       - hf-cache:/app/.cache/huggingface
     depends_on:
       db:
