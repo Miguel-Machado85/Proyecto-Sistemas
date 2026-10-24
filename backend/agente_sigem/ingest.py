@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import logging
 import os
 import re
 import shutil
@@ -25,12 +26,19 @@ from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from PIL import Image
 
-from .catalogo import normalizar
+from . import db
+from .catalogo import extraer_referencia, normalizar
 from .config import config
+from .repositorio_archivos import ErrorRepositorio, obtener_repositorio
 from .retrieval import invalidar_cache_documentos, obtener_catalogo_documentos, obtener_vector_store
 
+logger = logging.getLogger(__name__)
 
 SEPARADORES_CHUNKS = ["\n\n", "\n", ".", " ", ""]
+ADVERTENCIA_TITULO_NO_CANONICO = (
+    "No se reconoce tipo y número en el título; el documento se encontrará por contenido, "
+    "pero no por referencia como 'Decreto 045 de 2026'."
+)
 _PATRON_REFERENCIA = re.compile(
     r"\b(?P<tipo>decreto|resoluci[oó]n|acuerdo|ley|formato)\s*(?:n[.º°o]*\s*)?(?P<numero>\d{1,5})(?:\s*(?:de|/|-)\s*(?P<anio>(?:19|20)\d{2}))?",
     re.IGNORECASE,
@@ -381,6 +389,48 @@ def _crear_chunks(ruta: Path, metadata: dict[str, Any], documento_id: str, hash_
     return chunks
 
 
+def _mime_original(ruta: Path) -> str:
+    return "application/pdf" if _extension(ruta.name) == "pdf" else "image/png"
+
+
+def _subir_original(ruta: Path) -> tuple[Any, str]:
+    """Paso 1: sube el original al repositorio. Si falla, el documento no se indexa."""
+    try:
+        repositorio = obtener_repositorio()
+        return repositorio, repositorio.subir(ruta, ruta.name, _mime_original(ruta))
+    except Exception as error:
+        detalle = f" Detalle: {error}" if isinstance(error, ErrorRepositorio) else ""
+        logger.warning("No se pudo subir el original de %s: %s", ruta.name, error)
+        raise ErrorIngesta(
+            "No se pudo guardar el original del documento en el repositorio de archivos, "
+            f"así que no se indexó.{detalle}"
+        ) from error
+
+
+def _retirar_original(repositorio: Any, id_externo: str) -> str:
+    """Retira (papelera) un original subido; devuelve un aviso si no fue posible, o '' si todo salió bien."""
+    try:
+        repositorio.retirar(id_externo)
+        return ""
+    except Exception as error:
+        logger.warning("No se pudo retirar el original %s del repositorio: %s", id_externo, error)
+        return f" Además, no se pudo retirar el original ya subido ({id_externo}); revísalo en el repositorio de archivos."
+
+
+def _deshacer_indexacion(vector_store: Any, documento_id: str, repositorio: Any, id_externo: str) -> str:
+    """Deja todo como estaba si un paso posterior a la subida falla: Chroma limpio y original en la papelera."""
+    try:
+        vector_store.delete(where={"documento_id": documento_id})
+    except Exception:
+        logger.warning("No se pudo limpiar Chroma tras un fallo de indexación (%s).", documento_id, exc_info=True)
+    return _retirar_original(repositorio, id_externo)
+
+
+def _advertencias_de_titulo(titulo: str) -> list[str]:
+    """Sin tipo y número reconocibles 'Decreto 045 de 2026' no se encuentra por referencia; no bloquea."""
+    return [] if extraer_referencia(titulo) else [ADVERTENCIA_TITULO_NO_CANONICO]
+
+
 def _indexar_documento(
     ruta: Path,
     entrada: dict[str, Any],
@@ -405,6 +455,9 @@ def _indexar_documento(
     collection = getattr(vector_store, "_collection", None)
     if embedding_function is None or collection is None:
         raise ErrorIngesta("No fue posible preparar la conexión de embeddings para Chroma.")
+    advertencias = _advertencias_de_titulo(str(metadata["titulo"]))
+    reportar_progreso(len(chunks), 0, "subiendo_original")
+    repositorio, id_externo = _subir_original(ruta)  # 1. original al repositorio
     embeddings = []
     reportar_progreso(len(chunks), 0, "generando_embeddings")
     try:
@@ -423,17 +476,36 @@ def _indexar_documento(
             documents=[chunk.page_content for chunk in chunks],
             metadatas=[chunk.metadata for chunk in chunks],
         )
+    except Exception as error:  # 2. falló Chroma: no queda nada ni en el índice ni en el repositorio
+        aviso = _deshacer_indexacion(vector_store, documento_id, repositorio, id_externo)
+        raise ErrorIngesta("No fue posible generar los embeddings del documento." + aviso) from error
+    try:  # 3. fila que enlaza el documento con su original
+        db.registrar_archivo(
+            nombre_archivo=ruta.name,
+            proveedor=repositorio.proveedor,
+            id_externo=id_externo,
+            titulo=str(metadata["titulo"]),
+            mime_type=_mime_original(ruta),
+            tamano_bytes=ruta.stat().st_size,
+            hash_sha256=hash_archivo,
+        )
     except Exception as error:
-        vector_store.delete(where={"documento_id": documento_id})
-        raise ErrorIngesta("No fue posible generar los embeddings del documento.") from error
+        # Un documento que el agente encuentra pero no puede entregar es peor que un error visible.
+        aviso = _deshacer_indexacion(vector_store, documento_id, repositorio, id_externo)
+        raise ErrorIngesta("No fue posible registrar el original del documento en la base de datos." + aviso) from error
     identificadores_lote.update(identificadores)
-    return {
+    resultado = {
         "archivo": ruta.name,
         "estado": "indexado",
         "documento_id": documento_id,
         "fragmentos_indexados": len(chunks),
         "metadata": metadata,
+        "proveedor_original": repositorio.proveedor,
+        "id_externo": id_externo,
     }
+    if advertencias:
+        resultado["advertencias"] = advertencias
+    return resultado
 
 
 def iniciar_indexacion(lote_id: str) -> dict[str, Any]:
@@ -544,8 +616,24 @@ def eliminar_documento_lote(lote_id: str, archivo: str) -> dict[str, Any]:
     return manifiesto
 
 
+def _retirar_original_del_lote(lote_id: str, manifiesto: dict[str, Any], resultado: dict[str, Any]) -> None:
+    """Manda el original a la papelera y borra su fila. Es reintentable: lo ya retirado queda marcado en el manifiesto."""
+    id_externo = resultado.get("id_externo")
+    if id_externo and not resultado.get("original_retirado"):
+        repositorio = obtener_repositorio()
+        proveedor = resultado.get("proveedor_original")
+        if proveedor and proveedor != repositorio.proveedor:
+            raise ErrorRepositorio(
+                f"El original está en '{proveedor}' pero el repositorio activo es '{repositorio.proveedor}'."
+            )
+        repositorio.retirar(id_externo)
+        resultado["original_retirado"] = True
+        _guardar_manifiesto(lote_id, manifiesto)
+    db.eliminar_registro_archivo(resultado["archivo"])
+
+
 def revertir_indexacion(lote_id: str) -> dict[str, Any]:
-    """Elimina de Chroma únicamente los documentos que este lote añadió."""
+    """Elimina de Chroma, de la tabla de originales y del repositorio (papelera) lo que este lote añadió."""
     manifiesto = _leer_manifiesto(lote_id)
     if manifiesto.get("estado") != "indexado":
         raise ErrorIngesta("Solo se puede revertir un lote cuya indexación haya terminado.")
@@ -553,13 +641,23 @@ def revertir_indexacion(lote_id: str) -> dict[str, Any]:
     resultados_indexados = [resultado for resultado in manifiesto.get("resultados", []) if resultado.get("estado") == "indexado"]
     vector_store = obtener_vector_store()
     errores = []
+    motivos = []
     for resultado in resultados_indexados:
         try:
             vector_store.delete(where={"documento_id": resultado["documento_id"]})
         except Exception:
             errores.append(resultado["archivo"])
+            continue
+        try:
+            _retirar_original_del_lote(lote_id, manifiesto, resultado)
+        except Exception as error:
+            logger.warning("No se pudo retirar el original de %s al revertir: %s", resultado["archivo"], error)
+            errores.append(resultado["archivo"])
+            if isinstance(error, ErrorRepositorio):
+                motivos.append(str(error))
     if errores:
-        raise ErrorIngesta("No fue posible revertir completamente el lote. Intenta de nuevo para: " + ", ".join(errores))
+        detalle = (" Motivo: " + "; ".join(sorted(set(motivos)))) if motivos else ""
+        raise ErrorIngesta("No fue posible revertir completamente el lote. Intenta de nuevo para: " + ", ".join(errores) + "." + detalle)
 
     origen = _ruta_lote(lote_id, "indexados")
     destino = _ruta_lote(lote_id)

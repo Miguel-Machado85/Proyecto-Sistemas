@@ -51,7 +51,7 @@ Orden de ejecución: **0 → 1 → 2 → 4 → 5 → 3 → 6** (solo la 3 necesi
 - [x] **Fase 0** — Rama lista, `CLAUDE.md` con las nuevas reglas, versiones verificadas
 - [x] **Fase 1** — Chroma como servicio aparte (contenedor), índice migrado sin regenerar embeddings
 - [x] **Fase 2** — Módulo `repositorio_archivos` (Drive o local), tabla `archivos_documento`, endpoint de descarga, 71 documentos enlazados
-- [ ] **Fase 3** — La ingesta del admin sube el original a Drive al indexar y lo retira al revertir
+- [x] **Fase 3** — La ingesta del admin sube el original a Drive al indexar y lo retira al revertir
 - [x] **Fase 4** — El agente detecta cuándo se pide el archivo y lo entrega (`solicita_archivo`, `preparar_descarga`)
 - [x] **Fase 5** — `index.html` muestra el botón de descarga (texto y voz)
 - [ ] **Fase 6** — Evaluación, documentación (`home.md`, READMEs) y PR a `main`
@@ -360,3 +360,21 @@ Fallos: `tema-04` (arma/porte de armas), `mal-01` ("decrto 83… horaro de atens
 - **Verificado en el navegador** (frontend de Compose en :8080 + backend real con Drive; `/chat` y `/chat-voz` simulados en la página para no gastar cuota de Gemini): 2 botones de 44 px con texto y aria-label correctos,
   URL externa descartada; clic en el documento con original → blob `application/pdf` de 409451 bytes con el nombre original; clic en `2401_decretono187.pdf` (sin original) → mensaje rojo amable en el chat sin salir de la página;
   el flujo de voz pinta el botón igual; el anillo de foco aparece con teclado; en 375 px el texto del botón se parte en dos líneas sin desbordar.
+
+### Etapa 2, Fase 3 — la ingesta sube el original (2026-10-24)
+- **Solo se tocó `ingest.py`** (+ tests); `db.py`, `admin.py` y `admin.html` sin cambios. `_indexar_documento` ahora: omitidos (mismo hash/título) → no se suben; luego **1.** subir el original
+  (`_subir_original`; si falla, `ErrorIngesta` "…no se indexó. Detalle: …" y no se gastan embeddings), **2.** embeddings + `upsert` (si falla: `_deshacer_indexacion` borra de Chroma y manda el original a la papelera),
+  **3.** `db.registrar_archivo` (si falla: se deshace todo igual). Si además no se puede retirar el original, el mensaje al admin lo dice. El resultado del archivo lleva `id_externo` y `proveedor_original`
+  (así queda en el manifiesto del lote) y, si el título final no se lee como tipo + número (`catalogo.extraer_referencia`), `advertencias: [ADVERTENCIA_TITULO_NO_CANONICO]` (no bloquea).
+- **`revertir_indexacion`:** por cada documento borra de Chroma, manda el original a la papelera (`retirar`, nunca borrado) y elimina la fila. Es **reintentable**: tras retirar marca `original_retirado` en el manifiesto,
+  así un fallo a medias (p. ej. 403 por no ser Editor) deja el lote en `indexado` y el reintento no repite lo ya hecho; si el proveedor del original ≠ repositorio activo, no lo toca y avisa;
+  lotes anteriores a esta fase (sin `id_externo`) se revierten como antes.
+- **Pruebas reales de Drive:** la cuenta del token (`miguel.machado8506@gmail.com`) ya tiene `canEdit`/`canAddChildren` sobre `lossetentayuno` (verificado en solo lectura el 2026-10-24), pero por el enlace público con rol
+  `writer`, no por correo; el dueño (`danielfernandez3123@gmail.com`) debe compartirla por correo como Editor y luego dejar el enlace en Lector. Sobre los 69 PDF existentes el token tiene `canTrash:false` (son del dueño):
+  `retirar` solo funcionará con lo que suba nuestra cuenta, que es justo lo que revierte la ingesta. La carpeta "71 documentos" (`1qKlQKc…`) es la contenedora de `lossetentayuno` y de `chroma_db`; `GOOGLE_DRIVE_FOLDER_ID` sigue siendo `lossetentayuno`.
+  **Aún no se ha escrito nada en Drive real** (ni los 2 PDF faltantes ni una indexación de prueba).
+- **Admin (de otro compañero, sin tocar):** `admin.html` muestra los errores de `result.error` (los mensajes nuevos salen ahí), pero **no muestra `advertencias`** (solo "Añadido a Chroma con N fragmento(s)") y desconoce la fase
+  `subiendo_original` (no rompe, solo no añade texto al progreso). Cambio sugerido para quien sea dueño de `admin.html`: línea 231, añadir `+ (result.advertencias || []).join(' ')`.
+- **Tests:** 317. `test_ingest.py` (27: orden subir→embeddings→upsert, fila y manifiesto, fallo de Chroma/subida/registro, omitidos, advertencia, revertir los tres lugares, reintentos) y
+  `tests/test_documento_nuevo.py` (extremo a extremo con Chroma en memoria, SQLite, `RepositorioLocal` y las tools reales: "Decreto 045 de 2026" lo encuentran `buscar_documento_por_referencia`, `listar_documentos`
+  (año 2026), `buscar_fragmentos`, `leer_documento` (páginas 1,2 en orden) y `preparar_descarga`; tras revertir ninguna; también sin invalidación explícita, simulando otro worker).
