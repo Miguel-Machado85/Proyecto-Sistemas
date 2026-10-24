@@ -10,18 +10,31 @@
 7. Historial de turnos en Postgres; trazas en Langfuse.
 8. LLM: Gemini (flash-lite para clasificar, flash para investigar y redactar); las decisiones las toman los agentes, no regex.
 9. Se migra a un sistema multi-agente (analista → investigador → evaluador → redactor) con Gemini.
-10. Rama de trabajo: `feature-agentico` (base `feature-Sprint6`); un commit por fase.
+10. Etapa 1 (migración agéntica, terminada): rama `feature-agentico`, un commit por fase.
+11. Etapa 2 (actual): entrega de documentos del agente, Google Drive y Chroma como servicio; rama `feature-archivosAgente`, un commit por fase.
 
 ## Fuente de verdad
-La especificación está en **`docs/MIGRACION_AGENTICA.md`** y **manda sobre cualquier otra suposición**
-(incluido lo que diga un prompt de fase). Léela entera antes de empezar una fase.
+- Etapa actual: **`docs/ARCHIVOS_AGENTE.md`** manda sobre cualquier otra suposición (incluido lo que diga un prompt de fase).
+  Léela entera antes de empezar una fase.
+- **`docs/MIGRACION_AGENTICA.md`** sigue vigente para todo lo que la etapa actual no cambia.
 
-## Convenciones (sección 14 de la especificación)
+## Convenciones
 - Identificadores, comentarios, prompts y docstrings en **español**, como el código existente.
-- **No tocar `chroma_db/`**, no reindexar, no cambiar `EMBEDDING_MODEL`.
-- **No modificar `frontend/`** (el contrato de la API no cambia).
-- Un commit por fase, en la rama `feature-agentico`, con un mensaje que describa la fase.
-- Los tests no llaman a Gemini ni a Chroma reales (fakes / monkeypatch de `crear_llm`).
+- `backend/chroma_db/` solo se **LEE** (origen de la migración a Chroma servidor); nunca se escribe ni se modifica.
+- **Prohibido** reindexar y cambiar `EMBEDDING_MODEL` o `COLLECTION_NAME`: la migración copia vectores, no los recalcula.
+- **Se puede modificar `frontend/index.html`**, solo para mostrar archivos descargables. **`frontend/admin.html` NO se toca** (es del compañero).
+- El contrato de la API solo cambia de forma **aditiva** (campos nuevos con valor por defecto).
+- Un commit por fase, en la rama `feature-archivosAgente`, con un mensaje que describa la fase.
+- Los tests no llaman a Gemini, Chroma servidor ni Drive reales (fakes / monkeypatch de `crear_llm`, `EphemeralClient`, `RepositorioLocal`).
+- Secretos (`backend/secrets/`, `.env`) nunca en Git ni en la imagen; en Compose se montan de solo lectura.
+
+## Coordinación con el compañero (login de admin; sección 5 de la especificación)
+- **Del compañero:** `admin.py` (autenticación) y `frontend/admin.html`. Si una fase exige cambiarlos, detenerse y avisar qué cambio se haría.
+- **Nuestros:** `ingest.py`, `retrieval.py`, `repositorio_archivos.py`, `tools.py`, los nodos e `index.html`.
+- `admin.py` debe seguir llamando a las mismas funciones de `ingest.py`.
+- Archivos que pueden tocar ambos (`config.py`, `.env.example`, `db.py`, `Compose.yml`, `api.py` lifespan): cada uno agrega su bloque con su propio
+  encabezado de comentario para que los merges sean triviales.
+- `git merge main` al empezar cada fase; en conflictos resolver solo en archivos nuestros y avisar de los del compañero.
 
 ## Comandos de verificación (desde `backend/`)
 ```bash
@@ -33,7 +46,17 @@ Línea base de recuperación (necesita `GOOGLE_API_KEY` y `backend/chroma_db`):
 cd backend && uv run python evaluacion/evaluar_recuperacion.py
 ```
 
-## Fases
+## Fases de la etapa actual (`docs/ARCHIVOS_AGENTE.md`, sección 1)
+Orden de ejecución: **0 → 1 → 2 → 4 → 5 → 3 → 6** (solo la 3 necesita permiso de Editor en Drive). Prioridad si aprieta el tiempo: 2 → 4 → 5.
+- [x] **Fase 0** — Rama lista, `CLAUDE.md` con las nuevas reglas, versiones verificadas
+- [ ] **Fase 1** — Chroma como servicio aparte (contenedor), índice migrado sin regenerar embeddings
+- [ ] **Fase 2** — Módulo `repositorio_archivos` (Drive o local), tabla `archivos_documento`, endpoint de descarga, 71 documentos enlazados
+- [ ] **Fase 3** — La ingesta del admin sube el original a Drive al indexar y lo retira al revertir
+- [ ] **Fase 4** — El agente detecta cuándo se pide el archivo y lo entrega (`solicita_archivo`, `preparar_descarga`)
+- [ ] **Fase 5** — `index.html` muestra el botón de descarga (texto y voz)
+- [ ] **Fase 6** — Evaluación, documentación (`home.md`, READMEs) y PR a `main`
+
+## Fases de la etapa 1 (migración agéntica, terminada)
 - [x] **Fase 0** — Preparación: rama, CLAUDE.md, dependencias, verificación del entorno, dataset y línea base de recuperación
 - [x] **Fase 1** — Configuración y LLM: `config.py`, `llm.py`, variables Gemini, `.env.example`, retirar Ollama
 - [x] **Fase 2** — Recuperación: `retrieval.py` refactor, `reranker.py`, `catalogo.py` (`buscar_por_atributos`, `similares`)
@@ -243,3 +266,20 @@ Fallos: `tema-04` (arma/porte de armas), `mal-01` ("decrto 83… horaro de atens
 - `dataset.jsonl` agrega dos campos opcionales fuera de la sección 13: `consulta_recuperacion` (pregunta autónoma
   equivalente para evaluar sin LLM en casos de varios turnos) y `candidatos_esperados` (bool). `intencion_esperada` y
   `archivos_esperados` se refieren al **último** turno.
+
+### Etapa 2, Fase 0 — versiones verificadas (2026-10-23, Python 3.13.14 local, `uv sync`)
+- **Tests al iniciar:** `172 passed` (2 warnings: `fitz` deprecado, `TestClient`).
+- **(a) chromadb 1.5.9** (langchain-chroma 1.1.0). `langchain_chroma.Chroma.__init__` **sí acepta `client=`** (`ClientAPI | None`), y además `host`, `port`, `ssl`,
+  `headers`, `chroma_cloud_api_key`, `tenant`, `database`, `client_settings`, `collection_metadata`, `collection_configuration`,
+  `create_collection_if_not_exists=True` (por defecto crea la colección si no existe).
+  → La imagen del servidor debe fijarse a **`chromadb/chroma:1.5.9`** (la misma que el cliente). `pyproject.toml` solo exige `langchain-chroma>=1.1.0` (sin tope de `chromadb`):
+  conviene fijar `chromadb==1.5.9` o el rango equivalente en la Fase 1.
+- **(b) `chromadb.HttpClient`** existe: `HttpClient(host='localhost', port=8000, ssl=False, headers=None, settings=None, tenant='default_tenant', database='default_database')`.
+  También existe `chromadb.CloudClient` (fuera de alcance).
+- **(c) Colección local `backend/chroma_db`** (leída con sqlite3 en modo `mode=ro`, sin abrir `PersistentClient`): una sola colección `langchain`,
+  dimensión **3072**, **798 embeddings**, `config_json_str = '{}'`, `collection_metadata` vacía → sin `hnsw:space` explícito ⇒ **distancia por defecto de Chroma (l2)**.
+  Segmentos: `hnsw-local-persisted` (vectorial) + `sqlite` (metadatos). Al migrar, crear la colección destino también sin métrica explícita (o `l2`) y comprobarlo.
+- **(d) Paquetes de Google** (resolución con `uv pip install --dry-run`, compatible con Python 3.13 y los demás paquetes): `google-api-python-client==2.201.0`,
+  `google-auth-oauthlib==1.5.0`, `google-auth` ya instalado en **2.57.0** (dependencia transitiva de `google-genai`; `--dry-run` no lo cambia). Arrastran `google-api-core 2.43.0`,
+  `google-auth-httplib2 0.4.4`, `httplib2 0.32.0`, `proto-plus 1.29.0`, `uritemplate 4.2.0`, `pyparsing 3.3.3`. Son wheels puras de Python: sin problema en el Dockerfile (Python 3.14).
+- **Estado del repo:** `backend/chroma_db/` está en `backend/.gitignore` (no versionado); `backend/secrets/` aún no existe ni está ignorado (se crea en la Fase 2).
