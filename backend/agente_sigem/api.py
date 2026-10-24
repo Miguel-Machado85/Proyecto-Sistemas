@@ -5,13 +5,14 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from google import genai
 from google.genai import errors as genai_errors
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 
-from . import db, reranker, storage
+from . import db, reranker, retrieval, storage
 from .admin import router as admin_router
 from .agent import construir_grafo
 from .audio import synthesize, transcribe
@@ -171,8 +172,15 @@ app.include_router(admin_router)
 
 @app.get("/health", tags=["sistema"])
 async def health_check():
-    """Indica si el proceso del API está disponible."""
-    return {"status": "ok"}
+    """Indica si el proceso del API está disponible y, en modo http, si Chroma responde."""
+    if config.CHROMA_MODO != "http":
+        return {"status": "ok"}
+    try:
+        await run_in_threadpool(lambda: retrieval.crear_cliente_chroma().heartbeat())
+    except Exception as error:
+        logger.warning("Chroma no responde: %s", error)
+        return JSONResponse(status_code=503, content={"status": "error", "chroma": "no disponible"})
+    return {"status": "ok", "chroma": "ok"}
 
 
 @app.get("/health/llm", tags=["sistema"])

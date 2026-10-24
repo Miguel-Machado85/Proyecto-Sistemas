@@ -214,6 +214,38 @@ En `ingest._indexar_documento`, orden propuesto:
 `revertir_indexacion` retira el archivo de Drive y borra la fila. El manifiesto del lote guarda
 `id_externo` por archivo para que el revertir sepa qué retirar.
 
+### Que el documento nuevo funcione con todas las tools del investigador
+La mayor parte **ya existe** desde el Sprint 6 (`ingest.py`, en `main`). Las 4 tools no leen otra
+fuente: todas salen de la misma colección de Chroma, así que un documento indexado por el admin
+queda disponible para ellas sin código nuevo.
+
+| Tool | De dónde sale el dato | Por qué ya funciona con un documento nuevo |
+|---|---|---|
+| `buscar_fragmentos` | Búsqueda textual y semántica en la colección | El upsert guarda texto y embeddings en la misma colección `langchain` |
+| `leer_documento` | `where={"nombre_archivo": ...}` + `page` | Cada chunk lleva `nombre_archivo`, `page` y `page_label` |
+| `buscar_documento_por_referencia` y `listar_documentos` | Catálogo en memoria (`catalogo.py`) armado con los metadatos de Chroma | Los chunks llevan `titulo`, `descripcion` y `fecha_expedicion`, y al terminar el lote se llama `invalidar_cache_documentos()` |
+| `preparar_descarga` (nueva) | Catálogo + tabla `archivos_documento` | La fase 3 registra la fila al indexar |
+
+Lo que **faltaba** y se agrega:
+
+1. **Caché del catálogo con Chroma como servidor (fase 1).** `invalidar_cache_documentos()` solo
+   limpia la caché del proceso que indexó. Con un solo proceso no pasa nada, pero con varios workers
+   o réplicas del backend (que es justo lo que habilita el contenedor de Chroma), los demás procesos
+   seguirían con el catálogo viejo: la búsqueda semántica encontraría el documento, pero
+   "Decreto 045 de 2026" o "¿qué decretos hay de 2026?" no. La solución: guardar junto al catálogo el
+   `collection.count()` con el que se construyó y reconstruirlo si cambió. Es una llamada barata por
+   consulta y no requiere coordinación entre procesos.
+2. **El título debe tener el formato canónico (fase 3).** `buscar_por_atributos` depende de que el
+   título se pueda leer como "Decreto 045 de 2026". `_metadata_sugerida` ya lo propone así, pero el
+   admin lo puede editar libremente. Si el título final no tiene tipo y número reconocibles, el
+   resultado del lote debe advertirlo, sin bloquear la indexación (un documento sin número sigue
+   encontrándose por texto y semántica).
+3. **Limitación conocida:** "documento 18399" (`buscar_por_codigo`) solo funciona con los 71 originales,
+   cuyo nombre empieza por el código de SIGEM. Los documentos subidos por el admin no lo tienen. Se
+   documenta y no se cambia.
+4. **Prueba de extremo a extremo (fase 3):** indexar un documento de prueba y comprobar que cada tool,
+   incluida `preparar_descarga`, lo encuentra sin reiniciar la API.
+
 ---
 
 ## 4. Parte C: Chroma fuera del proceso del backend
@@ -340,6 +372,7 @@ Después:
 1. config.py: CHROMA_MODO (local|http, por defecto local para no romper tests ni desarrollo), CHROMA_HOST, CHROMA_PORT, CHROMA_SSL. Actualiza .env.example en un bloque propio.
 2. retrieval.py: crear_cliente_chroma() según CHROMA_MODO y obtener_vector_store() usando Chroma(client=...). Mantén el lru_cache. ingest.py no debería necesitar cambios: verifícalo.
 3. /health: incluye el estado de Chroma (heartbeat) sin cambiar el código HTTP actual cuando todo está bien.
+3b. Catálogo con varios procesos (subsección "Que el documento nuevo funcione con todas las tools" de la parte B): obtener_catalogo_documentos guarda el collection.count() con el que se construyó y se reconstruye si cambió. invalidar_cache_documentos() sigue existiendo. Test: un proceso indexa (simulado con otro cliente sobre la misma colección) y el catálogo de este proceso ve el documento nuevo sin invalidación explícita.
 4. Compose.yml: servicio chroma (imagen fijada a la versión del cliente), volumen nombrado chroma-data en /data, sin puerto publicado salvo 127.0.0.1:8000 para migración y depuración, backend con depends_on y CHROMA_MODO=http, CHROMA_HOST=chroma. Quita el montaje de ./backend/chroma_db en el backend. Si el contenedor de Chroma no tiene curl para el healthcheck, busca una alternativa y explícamela.
 5. backend/scripts/migrar_chroma.py exactamente como dice la especificación: lectura paginada con ids y embeddings, misma configuración de distancia, upsert idempotente, y verificación de conteo, ids y top-8 usando embeddings guardados como consulta (sin llamar a Gemini). Debe abrir chroma_db solo para leer.
 6. Tests: crear_cliente_chroma con cada modo (monkeypatch, sin servidor real) y la lógica de paginación y verificación del script con dos clientes Chroma en memoria (EphemeralClient). uv run pytest -q.
@@ -379,7 +412,9 @@ Lee CLAUDE.md y la subsección "Ingesta" de la parte B de docs/ARCHIVOS_AGENTE.m
 2. Guarda id_externo por archivo en el manifiesto del lote.
 3. revertir_indexacion retira el archivo del repositorio (papelera) y borra la fila de archivos_documento, además de lo que ya hace en Chroma.
 4. Los documentos omitidos (mismo hash o mismo título) no se suben.
-5. Tests en test_ingest.py con RepositorioLocal o uno falso: indexación correcta crea la fila; fallo de Chroma retira el archivo; fallo de subida no indexa; revertir limpia los tres lugares. uv run pytest -q.
+4b. Si el título final no se puede leer como tipo + número (catalogo.extraer_referencia devuelve None), el resultado de ese archivo en el lote incluye una advertencia: "No se reconoce tipo y número en el título; el documento se encontrará por contenido, pero no por referencia como 'Decreto 045 de 2026'". No bloquea la indexación.
+5. Tests en test_ingest.py con RepositorioLocal o uno falso: indexación correcta crea la fila; fallo de Chroma retira el archivo; fallo de subida no indexa; revertir limpia los tres lugares; advertencia de título no canónico.
+5b. Test de extremo a extremo (tests/test_documento_nuevo.py) con Chroma en memoria, embeddings falsos y RepositorioLocal: indexa un PDF de prueba con título "Decreto 045 de 2026" y verifica, SIN reiniciar nada, que lo encuentran buscar_documento_por_referencia (tipo, número y año), listar_documentos (filtro por año 2026), buscar_fragmentos (por una frase de su contenido), leer_documento (sus páginas en orden) y preparar_descarga (devuelve url_descarga). Luego revierte el lote y verifica que ninguna de las cinco lo encuentra. uv run pytest -q.
 6. Marca la fase en CLAUDE.md y haz commit.
 ```
 

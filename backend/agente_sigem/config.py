@@ -41,8 +41,12 @@ class Config:
     ALLOWED_AUDIO_EXTENSIONS = {"webm", "wav", "mp3", "m4a", "mp4", "ogg"}
 
     # ── Chroma ────────
-    # Chroma corre embebido (una carpeta local persistida), se usa
-    # CHROMA_PERSIST_DIR. 
+    # local: carpeta persistida en CHROMA_PERSIST_DIR (tests, desarrollo y origen de la migración).
+    # http: servidor Chroma aparte (contenedor `chroma` en Compose) en CHROMA_HOST:CHROMA_PORT.
+    CHROMA_MODO = os.getenv("CHROMA_MODO", "local").strip().lower()
+    CHROMA_HOST = os.getenv("CHROMA_HOST", "localhost")
+    CHROMA_PORT = int(os.getenv("CHROMA_PORT", "8000"))
+    CHROMA_SSL = os.getenv("CHROMA_SSL", "false").strip().lower() in {"1", "true", "yes", "si", "sí"}
     CHROMA_PERSIST_DIR = os.getenv("CHROMA_PERSIST_DIR", "./chroma_db")
 
     # La colección existente se llama `langchain`; usar otro valor crea un índice vacío.

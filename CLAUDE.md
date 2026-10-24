@@ -49,7 +49,7 @@ cd backend && uv run python evaluacion/evaluar_recuperacion.py
 ## Fases de la etapa actual (`docs/ARCHIVOS_AGENTE.md`, sección 1)
 Orden de ejecución: **0 → 1 → 2 → 4 → 5 → 3 → 6** (solo la 3 necesita permiso de Editor en Drive). Prioridad si aprieta el tiempo: 2 → 4 → 5.
 - [x] **Fase 0** — Rama lista, `CLAUDE.md` con las nuevas reglas, versiones verificadas
-- [ ] **Fase 1** — Chroma como servicio aparte (contenedor), índice migrado sin regenerar embeddings
+- [x] **Fase 1** — Chroma como servicio aparte (contenedor), índice migrado sin regenerar embeddings
 - [ ] **Fase 2** — Módulo `repositorio_archivos` (Drive o local), tabla `archivos_documento`, endpoint de descarga, 71 documentos enlazados
 - [ ] **Fase 3** — La ingesta del admin sube el original a Drive al indexar y lo retira al revertir
 - [ ] **Fase 4** — El agente detecta cuándo se pide el archivo y lo entrega (`solicita_archivo`, `preparar_descarga`)
@@ -283,3 +283,23 @@ Fallos: `tema-04` (arma/porte de armas), `mal-01` ("decrto 83… horaro de atens
   `google-auth-oauthlib==1.5.0`, `google-auth` ya instalado en **2.57.0** (dependencia transitiva de `google-genai`; `--dry-run` no lo cambia). Arrastran `google-api-core 2.43.0`,
   `google-auth-httplib2 0.4.4`, `httplib2 0.32.0`, `proto-plus 1.29.0`, `uritemplate 4.2.0`, `pyparsing 3.3.3`. Son wheels puras de Python: sin problema en el Dockerfile (Python 3.14).
 - **Estado del repo:** `backend/chroma_db/` está en `backend/.gitignore` (no versionado); `backend/secrets/` aún no existe ni está ignorado (se crea en la Fase 2).
+
+### Etapa 2, Fase 1 — Chroma como servicio (2026-10-23)
+- **Código:** `config.CHROMA_MODO` (`local` por defecto | `http`), `CHROMA_HOST/PORT/SSL`; `retrieval.crear_cliente_chroma()` y `obtener_vector_store()` con `Chroma(client=...)`.
+  `ingest.py` no cambió (`_collection.upsert` y `.get` funcionan igual contra el servidor). `chromadb==1.5.9` fijado en `pyproject.toml`.
+- **Catálogo multiproceso:** `obtener_catalogo_documentos()` ya no usa `lru_cache`: guarda el `collection.count()` con el que se construyó y se reconstruye si cambia
+  (con candado). Si `count()` falla conserva el catálogo anterior. `invalidar_cache_documentos()` sigue existiendo.
+- **`/health`:** en modo `http` hace `heartbeat()` en un hilo y responde `{"status":"ok","chroma":"ok"}`; si falla, **503** `{"status":"error","chroma":"no disponible"}`
+  (probado parando el contenedor). En modo local no cambia (`{"status":"ok"}`).
+- **Compose:** servicio `chroma` (`chromadb/chroma:1.5.9`, volumen `chroma-data:/data`, puerto solo `127.0.0.1:8000`); el backend usa `CHROMA_MODO=http`, `CHROMA_HOST=chroma`
+  y `depends_on` con `service_healthy`; se quitó el montaje de `./backend/chroma_db`. La imagen **no trae curl ni python**, solo `bash`: el healthcheck usa `/dev/tcp` y
+  `GET /api/v2/heartbeat`.
+- **Migración (`backend/scripts/migrar_chroma.py`):** trabaja sobre una copia temporal de `chroma_db` (el original no se toca; md5 del sqlite igual antes y después).
+  798 registros migrados, mismos ids, distancia l2 (el destino se crea con la misma configuración HNSW y aborta si la métrica difiere). Es idempotente (`upsert`).
+  **Hallazgo:** el top-8 no es idéntico entre origen y destino (9/10 muestras): HNSW es aproximado y se construye distinto; en el caso que difirió el **destino era el exacto**
+  y el origen se perdía un vecino. Por eso la verificación compara cada lado con el top-8 exacto por fuerza bruta y exige que el destino no recupere peor que el origen.
+- **Recuperación contra el servidor (33 casos, `evaluar_recuperacion.py`, `evaluacion/fase1_servidor_*.json`):** con reranker hit@8 0.79 / MRR 0.67 (fase 6: 0.82 / 0.68);
+  sin reranker 0.82 / 0.70 (fase 6: 0.85 / 0.70). La única diferencia de acierto es `amb-02` (referencia ambigua; un candidato casi empatado cambia de posición); el resto son
+  reordenamientos marginales. No es un error de migración: mismos vectores, índice ANN distinto.
+- **Tests:** 187 (`tests/test_chroma_servicio.py`: cliente por modo, `/health`, catálogo que ve documentos de otro cliente sin invalidar, migración con `EphemeralClient`).
+- **Pruebas con modelos:** se usó `gemini-3.5-flash-lite` en los cuatro agentes (variables de sesión) cuando hizo falta; el script de recuperación solo gasta embeddings.
