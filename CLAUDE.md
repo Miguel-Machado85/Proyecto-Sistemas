@@ -53,7 +53,7 @@ Orden de ejecución: **0 → 1 → 2 → 4 → 5 → 3 → 6** (solo la 3 necesi
 - [x] **Fase 2** — Módulo `repositorio_archivos` (Drive o local), tabla `archivos_documento`, endpoint de descarga, 71 documentos enlazados
 - [ ] **Fase 3** — La ingesta del admin sube el original a Drive al indexar y lo retira al revertir
 - [x] **Fase 4** — El agente detecta cuándo se pide el archivo y lo entrega (`solicita_archivo`, `preparar_descarga`)
-- [ ] **Fase 5** — `index.html` muestra el botón de descarga (texto y voz)
+- [x] **Fase 5** — `index.html` muestra el botón de descarga (texto y voz)
 - [ ] **Fase 6** — Evaluación, documentación (`home.md`, READMEs) y PR a `main`
 
 ## Fases de la etapa 1 (migración agéntica, terminada)
@@ -348,3 +348,15 @@ Fallos: `tema-04` (arma/porte de armas), `mal-01` ("decrto 83… horaro de atens
 - **Tests:** 296 (`tests/test_entrega_archivos.py` con 37 casos, más ampliaciones en `test_tools`, `test_api`, `test_evaluacion`). `test_chroma_servicio::test_verificar_detecta_registros_faltantes` falló una vez en una
   corrida completa y no se reprodujo en 4 corridas posteriores (posible estado compartido de `EphemeralClient` entre tests); vigilar.
 - **Dataset:** 11 casos `solicitud_archivo` (`solicita_archivo_esperado`, `incluye_contenido_esperado`); `evaluar_agente.py` reporta `solicita_archivo_ok`, `incluye_contenido_ok` y `entrega_ok` (columnas `sol.arch` y `entrega`).
+
+### Etapa 2, Fase 5 — botón de descarga en `frontend/index.html` (2026-10-23)
+- **Solo se tocó `index.html`** (`admin.html` intacto). `appendFiles(bubble, data.archivos)` se llama después de `appendSources` en `/chat` y en `/chat-voz`. Un enlace por archivo:
+  ícono SVG de descarga, texto "Descargar <título> (PDF)", `aria-label` igual, `href = API_BASE_URL + url_descarga`, atributo `download` con el nombre original, `min-height: 44px`, foco visible
+  (`:focus-visible` con `--focus-ring`) y estilo gov.co (azul `--govco-blue`). Solo se aceptan `url_descarga` que empiecen por `/documentos/` (cualquier otra URL se ignora).
+- **404/503:** el clic hace `fetch` (en vez de navegar) para poder mostrar un mensaje amable en el chat (`msg-error`): con 404 el `detail` de la API ("aún no está disponible para descarga…"), con otros errores un texto
+  genérico. Si responde 200 se baja el blob y se dispara la descarga con el nombre original; mientras tanto el botón queda `aria-busy` con "Descargando…". Funciona aunque front y API estén en orígenes distintos
+  (el atributo `download` solo se ignora entre orígenes en un clic directo; por eso se usa el blob).
+- **Historial:** no se persistieron `archivos` en la Fase 4, así que al recargar el hilo el botón no reaparece (solo el texto). No se hizo nada con `/historial` (como pedía el prompt).
+- **Verificado en el navegador** (frontend de Compose en :8080 + backend real con Drive; `/chat` y `/chat-voz` simulados en la página para no gastar cuota de Gemini): 2 botones de 44 px con texto y aria-label correctos,
+  URL externa descartada; clic en el documento con original → blob `application/pdf` de 409451 bytes con el nombre original; clic en `2401_decretono187.pdf` (sin original) → mensaje rojo amable en el chat sin salir de la página;
+  el flujo de voz pinta el botón igual; el anillo de foco aparece con teclado; en 375 px el texto del botón se parte en dos líneas sin desbordar.
