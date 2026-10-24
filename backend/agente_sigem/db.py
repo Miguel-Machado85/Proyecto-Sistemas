@@ -5,7 +5,7 @@ La tabla `contextos_sigem` de bases existentes se deja intacta; create_all nunca
 """
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, Integer, String, Text, create_engine
+from sqlalchemy import BigInteger, Column, DateTime, Integer, String, Text, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from .config import config
@@ -25,6 +25,24 @@ class Turno(Base):
     rol = Column(String, nullable=False)  # 'usuario' | 'agente'
     texto = Column(Text, nullable=False)
     audio_key = Column(String, nullable=True)  # key en S3, no URL (el bucket es privado)
+    creado_en = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class ArchivoDocumento(Base):
+    """Enlace entre un documento indexado y su original en el repositorio de archivos (Drive o local).
+
+    La clave es la misma `nombre_archivo` de los metadatos de Chroma; así no se modifica la colección.
+    """
+
+    __tablename__ = "archivos_documento"
+
+    nombre_archivo = Column(String, primary_key=True)
+    titulo = Column(String, nullable=True)
+    proveedor = Column(String, nullable=False)  # 'drive' | 'local'
+    id_externo = Column(String, nullable=False)
+    mime_type = Column(String, nullable=True)
+    tamano_bytes = Column(BigInteger, nullable=True)
+    hash_sha256 = Column(String, nullable=True)
     creado_en = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
@@ -50,3 +68,43 @@ def obtener_historial(thread_id: str) -> list[Turno]:
             .order_by(Turno.creado_en.asc())
             .all()
         )
+
+
+def registrar_archivo(
+    nombre_archivo: str,
+    proveedor: str,
+    id_externo: str,
+    titulo: str | None = None,
+    mime_type: str | None = None,
+    tamano_bytes: int | None = None,
+    hash_sha256: str | None = None,
+) -> ArchivoDocumento:
+    """Inserta o actualiza el enlace del documento con su original."""
+    with SessionLocal() as session:
+        fila = session.merge(ArchivoDocumento(
+            nombre_archivo=nombre_archivo, titulo=titulo, proveedor=proveedor, id_externo=id_externo,
+            mime_type=mime_type, tamano_bytes=tamano_bytes, hash_sha256=hash_sha256,
+        ))
+        session.commit()
+        session.refresh(fila)
+        session.expunge(fila)
+        return fila
+
+
+def obtener_archivo(nombre_archivo: str) -> ArchivoDocumento | None:
+    with SessionLocal() as session:
+        fila = session.get(ArchivoDocumento, nombre_archivo)
+        if fila is not None:
+            session.expunge(fila)
+        return fila
+
+
+def eliminar_registro_archivo(nombre_archivo: str) -> bool:
+    """Borra solo la fila (el archivo en el repositorio se retira aparte). Devuelve si existía."""
+    with SessionLocal() as session:
+        fila = session.get(ArchivoDocumento, nombre_archivo)
+        if fila is None:
+            return False
+        session.delete(fila)
+        session.commit()
+        return True

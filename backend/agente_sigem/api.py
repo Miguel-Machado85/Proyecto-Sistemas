@@ -2,16 +2,18 @@ import asyncio
 import logging
 import time
 from contextlib import asynccontextmanager
+from urllib.parse import quote
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, RedirectResponse, StreamingResponse
 from google import genai
 from google.genai import errors as genai_errors
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 
-from . import db, reranker, storage
+from . import db, repositorio_archivos, reranker, retrieval, storage
 from .admin import router as admin_router
 from .agent import construir_grafo
 from .audio import synthesize, transcribe
@@ -55,12 +57,19 @@ class CandidatoDocumento(BaseModel):
     descripcion: str | None = None
 
 
+class ArchivoDescargable(BaseModel):
+    titulo: str
+    archivo: str
+    url_descarga: str  # relativa (/documentos/{archivo}/descargar): el frontend la completa con su API_URL
+
+
 class ChatResponse(BaseModel):
     respuesta: str
     thread_id: str
     pasos: list[PasoAgente]
     fuentes: list[FuenteSigem] = []
     candidatos: list[CandidatoDocumento] = []
+    archivos: list[ArchivoDescargable] = []
     tiempo_ms: float
 
 class ChatVozResponse(BaseModel):
@@ -71,6 +80,7 @@ class ChatVozResponse(BaseModel):
     respuesta_audio_url: str | None
     fuentes: list[FuenteSigem] = []
     candidatos: list[CandidatoDocumento] = []
+    archivos: list[ArchivoDescargable] = []
     alerta: bool = False
 
 
@@ -115,6 +125,8 @@ def ejecutar_turno(agente, thread_id: str, mensaje: str, perfil: str, origen: st
             "consulta_actual": "",
             "pasos": [],
             "es_alerta": False,
+            "archivos": [],
+            "archivos_no_disponibles": [],
         },
         config=config_graph,
     )
@@ -130,6 +142,16 @@ def _fuentes(resultado: dict) -> list[FuenteSigem]:
 
 def _candidatos(resultado: dict) -> list[CandidatoDocumento]:
     return [CandidatoDocumento(**candidato) for candidato in resultado.get("candidatos", [])]
+
+
+def _archivos(resultado: dict) -> list[ArchivoDescargable]:
+    """Compuerta determinística: solo hay archivos si el analista marcó que el usuario los pidió."""
+    if not (resultado.get("analisis") or {}).get("solicita_archivo"):
+        return []
+    return [
+        ArchivoDescargable(titulo=a.get("titulo") or a["archivo"], archivo=a["archivo"], url_descarga=a["url_descarga"])
+        for a in resultado.get("archivos", [])
+    ]
 
 
 def _pasos(resultado: dict) -> list[PasoAgente]:
@@ -171,8 +193,15 @@ app.include_router(admin_router)
 
 @app.get("/health", tags=["sistema"])
 async def health_check():
-    """Indica si el proceso del API está disponible."""
-    return {"status": "ok"}
+    """Indica si el proceso del API está disponible y, en modo http, si Chroma responde."""
+    if config.CHROMA_MODO != "http":
+        return {"status": "ok"}
+    try:
+        await run_in_threadpool(lambda: retrieval.crear_cliente_chroma().heartbeat())
+    except Exception as error:
+        logger.warning("Chroma no responde: %s", error)
+        return JSONResponse(status_code=503, content={"status": "error", "chroma": "no disponible"})
+    return {"status": "ok", "chroma": "ok"}
 
 
 @app.get("/health/llm", tags=["sistema"])
@@ -220,6 +249,40 @@ def sugerencias_documentos(q: str = ""):
         for documento in obtener_catalogo_documentos().sugerencias(q)
     ]
 
+def _detalle_503_descarga(error: Exception) -> str:
+    logger.warning("Descarga no disponible: %s", error)
+    return "La descarga de documentos no está disponible en este momento. Intenta de nuevo más tarde."
+
+
+@app.get("/documentos/{archivo}/descargar", tags=["sigem"])
+def descargar_documento(archivo: str):
+    """Entrega el original de un documento indexado (streaming o redirect, según DRIVE_MODO_ENTREGA)."""
+    # El parámetro solo se compara con los nombres del catálogo: nunca forma parte de una ruta de disco.
+    if not any(documento.archivo == archivo for documento in obtener_catalogo_documentos().documentos):
+        raise HTTPException(status_code=404, detail="No encontré ese documento en el repositorio de la Alcaldía.")
+    registro = db.obtener_archivo(archivo)
+    if registro is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Ese documento aún no está disponible para descarga. Puedes consultar su contenido en el chat.",
+        )
+    try:
+        repositorio = repositorio_archivos.obtener_repositorio()
+        if registro.proveedor != repositorio.proveedor:
+            raise repositorio_archivos.ErrorRepositorio(
+                f"El documento está en '{registro.proveedor}' pero el repositorio activo es '{repositorio.proveedor}'."
+            )
+        if config.DRIVE_MODO_ENTREGA == "redirect":
+            enlace = repositorio.enlace_ver(registro.id_externo)
+            if enlace:
+                return RedirectResponse(enlace, status_code=302)
+        trozos = repositorio.descargar(registro.id_externo)
+    except repositorio_archivos.ErrorRepositorio as error:
+        raise HTTPException(status_code=503, detail=_detalle_503_descarga(error)) from error
+    cabeceras = {"Content-Disposition": f"attachment; filename*=UTF-8''{quote(archivo)}"}
+    return StreamingResponse(trozos, media_type=registro.mime_type or "application/octet-stream", headers=cabeceras)
+
+
 @app.post("/chat", response_model=ChatResponse)
 async def endpoint_chat(request: ChatRequest, http_request: Request):
     """
@@ -248,6 +311,7 @@ async def endpoint_chat(request: ChatRequest, http_request: Request):
             pasos=_pasos(resultado),
             fuentes=_fuentes(resultado),
             candidatos=_candidatos(resultado),
+            archivos=_archivos(resultado),
             tiempo_ms=round((time.time() - inicio) * 1000, 1),
         )
     except Exception as e:
@@ -343,6 +407,7 @@ async def endpoint_chat_voz(
         respuesta_audio_url=storage.url_firmada(respuesta_key),
         fuentes=_fuentes(resultado),
         candidatos=_candidatos(resultado),
+        archivos=_archivos(resultado),
     )
 
 

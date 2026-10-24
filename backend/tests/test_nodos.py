@@ -12,6 +12,7 @@ from agente_sigem.estado import AnalisisConsulta, EvaluacionEvidencia, FiltrosSi
 from fakes_llm import (  # noqa: E402
     CANDIDATOS,
     FRAGMENTO_TAXI,
+    ARCHIVO_TAXI_SALIDA,
     FUENTE_TAXI,
     FakeEstructurado,
     ModeloFalso,
@@ -41,6 +42,8 @@ def estado_base(**cambios) -> dict:
         "consulta_actual": "",
         "pasos": [],
         "es_alerta": False,
+        "archivos": [],
+        "archivos_no_disponibles": [],
     }
     estado.update(cambios)
     return estado
@@ -52,6 +55,8 @@ def analisis_dict(**cambios) -> dict:
         "consulta_autonoma": "¿Cuáles son las tarifas del taxi?",
         "filtros": None,
         "usa_documento_activo": False,
+        "solicita_archivo": False,
+        "incluye_contenido": False,
         "pregunta_aclaracion": None,
         "razonamiento": "x",
     }
@@ -243,6 +248,7 @@ def correr_investigador(monkeypatch, respuestas, salidas_tools, estado=None, con
     modelo = ModeloFalso(respuestas=list(respuestas))
     pedidos = instalar(monkeypatch, m_investigador, modelo)
     monkeypatch.setattr(tools, "HERRAMIENTAS_INVESTIGADOR", herramientas_dobles(salidas_tools))
+    monkeypatch.setattr(tools, "HERRAMIENTAS_DESCARGA", herramientas_dobles({"preparar_descarga": ARCHIVO_TAXI_SALIDA}))
     resultado = m_investigador.investigador(estado or estado_base(
         analisis=analisis_dict(), consulta_actual="¿Cuáles son las tarifas del taxi?"), config_ejecucion)
     return resultado, modelo, pedidos

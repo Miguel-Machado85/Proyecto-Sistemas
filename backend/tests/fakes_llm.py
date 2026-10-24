@@ -40,6 +40,7 @@ class ModeloFalso(BaseChatModel):
     respuestas: list = Field(default_factory=list)
     entradas: list = Field(default_factory=list)
     etiquetas: list = Field(default_factory=list)
+    herramientas_vinculadas: list = Field(default_factory=list)  # nombres de las tools que recibió bind_tools
     informacion_encontrada: bool = True  # lo que devolverá como señal en salida estructurada del redactor
 
     def with_structured_output(self, esquema, **kwargs):
@@ -60,6 +61,7 @@ class ModeloFalso(BaseChatModel):
         return ChatResult(generations=[ChatGeneration(message=mensaje)])
 
     def bind_tools(self, tools, **kwargs):
+        self.herramientas_vinculadas = [getattr(herramienta, "name", str(herramienta)) for herramienta in tools]
         return self
 
     @property
@@ -91,6 +93,19 @@ FUENTE_TAXI = {
     "descripcion": "Tarifas de taxis y buses",
 }
 FRAGMENTO_TAXI = {"fuente": FUENTE_TAXI, "contenido": "La tarifa mínima del taxi es de $5.500."}
+ARCHIVO_TAXI = {
+    "titulo": "Decreto 001 de 2019",
+    "archivo": "22598_decreto-no-0012019.pdf",
+    "fecha_expedicion": "2019-01-03T08:00:00",
+    "descripcion": "Tarifas de taxis y buses",
+    "url_descarga": "/documentos/22598_decreto-no-0012019.pdf/descargar",
+}
+ARCHIVO_TAXI_SALIDA = {"fuentes": [], "fragmentos": [], "archivos": [ARCHIVO_TAXI]}
+NO_DISPONIBLE_SALIDA = {
+    "fuentes": [], "fragmentos": [], "motivo": "no_disponible",
+    "titulo": "Decreto 001 de 2019", "archivo": "22598_decreto-no-0012019.pdf",
+    "error": "El documento Decreto 001 de 2019 está en SIGEM pero su original no está disponible para descarga.",
+}
 CANDIDATOS = [
     {"titulo": "Resolución 4397 de 2018", "archivo": "23655.pdf", "fecha_expedicion": "2018-12-13", "descripcion": None},
     {"titulo": "Resolución 4397 de 2017", "archivo": "23661.pdf", "fecha_expedicion": "2018-12-19", "descripcion": None},

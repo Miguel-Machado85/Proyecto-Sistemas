@@ -10,18 +10,31 @@
 7. Historial de turnos en Postgres; trazas en Langfuse.
 8. LLM: Gemini (flash-lite para clasificar, flash para investigar y redactar); las decisiones las toman los agentes, no regex.
 9. Se migra a un sistema multi-agente (analista → investigador → evaluador → redactor) con Gemini.
-10. Rama de trabajo: `feature-agentico` (base `feature-Sprint6`); un commit por fase.
+10. Etapa 1 (migración agéntica, terminada): rama `feature-agentico`, un commit por fase.
+11. Etapa 2 (actual): entrega de documentos del agente, Google Drive y Chroma como servicio; rama `feature-archivosAgente`, un commit por fase; el PR va hacia `feature-Sprint7` (no `main` todavía).
 
 ## Fuente de verdad
-La especificación está en **`docs/MIGRACION_AGENTICA.md`** y **manda sobre cualquier otra suposición**
-(incluido lo que diga un prompt de fase). Léela entera antes de empezar una fase.
+- Etapa actual: **`docs/ARCHIVOS_AGENTE.md`** manda sobre cualquier otra suposición (incluido lo que diga un prompt de fase).
+  Léela entera antes de empezar una fase.
+- **`docs/MIGRACION_AGENTICA.md`** sigue vigente para todo lo que la etapa actual no cambia.
 
-## Convenciones (sección 14 de la especificación)
+## Convenciones
 - Identificadores, comentarios, prompts y docstrings en **español**, como el código existente.
-- **No tocar `chroma_db/`**, no reindexar, no cambiar `EMBEDDING_MODEL`.
-- **No modificar `frontend/`** (el contrato de la API no cambia).
-- Un commit por fase, en la rama `feature-agentico`, con un mensaje que describa la fase.
-- Los tests no llaman a Gemini ni a Chroma reales (fakes / monkeypatch de `crear_llm`).
+- `backend/chroma_db/` solo se **LEE** (origen de la migración a Chroma servidor); nunca se escribe ni se modifica.
+- **Prohibido** reindexar y cambiar `EMBEDDING_MODEL` o `COLLECTION_NAME`: la migración copia vectores, no los recalcula.
+- **Se puede modificar `frontend/index.html`**, solo para mostrar archivos descargables. **`frontend/admin.html` NO se toca** (es del compañero).
+- El contrato de la API solo cambia de forma **aditiva** (campos nuevos con valor por defecto).
+- Un commit por fase, en la rama `feature-archivosAgente`, con un mensaje que describa la fase.
+- Los tests no llaman a Gemini, Chroma servidor ni Drive reales (fakes / monkeypatch de `crear_llm`, `EphemeralClient`, `RepositorioLocal`).
+- Secretos (`backend/secrets/`, `.env`) nunca en Git ni en la imagen; en Compose se montan de solo lectura.
+
+## Coordinación con el compañero (login de admin; sección 5 de la especificación)
+- **Del compañero:** `admin.py` (autenticación) y `frontend/admin.html`. Si una fase exige cambiarlos, detenerse y avisar qué cambio se haría.
+- **Nuestros:** `ingest.py`, `retrieval.py`, `repositorio_archivos.py`, `tools.py`, los nodos e `index.html`.
+- `admin.py` debe seguir llamando a las mismas funciones de `ingest.py`.
+- Archivos que pueden tocar ambos (`config.py`, `.env.example`, `db.py`, `Compose.yml`, `api.py` lifespan): cada uno agrega su bloque con su propio
+  encabezado de comentario para que los merges sean triviales.
+- `git merge main` al empezar cada fase; en conflictos resolver solo en archivos nuestros y avisar de los del compañero.
 
 ## Comandos de verificación (desde `backend/`)
 ```bash
@@ -33,7 +46,17 @@ Línea base de recuperación (necesita `GOOGLE_API_KEY` y `backend/chroma_db`):
 cd backend && uv run python evaluacion/evaluar_recuperacion.py
 ```
 
-## Fases
+## Fases de la etapa actual (`docs/ARCHIVOS_AGENTE.md`, sección 1)
+Orden de ejecución: **0 → 1 → 2 → 4 → 5 → 3 → 6** (solo la 3 necesita permiso de Editor en Drive). Prioridad si aprieta el tiempo: 2 → 4 → 5.
+- [x] **Fase 0** — Rama lista, `CLAUDE.md` con las nuevas reglas, versiones verificadas
+- [x] **Fase 1** — Chroma como servicio aparte (contenedor), índice migrado sin regenerar embeddings
+- [x] **Fase 2** — Módulo `repositorio_archivos` (Drive o local), tabla `archivos_documento`, endpoint de descarga, 71 documentos enlazados
+- [x] **Fase 3** — La ingesta del admin sube el original a Drive al indexar y lo retira al revertir
+- [x] **Fase 4** — El agente detecta cuándo se pide el archivo y lo entrega (`solicita_archivo`, `preparar_descarga`)
+- [x] **Fase 5** — `index.html` muestra el botón de descarga (texto y voz)
+- [x] **Fase 6** — Evaluación, documentación (`home.md`, READMEs) y PR (hacia `feature-Sprint7`, no `main`). Un caso (`seg-03`) y 16 re-evaluaciones pendientes por cuota: ver 'Fase 6' en las notas
+
+## Fases de la etapa 1 (migración agéntica, terminada)
 - [x] **Fase 0** — Preparación: rama, CLAUDE.md, dependencias, verificación del entorno, dataset y línea base de recuperación
 - [x] **Fase 1** — Configuración y LLM: `config.py`, `llm.py`, variables Gemini, `.env.example`, retirar Ollama
 - [x] **Fase 2** — Recuperación: `retrieval.py` refactor, `reranker.py`, `catalogo.py` (`buscar_por_atributos`, `similares`)
@@ -243,3 +266,132 @@ Fallos: `tema-04` (arma/porte de armas), `mal-01` ("decrto 83… horaro de atens
 - `dataset.jsonl` agrega dos campos opcionales fuera de la sección 13: `consulta_recuperacion` (pregunta autónoma
   equivalente para evaluar sin LLM en casos de varios turnos) y `candidatos_esperados` (bool). `intencion_esperada` y
   `archivos_esperados` se refieren al **último** turno.
+
+### Etapa 2, Fase 0 — versiones verificadas (2026-10-23, Python 3.13.14 local, `uv sync`)
+- **Tests al iniciar:** `172 passed` (2 warnings: `fitz` deprecado, `TestClient`).
+- **(a) chromadb 1.5.9** (langchain-chroma 1.1.0). `langchain_chroma.Chroma.__init__` **sí acepta `client=`** (`ClientAPI | None`), y además `host`, `port`, `ssl`,
+  `headers`, `chroma_cloud_api_key`, `tenant`, `database`, `client_settings`, `collection_metadata`, `collection_configuration`,
+  `create_collection_if_not_exists=True` (por defecto crea la colección si no existe).
+  → La imagen del servidor debe fijarse a **`chromadb/chroma:1.5.9`** (la misma que el cliente). `pyproject.toml` solo exige `langchain-chroma>=1.1.0` (sin tope de `chromadb`):
+  conviene fijar `chromadb==1.5.9` o el rango equivalente en la Fase 1.
+- **(b) `chromadb.HttpClient`** existe: `HttpClient(host='localhost', port=8000, ssl=False, headers=None, settings=None, tenant='default_tenant', database='default_database')`.
+  También existe `chromadb.CloudClient` (fuera de alcance).
+- **(c) Colección local `backend/chroma_db`** (leída con sqlite3 en modo `mode=ro`, sin abrir `PersistentClient`): una sola colección `langchain`,
+  dimensión **3072**, **798 embeddings**, `config_json_str = '{}'`, `collection_metadata` vacía → sin `hnsw:space` explícito ⇒ **distancia por defecto de Chroma (l2)**.
+  Segmentos: `hnsw-local-persisted` (vectorial) + `sqlite` (metadatos). Al migrar, crear la colección destino también sin métrica explícita (o `l2`) y comprobarlo.
+- **(d) Paquetes de Google** (resolución con `uv pip install --dry-run`, compatible con Python 3.13 y los demás paquetes): `google-api-python-client==2.201.0`,
+  `google-auth-oauthlib==1.5.0`, `google-auth` ya instalado en **2.57.0** (dependencia transitiva de `google-genai`; `--dry-run` no lo cambia). Arrastran `google-api-core 2.43.0`,
+  `google-auth-httplib2 0.4.4`, `httplib2 0.32.0`, `proto-plus 1.29.0`, `uritemplate 4.2.0`, `pyparsing 3.3.3`. Son wheels puras de Python: sin problema en el Dockerfile (Python 3.14).
+- **Estado del repo:** `backend/chroma_db/` está en `backend/.gitignore` (no versionado); `backend/secrets/` aún no existe ni está ignorado (se crea en la Fase 2).
+
+### Etapa 2, Fase 1 — Chroma como servicio (2026-10-23)
+- **Código:** `config.CHROMA_MODO` (`local` por defecto | `http`), `CHROMA_HOST/PORT/SSL`; `retrieval.crear_cliente_chroma()` y `obtener_vector_store()` con `Chroma(client=...)`.
+  `ingest.py` no cambió (`_collection.upsert` y `.get` funcionan igual contra el servidor). `chromadb==1.5.9` fijado en `pyproject.toml`.
+- **Catálogo multiproceso:** `obtener_catalogo_documentos()` ya no usa `lru_cache`: guarda el `collection.count()` con el que se construyó y se reconstruye si cambia
+  (con candado). Si `count()` falla conserva el catálogo anterior. `invalidar_cache_documentos()` sigue existiendo.
+- **`/health`:** en modo `http` hace `heartbeat()` en un hilo y responde `{"status":"ok","chroma":"ok"}`; si falla, **503** `{"status":"error","chroma":"no disponible"}`
+  (probado parando el contenedor). En modo local no cambia (`{"status":"ok"}`).
+- **Compose:** servicio `chroma` (`chromadb/chroma:1.5.9`, volumen `chroma-data:/data`, puerto solo `127.0.0.1:8000`); el backend usa `CHROMA_MODO=http`, `CHROMA_HOST=chroma`
+  y `depends_on` con `service_healthy`; se quitó el montaje de `./backend/chroma_db`. La imagen **no trae curl ni python**, solo `bash`: el healthcheck usa `/dev/tcp` y
+  `GET /api/v2/heartbeat`.
+- **Migración (`backend/scripts/migrar_chroma.py`):** trabaja sobre una copia temporal de `chroma_db` (el original no se toca; md5 del sqlite igual antes y después).
+  798 registros migrados, mismos ids, distancia l2 (el destino se crea con la misma configuración HNSW y aborta si la métrica difiere). Es idempotente (`upsert`).
+  **Hallazgo:** el top-8 no es idéntico entre origen y destino (9/10 muestras): HNSW es aproximado y se construye distinto; en el caso que difirió el **destino era el exacto**
+  y el origen se perdía un vecino. Por eso la verificación compara cada lado con el top-8 exacto por fuerza bruta y exige que el destino no recupere peor que el origen.
+- **Recuperación contra el servidor (33 casos, `evaluar_recuperacion.py`, `evaluacion/fase1_servidor_*.json`):** con reranker hit@8 0.79 / MRR 0.67 (fase 6: 0.82 / 0.68);
+  sin reranker 0.82 / 0.70 (fase 6: 0.85 / 0.70). La única diferencia de acierto es `amb-02` (referencia ambigua; un candidato casi empatado cambia de posición); el resto son
+  reordenamientos marginales. No es un error de migración: mismos vectores, índice ANN distinto.
+- **Tests:** 187 (`tests/test_chroma_servicio.py`: cliente por modo, `/health`, catálogo que ve documentos de otro cliente sin invalidar, migración con `EphemeralClient`).
+- **Pruebas con modelos:** se usó `gemini-3.5-flash-lite` en los cuatro agentes (variables de sesión) cuando hizo falta; el script de recuperación solo gasta embeddings.
+
+### Etapa 2, Fase 2 — repositorio de archivos y Drive (2026-10-23)
+- **Módulo `agente_sigem/repositorio_archivos.py`:** `RepositorioArchivos` (Protocol: `subir`, `descargar`, `retirar`, `listar`, `enlace_ver`, `proveedor`), `RepositorioLocal`
+  (`UPLOAD_ROOT/repositorio`, id aleatorio, papelera `_papelera/`) y `RepositorioDrive` (Drive v3, `supportsAllDrives=True` siempre; `retirar` = `files.update(trashed=True)`, nunca `delete`;
+  un servicio `build` por operación porque httplib2 no es seguro entre hilos). `obtener_repositorio()` (lru_cache) según `ARCHIVOS_BACKEND` (por defecto `local`); crearlo no lee credenciales.
+- **Errores:** `ErrorRepositorio` con mensajes en español (403 al escribir → "el usuario de Drive no tiene permiso de Editor sobre la carpeta"; 401/`RefreshError` → token inválido o caducado;
+  404; 429/rateLimit). `descargar()` pide el primer trozo al llamarse, así un 403/404 sale ANTES de empezar a responder.
+- **Token OAuth:** carga perezosa de `GOOGLE_OAUTH_TOKEN_FILE`, refresco automático y reescritura (si el montaje es de solo lectura solo avisa). Sin archivo/dañado/caducado la API arranca igual;
+  solo `/documentos/{archivo}/descargar` responde **503** (mensaje genérico, sin rutas).
+- **`config.py`:** `ARCHIVOS_BACKEND`, `GOOGLE_DRIVE_FOLDER_ID` (acepta ID o URL; `extraer_id_carpeta_drive`), `GOOGLE_OAUTH_CLIENT_FILE/TOKEN_FILE` (por defecto `backend/secrets/`), `DRIVE_MODO_ENTREGA`.
+  `backend/secrets/` en `.gitignore` y `.dockerignore`; Compose lo monta en `/app/secrets:ro`.
+- **`db.py`:** tabla `archivos_documento` (PK `nombre_archivo`) con `registrar_archivo` (merge), `obtener_archivo`, `eliminar_registro_archivo`. Verificada en el Postgres de Compose.
+- **Endpoint `GET /documentos/{archivo}/descargar`:** el parámetro solo se compara con el catálogo (404 amable); sin fila → 404 "aún no está disponible"; proveedor distinto al activo → 503;
+  `stream` con `Content-Disposition: attachment; filename*=UTF-8''<nombre_archivo original>` (sin Content-Length) o `redirect` 302 (si no hay enlace, cae a stream).
+- **Scripts:** `scripts/autorizar_drive.py` (InstalledAppFlow, alcance `drive`, docstring con "In production" o el token caduca a los 7 días) y `scripts/sincronizar_drive.py`
+  (simulación por defecto; `--aplicar`; `--subir-faltantes DIR` solo sube con `--aplicar`; empareja por nombre exacto, luego normalizado; dudosos y duplicados no se enlazan).
+- **Tests:** 237 (`test_repositorio_archivos.py`, `test_descarga_y_sincronizacion.py`; cliente de Drive falso, sin red). Probado el stack real: tabla creada, 404 de catálogo y de fila.
+- **Probado con Drive real (token de lector, modo Pruebas):** `sincronizar_drive.py` en simulación listó 69 archivos en la carpeta y enlazó 69 de los 71 del catálogo (todos por nombre exacto, 0 dudosos, 0 huérfanos). **Faltan en Drive:** `2401_decretono187.pdf` y `2403_decretono184.pdf` (no se podrán descargar hasta subirlos). Descarga real de `10322_decreto-no-0832018.pdf`: 409451 bytes = tamaño en Drive, empieza por `%PDF-`; `enlace_ver` devuelve el `webViewLink`; un id inexistente da el mensaje claro de 404. No se probó subir/retirar (el usuario aún es Lector; no se hacen escrituras de prueba en la carpeta real).
+- **OAuth en modo Pruebas:** el token caduca a los 7 días (repetir `scripts/autorizar_drive.py`); el usuario autorizador debe estar en 'Usuarios de prueba'. `--aplicar` ya se corrió (2026-10-23) contra el Postgres de Compose (DATABASE_URL=localhost:55432): 69 filas `drive` en `archivos_documento`. Verificado por el endpoint del contenedor: `GET /documentos/10322_decreto-no-0832018.pdf/descargar` → 200, 409451 bytes, `%PDF-`, `Content-Disposition: attachment` con el nombre original; `2401_decretono187.pdf` (sin original en Drive) → 404 amable. Para repetir desde el host: `DATABASE_URL=postgresql://sigem:sigem@localhost:55432/sigem CHROMA_MODO=local uv run python scripts/sincronizar_drive.py`.
+
+### Etapa 2, Fase 4 — el agente entrega documentos (2026-10-23)
+- **Regla de producto (decidida con el equipo):** un ciudadano que dice "dame / necesito / quiero / pásame el decreto 83" suele querer entenderlo, así que esos verbos piden **archivo + contenido**
+  (`solicita_archivo=true`, `incluye_contenido=true`: se redacta con fragmentos y además se entrega el botón). Solo "descargar / PDF / archivo / enlace / dónde puedo bajarlo" piden **solo el archivo**
+  (`incluye_contenido=false`). Sin referencia ni documento activo ("pásame el archivo") es `ambigua`.
+- **Estado:** `AnalisisConsulta.solicita_archivo` e `incluye_contenido` (este último, adición a la spec: sin él no se distingue "solo archivo" de "archivo y resumen", porque la tool que identifica el
+  documento siempre devuelve fragmentos); `EstadoAgente.archivos` y `archivos_no_disponibles` (adición a la spec: para explicar un documento sin original), sin reducer y reiniciados por turno.
+  `analista._coherente` fuerza ambos a false si la intención no busca, e `incluye_contenido` a false si no hay `solicita_archivo`.
+- **Tool `tools.preparar_descarga(archivo)`:** valida contra el catálogo y contra `archivos_documento`; devuelve `archivos` (con `url_descarga` relativa, `quote`d) o `error` (+`motivo:"no_disponible"`).
+  Está en `HERRAMIENTAS_DESCARGA`, **fuera** de `HERRAMIENTAS_INVESTIGADOR`; `tools.herramientas_investigador(solicita_archivo)` arma la lista y `prompts.construir_prompt_investigador` añade las instrucciones
+  solo en ese caso (sin la bandera el modelo no ve la tool ni su mención).
+- **Investigador:** `acumular_resultados` devuelve un `NamedTuple` `Resultados` (+`archivos` máx. 3 sin duplicados, +`archivos_no_disponibles`). Si el pedido es solo de archivo y hay archivo (o "no disponible"),
+  descarta `evidencia`/`fuentes` (los fragmentos solo servían para identificar el documento).
+- **Evaluador:** atajo sin LLM `(archivos o no_disponibles) y sin evidencia` → redactor; los `candidatos` siguen ganando (se pide aclaración antes de entregar nada).
+- **Redactor:** modos `entrega` y `descarga_no_disponible` (sin salida estructurada, sin fuentes; `documento_activo` = archivo entregado); `elegir_modo`: evidencia → respuesta, candidatos → aclaración,
+  archivos → entrega, no disponibles → descarga_no_disponible. Regla en el prompt base: **nunca URLs**. El modelo ve solo títulos, nunca la `url_descarga`.
+- **API:** `ArchivoDescargable{titulo,archivo,url_descarga}` y `archivos: []` en `ChatResponse`/`ChatVozResponse` (aditivo; verificado en el OpenAPI del contenedor). `_archivos(resultado)` es la compuerta:
+  devuelve `[]` si `analisis.solicita_archivo` es false. `ejecutar_turno` reinicia `archivos` y `archivos_no_disponibles`. No se implementó la persistencia opcional en `/historial`.
+- **Defecto hallado con Gemini real y corregido:** la regla "indica `informacion_encontrada`" estaba en `PROMPT_REDACTOR_BASE`; en los modos sin salida estructurada (entrega, aclaración, sin resultados) el modelo la copiaba
+  al texto ("… informacion_encontrada: false") y en un caso se confundió y dijo que no había información. Ahora esa regla vive solo en el modo `respuesta` (test que lo protege).
+- **Evaluación (flash-lite en los 4 agentes, `--pausa 20`, 11 casos `solicitud_archivo`, `evaluacion/resultados_fase4_solicitud_archivo.json` y `…_reintento.json`):** intención 1.00, archivos 1.00,
+  `solicita_archivo` 1.00, `incluye_contenido` 1.00, entrega 1.00, información 1.00 tras el arreglo (0.90 antes: arch-06). Analista solo, con extras: "Necesito el documento 18399" y "Quiero el decreto 116 de 2018" →
+  archivo + contenido; "pásame el archivo" → ambigua; saludo → nada. No se re-corrieron las demás categorías con Gemini (el prompt del analista cambió: conviene una pasada completa antes del PR, Fase 6).
+- **Tests:** 296 (`tests/test_entrega_archivos.py` con 37 casos, más ampliaciones en `test_tools`, `test_api`, `test_evaluacion`). `test_chroma_servicio::test_verificar_detecta_registros_faltantes` falló una vez en una
+  corrida completa y no se reprodujo en 4 corridas posteriores (posible estado compartido de `EphemeralClient` entre tests); vigilar.
+- **Dataset:** 11 casos `solicitud_archivo` (`solicita_archivo_esperado`, `incluye_contenido_esperado`); `evaluar_agente.py` reporta `solicita_archivo_ok`, `incluye_contenido_ok` y `entrega_ok` (columnas `sol.arch` y `entrega`).
+
+### Etapa 2, Fase 5 — botón de descarga en `frontend/index.html` (2026-10-23)
+- **Solo se tocó `index.html`** (`admin.html` intacto). `appendFiles(bubble, data.archivos)` se llama después de `appendSources` en `/chat` y en `/chat-voz`. Un enlace por archivo:
+  ícono SVG de descarga, texto "Descargar <título> (PDF)", `aria-label` igual, `href = API_BASE_URL + url_descarga`, atributo `download` con el nombre original, `min-height: 44px`, foco visible
+  (`:focus-visible` con `--focus-ring`) y estilo gov.co (azul `--govco-blue`). Solo se aceptan `url_descarga` que empiecen por `/documentos/` (cualquier otra URL se ignora).
+- **404/503:** el clic hace `fetch` (en vez de navegar) para poder mostrar un mensaje amable en el chat (`msg-error`): con 404 el `detail` de la API ("aún no está disponible para descarga…"), con otros errores un texto
+  genérico. Si responde 200 se baja el blob y se dispara la descarga con el nombre original; mientras tanto el botón queda `aria-busy` con "Descargando…". Funciona aunque front y API estén en orígenes distintos
+  (el atributo `download` solo se ignora entre orígenes en un clic directo; por eso se usa el blob).
+- **Historial:** no se persistieron `archivos` en la Fase 4, así que al recargar el hilo el botón no reaparece (solo el texto). No se hizo nada con `/historial` (como pedía el prompt).
+- **Verificado en el navegador** (frontend de Compose en :8080 + backend real con Drive; `/chat` y `/chat-voz` simulados en la página para no gastar cuota de Gemini): 2 botones de 44 px con texto y aria-label correctos,
+  URL externa descartada; clic en el documento con original → blob `application/pdf` de 409451 bytes con el nombre original; clic en `2401_decretono187.pdf` (sin original) → mensaje rojo amable en el chat sin salir de la página;
+  el flujo de voz pinta el botón igual; el anillo de foco aparece con teclado; en 375 px el texto del botón se parte en dos líneas sin desbordar.
+
+### Etapa 2, Fase 3 — la ingesta sube el original (2026-10-24)
+- **Solo se tocó `ingest.py`** (+ tests); `db.py`, `admin.py` y `admin.html` sin cambios. `_indexar_documento` ahora: omitidos (mismo hash/título) → no se suben; luego **1.** subir el original
+  (`_subir_original`; si falla, `ErrorIngesta` "…no se indexó. Detalle: …" y no se gastan embeddings), **2.** embeddings + `upsert` (si falla: `_deshacer_indexacion` borra de Chroma y manda el original a la papelera),
+  **3.** `db.registrar_archivo` (si falla: se deshace todo igual). Si además no se puede retirar el original, el mensaje al admin lo dice. El resultado del archivo lleva `id_externo` y `proveedor_original`
+  (así queda en el manifiesto del lote) y, si el título final no se lee como tipo + número (`catalogo.extraer_referencia`), `advertencias: [ADVERTENCIA_TITULO_NO_CANONICO]` (no bloquea).
+- **`revertir_indexacion`:** por cada documento borra de Chroma, manda el original a la papelera (`retirar`, nunca borrado) y elimina la fila. Es **reintentable**: tras retirar marca `original_retirado` en el manifiesto,
+  así un fallo a medias (p. ej. 403 por no ser Editor) deja el lote en `indexado` y el reintento no repite lo ya hecho; si el proveedor del original ≠ repositorio activo, no lo toca y avisa;
+  lotes anteriores a esta fase (sin `id_externo`) se revierten como antes.
+- **Pruebas reales de Drive:** la cuenta del token (`miguel.machado8506@gmail.com`) ya tiene `canEdit`/`canAddChildren` sobre `lossetentayuno` (verificado en solo lectura el 2026-10-24), pero por el enlace público con rol
+  `writer`, no por correo; el dueño (`danielfernandez3123@gmail.com`) debe compartirla por correo como Editor y luego dejar el enlace en Lector. Sobre los 69 PDF existentes el token tiene `canTrash:false` (son del dueño):
+  `retirar` solo funcionará con lo que suba nuestra cuenta, que es justo lo que revierte la ingesta. La carpeta "71 documentos" (`1qKlQKc…`) es la contenedora de `lossetentayuno` y de `chroma_db`; `GOOGLE_DRIVE_FOLDER_ID` sigue siendo `lossetentayuno`.
+  **Prueba real de escritura (2026-10-24, enlace público como editor):** la ingesta (`crear_lote` → `indexar_lote` → `revertir_indexacion`, con Chroma y base en memoria) subió `zz_prueba_borrar_decreto-999-2026.pdf` a `lossetentayuno`, se descargó de vuelta idéntico (973 bytes), `enlace_ver` funcionó y al revertir `retirar` lo mandó a la papelera de Drive (`trashed: true`, de la cuenta del token); la carpeta volvió a tener 69 PDF. El archivo quedó en la papelera de `miguel.machado8506@gmail.com` (Drive la vacía sola a los 30 días); nuestro código nunca borra de forma permanente. Siguen sin subirse los 2 PDF faltantes. Lo pendiente es repetir la comprobación de permisos cuando el dueño comparta por correo y deje el enlace en Lector.
+- **Admin (de otro compañero, sin tocar):** `admin.html` muestra los errores de `result.error` (los mensajes nuevos salen ahí), pero **no muestra `advertencias`** (solo "Añadido a Chroma con N fragmento(s)") y desconoce la fase
+  `subiendo_original` (no rompe, solo no añade texto al progreso). Cambio sugerido para quien sea dueño de `admin.html`: línea 231, añadir `+ (result.advertencias || []).join(' ')`.
+- **Tests:** 317. `test_ingest.py` (27: orden subir→embeddings→upsert, fila y manifiesto, fallo de Chroma/subida/registro, omitidos, advertencia, revertir los tres lugares, reintentos) y
+  `tests/test_documento_nuevo.py` (extremo a extremo con Chroma en memoria, SQLite, `RepositorioLocal` y las tools reales: "Decreto 045 de 2026" lo encuentran `buscar_documento_por_referencia`, `listar_documentos`
+  (año 2026), `buscar_fragmentos`, `leer_documento` (páginas 1,2 en orden) y `preparar_descarga`; tras revertir ninguna; también sin invalidación explícita, simulando otro worker).
+
+### Etapa 2, Fase 6 — evaluación, documentación y PR (2026-10-24)
+- **`git merge origin/feature-Sprint7`:** ya estaba al día (`feature-Sprint7` == `main` == `f74111f`); el login del compañero **aún no está en ninguna rama remota**, así que no hubo conflictos.
+  El PR va hacia `feature-Sprint7`; no se hizo merge ni push a ninguna rama compartida.
+- **Documentación:** `backend/README.md`, `README.md`, `backend/.env.example`, `docs/home_actualizacion.md` (para la wiki: Compose con `chroma`, Chroma ya no embebido, Drive y descarga, `solicita_archivo` y
+  `preparar_descarga`, credenciales de Drive paso a paso, "Known pending items") y la sección 9 "Estado de implementación" de `docs/ARCHIVOS_AGENTE.md` (16 desviaciones con su razón). Los permisos de Drive
+  se documentan como la configuración definitiva (Editor por correo + enlace en Lector).
+- **Recuperación contra el servidor (33 casos):** hit@8 0,79 / MRR 0,67, igual a la fase 1 caso por caso; frente a la línea base previa (0,88 / 0,77) difieren `ref-04`, `amb-02`, `glob-04`, `glob-02` (mejora `tema-04`).
+- **Agente completo (54 casos, flash-lite en los 4 agentes, `--pausa 20`):** intención/archivos/candidatos/alerta/negativa/`solicita_archivo`/`incluye_contenido`/entrega 1,00; `info` 0,98; 0 errores, 0 degradados.
+- **Hallazgo corregido (2026-10-24):** la frase del botón de descarga estaba en el prompt fijo del modo `respuesta` y flash-lite la usaba en 24 de 35 respuestas **sin archivo que entregar**. Ahora la agrega el código
+  (`construir_prompt_redactor(..., hay_archivos, hay_sin_original)`) solo si el estado trae `archivos`/`archivos_no_disponibles`; la regla base prohíbe mencionar botones salvo indicación. `evaluar_agente.py`: métrica `boton_ok` y
+  `FRASES_NEGATIVAS` con límite de palabra (`info`=NO en `glob-01` era un falso positivo: "hum**ano se encuentra**"). Re-evaluación: 20 de 36 casos antes de agotarse la cuota diaria de flash-lite → `boton` 1,00 (antes todos
+  mencionaban un botón inexistente), intención 1,00; **`seg-03` empeoró por variación del modelo** (dijo que no hay fecha de vigencia; 1 muestra). **Faltan 16 casos por re-evaluar** (`mal-*`, `voz-num-*`, `arch-*`):
+  `evaluar_agente.py --pausa 20 --ids mal-01 mal-02 mal-03 voz-num-01 voz-num-02 voz-num-03 arch-01 … arch-11 seg-03` cuando se renueve la cuota. Tests: 347.
+- **Limpieza:** sin secretos en el diff, `backend/secrets/`, `.env` y `chroma_db/` no están en Git; los únicos `print` nuevos son de los scripts CLI; se quitaron dos imports muertos y un escape inválido en tests.
+  `evaluar_agente.py` y `evaluar_recuperacion.py` ya no exigen la carpeta local de Chroma si `CHROMA_MODO=http`.
+- **Test inestable:** además del ya anotado, `test_verificar_detecta_un_destino_que_recupera_peor` falló una vez en una corrida completa (317 en verde en las otras ~12 corridas y en bucles); sin reproducir ni capturar el mensaje.

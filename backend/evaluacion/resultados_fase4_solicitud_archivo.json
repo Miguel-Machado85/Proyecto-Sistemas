@@ -1,0 +1,680 @@
+{
+  "fecha": "2026-10-23T23:19:33",
+  "modelos": {
+    "analista": "gemini-3.5-flash-lite",
+    "investigador": "gemini-3.5-flash-lite",
+    "evaluador": "gemini-3.5-flash-lite",
+    "redactor": "gemini-3.5-flash-lite"
+  },
+  "reranker": true,
+  "pausa_s": 20.0,
+  "abortado": null,
+  "resumen": {
+    "solicitud_archivo": {
+      "casos": 11,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": 1.0,
+      "entrega": 1.0,
+      "informacion": 0.9,
+      "negativa": null,
+      "tiempo_s_promedio": 11.4
+    },
+    "GLOBAL": {
+      "casos": 11,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": 1.0,
+      "entrega": 1.0,
+      "informacion": 0.9,
+      "negativa": null,
+      "tiempo_s_promedio": 11.4
+    }
+  },
+  "casos": [
+    {
+      "id": "arch-01",
+      "categoria": "solicitud_archivo",
+      "perfil": "P2",
+      "razonamiento_analista": "El usuario solicita explícitamente descargar el archivo PDF del Decreto 1 de 2019.",
+      "degradado": [],
+      "mensaje": "Descárgame el Decreto 001 de 2019",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Aquí tiene el Decreto 001 de 2019, el cual puede encontrar y descargar directamente en el botón que aparece aquí abajo.\n\ninformacion_encontrada: false",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: pregunta=Decreto 1 de 2019, anio=2019, tipo=decreto, numero=1",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=22598_decreto-no-0012019.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Archivo listo para entregar",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P2",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 11.7,
+      "intentos": 1
+    },
+    {
+      "id": "arch-02",
+      "categoria": "solicitud_archivo",
+      "perfil": "P2",
+      "razonamiento_analista": "El usuario pregunta por el contenido específico de un decreto determinado sin solicitar el archivo físico.",
+      "degradado": [],
+      "mensaje": "¿Qué dice el Decreto 001 de 2019?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "El Decreto 001 de 2019 establece el incremento concertado de las tarifas del servicio público de transporte (taxis, buses, busetas, camperos, buses mixtos o escaleras y microbuses) en el municipio de Marinilla para dicho año, basándose en la Resolución Nro. 4350 del Ministerio de Transporte y factores como costos variables, fijos, de capital, comportamiento del mercado, riesgos viales y el aumento del salario mínimo [Decreto 001 de 2019, p. 2]. Entre sus disposiciones principales, el Decreto fija la tarifa mínima de transporte en vehículo tipo taxi en cinco mil quinientos pesos ($5.500) [Decreto 001 de 2019, p. 8]. Asimismo, establece recargos nocturnos entre las 10:00 p.m. y las 6:00 a.m. equivalentes a quinientos pesos ($500) para trayectos urbanos, tres mil pesos ($3.000) para rurales, cinco mil pesos ($5.000) para el oriente antioqueño y diez mil pesos ($10.000) para el área metropolitana, fijando además el costo por hora de espera en veinte mil pesos ($20.000) [Decreto 001 de 2019, p. 8]. El documento detalla las tarifas máximas para diversos trayectos urbanos y rurales [Decreto 001 de 2019, p. 2, 3, 4, 6, 8], exige que los vehículos lleven la calcomanía visible de las tarifas autorizadas y plastificadas [Decreto 001 de 2019, p. 8], y designa a la Secretaría de Movilidad y Tránsito municipal para velar por su cumplimiento bajo las sanciones contempladas en la normativa vigente [Decreto 001 de 2019, p. 8]. El decreto fue comunicado a las empresas SOTRAMAR S.A., COOTRAMARINI y COTRAINDIVIDUAL [Decreto 001 de 2019, p. 8]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: anio=2019, numero=1, pregunta=¿Qué dice el Decreto 001 de 2019?, tipo=decreto",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P2",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 7.5,
+      "intentos": 1
+    },
+    {
+      "id": "arch-03",
+      "categoria": "solicitud_archivo",
+      "perfil": "P0",
+      "razonamiento_analista": "El usuario solicita explícitamente el PDF de una resolución específica.",
+      "degradado": [],
+      "mensaje": "Mándame el PDF de la Resolución 4496 de 2018",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Aquí tiene el archivo de la Resolución 4496 de 2018, el cual puede encontrar y descargar directamente en el botón que aparece debajo de este mensaje.\n\ninformacion_encontrada: false",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: tipo=resolucion, anio=2018, pregunta=Resolución 4496 de 2018, numero=4496",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=23653_resolucion-4496.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Archivo listo para entregar",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 7.7,
+      "intentos": 1
+    },
+    {
+      "id": "arch-04",
+      "categoria": "solicitud_archivo",
+      "perfil": "P0",
+      "razonamiento_analista": "El usuario pide explicaciones sobre el contenido de una resolución específica.",
+      "degradado": [],
+      "mensaje": "Explícame la Resolución 4496 de 2018",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "La Resolución 4496 de 2018 (expedida el 28 de diciembre de 2018) adopta el \"Manual de Políticas Contables\" para el Municipio de Marinilla bajo el Nuevo Marco Normativo para las Entidades de Gobierno [Resolución 4496 de 2018, p. 2, p. 3, p. 7]. Este manual establece los principios, bases, acuerdos, reglas y procedimientos que direccionan el proceso contable para la preparación, presentación, reconocimiento, medición y revelación de los estados financieros [Resolución 4496 de 2018, p. 3, p. 5]. \n\nSu cumplimiento es obligatorio para todas las dependencias del municipio y los servidores responsables de los procesos contables donde se realicen transacciones u operaciones [Resolución 4496 de 2018, p. 3]. Asimismo, la norma establece que las actualizaciones del manual se realizarán a través del aplicativo \"Mejoramiso\" cada vez que la Contaduría General de la Nación modifique el marco normativo o cuando el municipio lo considere pertinente para garantizar la relevancia de la información financiera [Resolución 4496 de 2018, p. 3, p. 4]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: pregunta=¿De qué trata y qué explica la Resolución 4496 de 2018?, anio=2018, tipo=resoluc…",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 6.2,
+      "intentos": 1
+    },
+    {
+      "id": "arch-05",
+      "categoria": "solicitud_archivo",
+      "perfil": "P1",
+      "razonamiento_analista": "Pide un decreto específico por número y año sin especificar si quiere solo el archivo o el texto, por lo que se solicita archivo y contenido.",
+      "degradado": [],
+      "mensaje": "Dame el Decreto 083 de 2018",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": true,
+      "respuesta": "El Decreto 083 de 2018 fue expedido por la Alcaldía Municipal de Marinilla para modificar el horario de atención al público en la Inspección Municipal de Policía [Decreto 083 de 2018, p. 1]. Esto se hizo para cumplir mejor las funciones y atender los trámites exigidos por el Código Nacional de Policía y Convivencia [Decreto 083 de 2018, p. 1]. El nuevo horario quedó así: De lunes a jueves, por la mañana de 7:30 a.m. a 11:00 a.m., y por la tarde de 1:30 p.m. a 4:00 p.m. El día viernes, por la mañana de 7:30 a.m. a 11:00 a.m., y por la tarde hasta las 4:00 p.m. [Decreto 083 de 2018, p. 1]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: tipo=decreto, pregunta=Decreto 083 de 2018, numero=83, anio=2018",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=10322_decreto-no-0832018.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P1",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 7.1,
+      "intentos": 1
+    },
+    {
+      "id": "arch-06",
+      "categoria": "solicitud_archivo",
+      "perfil": "P3",
+      "razonamiento_analista": "El usuario pregunta explícitamente dónde ver el documento completo de una ley, solicitando el archivo sin requerir explicación de contenido.",
+      "degradado": [],
+      "mensaje": "¿Dónde puedo ver la Ley 387 de 1997 completa?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "14362_ley387de1997.pdf"
+      ],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [
+        "14362_ley387de1997.pdf"
+      ],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "informacion_encontrada: false\n\nNo se encontró información pertinente en los documentos disponibles sobre dónde ver el texto completo de la Ley 387 de 1997.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: anio=1997, numero=387, pregunta=texto completo de la Ley 387 de 1997, tipo=ley",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=14362_ley387de1997.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Archivo listo para entregar",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P3",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": false
+      },
+      "tiempo_s": 14.7,
+      "intentos": 1
+    },
+    {
+      "id": "arch-07",
+      "categoria": "solicitud_archivo",
+      "perfil": "P3",
+      "razonamiento_analista": "Pregunta sobre el contenido y tema de una ley específica.",
+      "degradado": [],
+      "mensaje": "¿De qué trata la Ley 387 de 1997?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "14362_ley387de1997.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "14362_ley387de1997.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "La Ley 387 de 1997 adopta medidas para la prevención del desplazamiento forzado, así como para la atención, protección, consolidación y estabilización socioeconómica de los desplazados internos por la violencia en Colombia [Ley 387 1997, p. 1]. Define como desplazado a toda persona forzada a migrar dentro del territorio nacional abandonando su residencia o actividades económicas habituales debido a la vulneración o amenaza directa de su vida, integridad física, seguridad o libertad por causa de la violencia [Ley 387 1997, p. 1]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: numero=387, pregunta=¿De qué trata la Ley 387 de 1997?, tipo=ley, anio=1997",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P3",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 11.9,
+      "intentos": 1
+    },
+    {
+      "id": "arch-08",
+      "categoria": "solicitud_archivo",
+      "perfil": "P2",
+      "razonamiento_analista": "El usuario solicita el decreto de tarifas de taxi para obtener el archivo y también pregunta por el contenido específico sobre la carrera mínima.",
+      "degradado": [],
+      "mensaje": "Pásame el decreto de las tarifas de taxi y dime cuánto cuesta la carrera mínima",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": true,
+      "respuesta": "El Decreto 001 de 2019 fija las tarifas para el servicio público de transporte terrestre individual y colectivo municipal para el año 2019 [Decreto 001 de 2019, p. 1]. En este documento se establece que la tarifa mínima de transporte público terrestre automotor individual de pasajeros en vehículo tipo taxi es de cinco mil quinientos pesos ($5.500) [Decreto 001 de 2019, p. 2]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "listar_documentos: tipo=decreto, tema=tarifas de taxi",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: archivo=22598_decreto-no-0012019.pdf, consulta=tarifas de taxi carrera minima",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=22598_decreto-no-0012019.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P2",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 12.7,
+      "intentos": 1
+    },
+    {
+      "id": "arch-09",
+      "categoria": "solicitud_archivo",
+      "perfil": "P1",
+      "razonamiento_analista": "El usuario pide 'pásamelo' haciendo referencia al documento activo (Decreto 083 de 2018), lo cual constituye un seguimiento solicitando el envío del documento con contenido.",
+      "degradado": [],
+      "mensaje": "pásamelo",
+      "intencion_esperada": "seguimiento",
+      "intencion_obtenida": "seguimiento",
+      "archivos_esperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": true,
+      "respuesta": "El Decreto 083 de 2018 modifica el horario de atención al público en la Inspección Municipal de Policía para cumplir con el Código Nacional de Policía y Convivencia [Decreto 083 de 2018, p. 1]. El nuevo horario es de lunes a jueves de 7:30 a.m. a 11:00 a.m. y de 1:30 p.m. a 4:00 p.m.; los viernes de 7:30 a.m. a 11:00 a.m. y en la tarde hasta las 4:00 p.m. [Decreto 083 de 2018, p. 1]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: seguimiento (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: pregunta=horario de atención al público en la inspección municipal de policía, numero=83,…",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=10322_decreto-no-0832018.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P1",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 34.5,
+      "intentos": 1
+    },
+    {
+      "id": "arch-10",
+      "categoria": "solicitud_archivo",
+      "perfil": "P0",
+      "razonamiento_analista": "Inventario de documentos sobre el tema de presupuesto municipal, no requiere archivo.",
+      "degradado": [],
+      "mensaje": "¿Qué documentos existen sobre presupuesto municipal?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [],
+      "archivos_en_fuentes": [
+        "10311_decreto-no-0782018.pdf",
+        "10323_decreto-no-0842018.pdf",
+        "10330_decreto-no-0802018.pdf",
+        "14353_decreto-no-0942018.pdf",
+        "14354_decreto-no-0862018.pdf",
+        "16375_decreto-no-1042018.pdf",
+        "16376_dereto-no-1062018.pdf",
+        "16377_dereto-no-1072018.pdf",
+        "23634_decreto-no-0022019.pdf",
+        "23635_decreto-no-0052019.pdf",
+        "23646_decreto-no-0182019.pdf",
+        "23660_decreto-no-0072019.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "En el repositorio municipal se encuentran los siguientes documentos relacionados con el presupuesto municipal: el Decreto 002 de 2019 [Decreto 002 de 2019] y el Decreto 005 de 2019 [Decreto 005 de 2019], mediante los cuales se realizan traslados al presupuesto; el Decreto 007 de 2019 [Decreto 007 de 2019] y el Decreto 018 de 2019 [Decreto 018 de 2019], sobre adiciones presupuestales. Asimismo, se encuentran los decretos del año 2018 que corresponden a reducciones, traslados y adiciones en el presupuesto, los cuales son el Decreto 078 de 2018 [Decreto 078 de 2018], Decreto 080 de 2018 [Decreto 080 de 2018], Decreto 084 de 2018 [Decreto 084 de 2018], Decreto 086 de 2018 [Decreto 086 de 2018], Decreto 094 de 2018 [Decreto 094 de 2018], Decreto 104 de 2018 [Decreto 104 de 2018], Decreto 106 de 2018 [Decreto 106 de 2018] y el Decreto 107 de 2018 [Decreto 107 de 2018].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "listar_documentos: tema=presupuesto municipal",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true
+      },
+      "tiempo_s": 5.4,
+      "intentos": 1
+    },
+    {
+      "id": "arch-11",
+      "categoria": "solicitud_archivo",
+      "perfil": "P0",
+      "razonamiento_analista": "El usuario solicita explícitamente la descarga de un decreto específico, convirtiendo los números en palabras a dígitos.",
+      "degradado": [],
+      "mensaje": "descárgame el decreto ochenta y tres de dos mil dieciocho",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Aquí tiene el Decreto 083 de 2018 para su descarga, el cual puede encontrar en el botón que aparece debajo de este mensaje.\n\ninformacion_encontrada: true",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: tipo=decreto, pregunta=Decreto 83 de 2018, anio=2018, numero=83",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=10322_decreto-no-0832018.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Archivo listo para entregar",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 6.1,
+      "intentos": 1
+    }
+  ]
+}

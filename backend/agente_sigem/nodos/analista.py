@@ -53,13 +53,17 @@ def _fail_open(mensaje: str, motivo: str) -> AnalisisConsulta:
 
 
 def _coherente(analisis: AnalisisConsulta, tiene_documento_activo: bool) -> AnalisisConsulta:
-    """Sin documento activo no puede haber seguimiento ni uso del documento activo."""
-    if tiene_documento_activo:
-        return analisis
-    if analisis.intencion == "seguimiento":
-        analisis = analisis.model_copy(update={"intencion": "consulta_sigem"})
-    if analisis.usa_documento_activo:
-        analisis = analisis.model_copy(update={"usa_documento_activo": False})
+    """Sin documento activo no puede haber seguimiento ni uso del documento activo; el archivo solo se pide al buscar."""
+    if not tiene_documento_activo:
+        if analisis.intencion == "seguimiento":
+            analisis = analisis.model_copy(update={"intencion": "consulta_sigem"})
+        if analisis.usa_documento_activo:
+            analisis = analisis.model_copy(update={"usa_documento_activo": False})
+    if analisis.intencion not in INTENCIONES_CON_BUSQUEDA and (analisis.solicita_archivo or analisis.incluye_contenido):
+        # Un saludo, una aclaración o un audio ruidoso no entregan archivos.
+        analisis = analisis.model_copy(update={"solicita_archivo": False, "incluye_contenido": False})
+    elif not analisis.solicita_archivo and analisis.incluye_contenido:
+        analisis = analisis.model_copy(update={"incluye_contenido": False})
     return analisis
 
 
@@ -99,7 +103,7 @@ def analista(estado: dict, config: RunnableConfig | None = None) -> dict:
         "analisis": analisis.model_dump(),
         "consulta_actual": analisis.consulta_autonoma,
         "pasos": estado.get("pasos", []) + [
-            paso("analista", f"Analizando la pregunta: {analisis.intencion}", "🧭")
+            paso("analista", f"Analizando la pregunta: {analisis.intencion}" + (" (pide el archivo)" if analisis.solicita_archivo else ""), "🧭")
         ],
     }
 

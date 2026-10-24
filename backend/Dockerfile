@@ -16,8 +16,9 @@ WORKDIR /app
 RUN addgroup --system app && adduser --system --ingroup app app
 
 # OCR de documentos escaneados y PNG; el paquete spa permite leer texto en español.
-RUN apt-get update && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-spa \
-    && rm -rf /var/lib/apt/lists/*
+RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/debian.sources \
+&& apt-get update && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-spa \
+&& rm -rf /var/lib/apt/lists/*
 
 # Dependencias primero (capa cacheable). torch se instala desde el índice CPU declarado en
 # pyproject.toml ([[tool.uv.index]] pytorch-cpu): sin CUDA, la imagen es mucho más liviana.

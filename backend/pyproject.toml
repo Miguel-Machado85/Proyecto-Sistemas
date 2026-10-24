@@ -7,6 +7,10 @@ requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.139.0",
     "google-genai>=2.21.0",
+    "google-api-python-client>=2.201.0",
+    "google-auth>=2.57.0",
+    "google-auth-oauthlib>=1.5.0",
+    "chromadb==1.5.9",  # igual que la imagen chromadb/chroma:1.5.9 de Compose
     "langchain-chroma>=1.1.0",
     "langchain-core>=1.4.8",
     "langchain-google-genai>=4.3.7",
