@@ -10,6 +10,7 @@ Mide sobre el ÚLTIMO turno de cada caso:
   - alerta_ok:     `es_alerta` es True cuando se espera `no_comprensible`.
   - solicita_archivo_ok / incluye_contenido_ok: el analista marcó `solicita_archivo` / `incluye_contenido` como
                    dice `solicita_archivo_esperado` / `incluye_contenido_esperado` (solo en casos que lo definen).
+  - boton_ok:      la respuesta no menciona un "botón" de descarga cuando el usuario no recibe ningún archivo.
   - entrega_ok:    con `solicita_archivo_esperado`, el archivo esperado llegó en `archivos` (lo que ve el usuario) si se
                    esperaba entrega, o `archivos` quedó vacío si no.
 
@@ -29,6 +30,7 @@ Uso (desde backend/):
 import argparse
 import json
 import os
+import re
 import sys
 import time
 from collections import defaultdict
@@ -103,6 +105,9 @@ def evaluar_caso(agente, ejecutar_turno, caso: dict, pausa: float, sello: str) -
             metricas["incluye_contenido_ok"] = bool(analisis.get("incluye_contenido")) == bool(caso["incluye_contenido_esperado"])
         metricas["entrega_ok"] = bool(esperados & archivos_entregados) if espera_archivo else not archivos_entregados
 
+    # La respuesta no puede prometer un botón de descarga que la API no va a mostrar.
+    metricas["boton_ok"] = not menciona_boton_inexistente(resultado["messages"][-1].text, archivos_entregados)
+
     sin_informacion = respuesta_sin_informacion(resultado)
     if caso["categoria"] == "referencia_inexistente":
         # Documento que no existe: debe decirlo y no mostrar fuentes de relleno.
@@ -138,6 +143,9 @@ FRASES_NEGATIVAS = (
     "no esta disponible", "no cuento con", "no aparece", "no contienen", "no se encontr", "no existe",
 )
 MARCA_SIN_INFORMACION = "sin información pertinente"
+# Con límite de palabra al inicio: "humano se encuentra" no debe contar como "no se encuentra".
+PATRON_FRASE_NEGATIVA = re.compile("|".join(r"(?<!\w)" + re.escape(frase) for frase in FRASES_NEGATIVAS))
+PATRON_BOTON = re.compile(r"(?<!\w)bot[oó]n(?:es)?(?!\w)", re.IGNORECASE)
 
 
 def respuesta_sin_informacion(resultado: dict) -> bool:
@@ -148,7 +156,12 @@ def respuesta_sin_informacion(resultado: dict) -> bool:
     ):
         return True
     texto = resultado["messages"][-1].text.lower()
-    return any(frase in texto for frase in FRASES_NEGATIVAS)
+    return bool(PATRON_FRASE_NEGATIVA.search(texto))
+
+
+def menciona_boton_inexistente(texto: str, archivos_entregados: set) -> bool:
+    """True si la respuesta habla de un botón de descarga y el usuario no recibe ningún archivo."""
+    return bool(PATRON_BOTON.search(texto)) and not archivos_entregados
 
 
 def es_cuota_diaria(error: Exception) -> bool:
@@ -219,6 +232,7 @@ def resumir(resultados: list[dict]) -> dict:
             "entrega": porcentaje(sin_error, "entrega_ok"),
             "informacion": porcentaje(sin_error, "informacion_ok"),
             "negativa": porcentaje(sin_error, "negativa_ok"),
+            "boton": porcentaje(sin_error, "boton_ok"),
             "tiempo_s_promedio": round(sum(r["tiempo_s"] for r in sin_error) / len(sin_error), 1) if sin_error else None,
         }
 
@@ -231,14 +245,14 @@ def mostrar_resumen(resumen: dict, linea_base: dict | None) -> None:
     def fmt(valor):
         return "  -  " if valor is None else f"{valor:5.2f}"
 
-    print(f"\n{'categoría':<34}{'n':>3}{'err':>4}{'degr':>5}{'intención':>11}{'archivos':>10}{'candid.':>9}{'alerta':>8}{'info':>6}{'neg.':>6}{'sol.arch':>9}{'entrega':>8}{'seg':>7}{'base hit@8':>12}")
+    print(f"\n{'categoría':<34}{'n':>3}{'err':>4}{'degr':>5}{'intención':>11}{'archivos':>10}{'candid.':>9}{'alerta':>8}{'info':>6}{'neg.':>6}{'sol.arch':>9}{'entrega':>8}{'boton':>7}{'seg':>7}{'base hit@8':>12}")
     for categoria, m in resumen.items():
         base = ""
         if linea_base and categoria in linea_base:
             base = fmt(linea_base[categoria].get("hit@8"))
         print(
             f"{categoria:<34}{m['casos']:>3}{m['errores']:>4}{m['degradados']:>5}{fmt(m['intencion']):>11}{fmt(m['archivos']):>10}"
-            f"{fmt(m['candidatos']):>9}{fmt(m['alerta']):>8}{fmt(m['informacion']):>6}{fmt(m['negativa']):>6}{fmt(m['solicita_archivo']):>9}{fmt(m['entrega']):>8}{(m['tiempo_s_promedio'] or 0):>7.1f}{base:>12}"
+            f"{fmt(m['candidatos']):>9}{fmt(m['alerta']):>8}{fmt(m['informacion']):>6}{fmt(m['negativa']):>6}{fmt(m['solicita_archivo']):>9}{fmt(m['entrega']):>8}{fmt(m['boton']):>7}{(m['tiempo_s_promedio'] or 0):>7.1f}{base:>12}"
         )
 
 

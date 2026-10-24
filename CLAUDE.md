@@ -54,7 +54,7 @@ Orden de ejecución: **0 → 1 → 2 → 4 → 5 → 3 → 6** (solo la 3 necesi
 - [x] **Fase 3** — La ingesta del admin sube el original a Drive al indexar y lo retira al revertir
 - [x] **Fase 4** — El agente detecta cuándo se pide el archivo y lo entrega (`solicita_archivo`, `preparar_descarga`)
 - [x] **Fase 5** — `index.html` muestra el botón de descarga (texto y voz)
-- [x] **Fase 6** — Evaluación, documentación (`home.md`, READMEs) y PR (hacia `feature-Sprint7`, no `main`). **Hallazgo abierto:** ver 'Fase 6' en las notas
+- [x] **Fase 6** — Evaluación, documentación (`home.md`, READMEs) y PR (hacia `feature-Sprint7`, no `main`). Un caso (`seg-03`) y 16 re-evaluaciones pendientes por cuota: ver 'Fase 6' en las notas
 
 ## Fases de la etapa 1 (migración agéntica, terminada)
 - [x] **Fase 0** — Preparación: rama, CLAUDE.md, dependencias, verificación del entorno, dataset y línea base de recuperación
@@ -387,10 +387,11 @@ Fallos: `tema-04` (arma/porte de armas), `mal-01` ("decrto 83… horaro de atens
   se documentan como la configuración definitiva (Editor por correo + enlace en Lector).
 - **Recuperación contra el servidor (33 casos):** hit@8 0,79 / MRR 0,67, igual a la fase 1 caso por caso; frente a la línea base previa (0,88 / 0,77) difieren `ref-04`, `amb-02`, `glob-04`, `glob-02` (mejora `tema-04`).
 - **Agente completo (54 casos, flash-lite en los 4 agentes, `--pausa 20`):** intención/archivos/candidatos/alerta/negativa/`solicita_archivo`/`incluye_contenido`/entrega 1,00; `info` 0,98; 0 errores, 0 degradados.
-- **HALLAZGO ABIERTO (sin corregir, pendiente de decisión):** la frase añadida al modo `respuesta` del redactor ("…el documento queda disponible en el botón de descarga debajo del mensaje") la usa flash-lite en
-  24 de 35 respuestas **sin archivo que entregar** (el usuario leería un botón inexistente). `info`=NO en `glob-01` es un falso positivo de la métrica ("hum**ano se encuentra**" contiene "no se encuentra").
-  Corrección propuesta: añadir esa línea desde el código solo si `estado["archivos"]` no está vacío (no en el prompt fijo), test que lo proteja y una métrica en `evaluar_agente.py` que detecte "botón" sin archivo entregado;
-  usar límites de palabra en `FRASES_NEGATIVAS`.
+- **Hallazgo corregido (2026-10-24):** la frase del botón de descarga estaba en el prompt fijo del modo `respuesta` y flash-lite la usaba en 24 de 35 respuestas **sin archivo que entregar**. Ahora la agrega el código
+  (`construir_prompt_redactor(..., hay_archivos, hay_sin_original)`) solo si el estado trae `archivos`/`archivos_no_disponibles`; la regla base prohíbe mencionar botones salvo indicación. `evaluar_agente.py`: métrica `boton_ok` y
+  `FRASES_NEGATIVAS` con límite de palabra (`info`=NO en `glob-01` era un falso positivo: "hum**ano se encuentra**"). Re-evaluación: 20 de 36 casos antes de agotarse la cuota diaria de flash-lite → `boton` 1,00 (antes todos
+  mencionaban un botón inexistente), intención 1,00; **`seg-03` empeoró por variación del modelo** (dijo que no hay fecha de vigencia; 1 muestra). **Faltan 16 casos por re-evaluar** (`mal-*`, `voz-num-*`, `arch-*`):
+  `evaluar_agente.py --pausa 20 --ids mal-01 mal-02 mal-03 voz-num-01 voz-num-02 voz-num-03 arch-01 … arch-11 seg-03` cuando se renueve la cuota. Tests: 347.
 - **Limpieza:** sin secretos en el diff, `backend/secrets/`, `.env` y `chroma_db/` no están en Git; los únicos `print` nuevos son de los scripts CLI; se quitaron dos imports muertos y un escape inválido en tests.
   `evaluar_agente.py` y `evaluar_recuperacion.py` ya no exigen la carpeta local de Chroma si `CHROMA_MODO=http`.
 - **Test inestable:** además del ya anotado, `test_verificar_detecta_un_destino_que_recupera_peor` falló una vez en una corrida completa (317 en verde en las otras ~12 corridas y en bucles); sin reproducir ni capturar el mensaje.

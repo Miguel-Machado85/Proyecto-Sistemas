@@ -482,3 +482,70 @@ def test_los_modos_sin_salida_estructurada_no_mencionan_informacion_encontrada(m
 
 def test_el_modo_respuesta_si_pide_la_senal_informacion_encontrada():
     assert "informacion_encontrada" in prompts.construir_prompt_redactor("P0", "respuesta")
+
+
+# ══════════════════════════════════════════════════════════════
+# El botón de descarga solo se menciona si de verdad hay archivo (hallazgo de la evaluación de la fase 6)
+# ══════════════════════════════════════════════════════════════
+
+@pytest.mark.parametrize("modo", ["respuesta", "aclaracion", "sin_resultados"])
+@pytest.mark.parametrize("perfil", ["P0", "P1", "P2", "P3"])
+def test_sin_archivos_el_prompt_del_redactor_no_pide_mencionar_ningun_boton(modo, perfil):
+    sistema = prompts.construir_prompt_redactor(perfil, modo).lower()
+
+    assert "botón de descarga" not in sistema
+    assert "archivo para descargar" not in sistema and "original no disponible" not in sistema
+    # La regla base solo lo nombra para prohibirlo.
+    assert "no menciones botones" in sistema
+
+
+def test_con_archivos_la_respuesta_con_contenido_recibe_la_frase_del_boton():
+    sistema = prompts.construir_prompt_redactor("P0", "respuesta", hay_archivos=True)
+
+    assert prompts.INSTRUCCION_RESPUESTA_CON_ARCHIVO in sistema
+    assert prompts.INSTRUCCION_RESPUESTA_SIN_ORIGINAL not in sistema
+
+
+def test_con_original_no_disponible_la_respuesta_con_contenido_lo_avisa_sin_boton():
+    sistema = prompts.construir_prompt_redactor("P0", "respuesta", hay_sin_original=True)
+
+    assert prompts.INSTRUCCION_RESPUESTA_SIN_ORIGINAL in sistema
+    assert prompts.INSTRUCCION_RESPUESTA_CON_ARCHIVO not in sistema
+
+
+def test_las_instrucciones_del_boton_solo_aplican_al_modo_respuesta():
+    for modo in ("aclaracion", "sin_resultados", "entrega", "descarga_no_disponible"):
+        sistema = prompts.construir_prompt_redactor("P0", modo, hay_archivos=True, hay_sin_original=True)
+        assert prompts.INSTRUCCION_RESPUESTA_CON_ARCHIVO not in sistema
+        assert prompts.INSTRUCCION_RESPUESTA_SIN_ORIGINAL not in sistema
+
+
+def test_el_redactor_no_menciona_el_boton_en_una_respuesta_sin_archivos(monkeypatch):
+    estado = estado_investigador(pide_contenido(), evidencia=[FRAGMENTO_TAXI], fuentes=[FUENTE_TAXI])
+
+    _, modelo = correr_redactor(monkeypatch, estado, "La tarifa mínima es $5.500 [Decreto 001 de 2019, p. 1].")
+
+    sistema, entrada = modelo.entradas[0][0].content.lower(), modelo.entradas[0][1].content.lower()
+    assert "botón de descarga" not in sistema and "archivo(s) para descargar" not in entrada
+
+
+def test_el_redactor_pide_la_frase_del_boton_solo_cuando_hay_archivos(monkeypatch):
+    estado = estado_investigador(
+        pide_archivo(contenido=True), archivos=[ARCHIVO_TAXI], evidencia=[FRAGMENTO_TAXI], fuentes=[FUENTE_TAXI]
+    )
+
+    _, modelo = correr_redactor(monkeypatch, estado, "La tarifa mínima es $5.500 [Decreto 001 de 2019, p. 1].")
+
+    assert prompts.INSTRUCCION_RESPUESTA_CON_ARCHIVO in modelo.entradas[0][0].content
+
+
+def test_el_redactor_avisa_del_original_no_disponible_en_una_respuesta_con_contenido(monkeypatch):
+    estado = estado_investigador(
+        pide_archivo(contenido=True), archivos_no_disponibles=[{"titulo": "Decreto 001 de 2019", "archivo": "a.pdf"}],
+        evidencia=[FRAGMENTO_TAXI], fuentes=[FUENTE_TAXI],
+    )
+
+    _, modelo = correr_redactor(monkeypatch, estado, "La tarifa mínima es $5.500 [Decreto 001 de 2019, p. 1].")
+
+    assert prompts.INSTRUCCION_RESPUESTA_SIN_ORIGINAL in modelo.entradas[0][0].content
+    assert prompts.INSTRUCCION_RESPUESTA_CON_ARCHIVO not in modelo.entradas[0][0].content

@@ -178,7 +178,11 @@ def redactor(estado: dict, config: RunnableConfig | None = None) -> dict:
 
     llm = crear_llm(configuracion.REDACTOR_MODEL, 0.3)
     mensajes = [
-        SystemMessage(content=construir_prompt_redactor(perfil, modo)),
+        SystemMessage(content=construir_prompt_redactor(
+            perfil, modo,
+            hay_archivos=bool(estado.get("archivos")),
+            hay_sin_original=bool(estado.get("archivos_no_disponibles")),
+        )),
         HumanMessage(content=construir_entrada(estado, modo)),
     ]
     texto, informacion_encontrada = _redactar(llm, mensajes, config, estructurado=(modo == "respuesta"))

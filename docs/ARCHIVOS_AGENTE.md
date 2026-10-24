@@ -526,9 +526,23 @@ propia cuenta del backend, que es justo lo que revierte la ingesta. Los archivos
   intención 1,00, archivos 1,00, candidatos 1,00, alerta 1,00, negativa 1,00, `solicita_archivo` 1,00, `incluye_contenido` 1,00, entrega 1,00, `info` 0,98 (ver abajo); 0 errores y 0 degradados;
   mediana 15 s por caso (incluye las pausas de 20 s entre turnos de los casos de varios turnos).
 
-### Hallazgo abierto de la evaluación
-La instrucción que se añadió al modo `respuesta` del redactor ("si la entrada indica ARCHIVO(S) PARA DESCARGAR, cierra diciendo que el documento queda disponible en el botón…") la aplica
-el modelo flash-lite en **casi todas** las respuestas con contenido: 24 de las 35 respuestas que mencionan el botón lo hacen sin que haya archivo que entregar (p. ej. `ref-01`, `tema-02`, `seg-02`).
-El usuario leería "queda disponible en el botón de descarga" sin que aparezca ningún botón. La métrica `info` (0,98) marcó `glob-01` por un falso positivo de la propia métrica ("hum**ano se encuentra**"
-contiene "no se encuentra"), pero el defecto de fondo es real. Corrección propuesta (pendiente de decisión): dejar de pedirlo en el prompt fijo y añadir esa línea desde el código solo cuando el estado
-trae `archivos`, con un test, y añadir a `evaluar_agente.py` una métrica que detecte la mención al botón sin archivo entregado.
+### Hallazgo de la evaluación y su corrección
+La instrucción que se había añadido al prompt fijo del modo `respuesta` del redactor ("si la entrada indica ARCHIVO(S) PARA DESCARGAR, cierra diciendo que el documento queda disponible en el
+botón…") la aplicaba flash-lite en **casi todas** las respuestas con contenido: 24 de las 35 respuestas que mencionaban el botón lo hacían sin que hubiera archivo que entregar (p. ej. `ref-01`,
+`tema-02`, `seg-02`); el usuario habría leído "queda disponible en el botón de descarga" sin que apareciera ningún botón. La métrica `info` (0,98) marcó `glob-01` por un falso positivo de la propia
+métrica ("hum**ano se encuentra**" contiene "no se encuentra"), pero el defecto de fondo era real.
+
+**Corrección:**
+- Esa frase ya no está en el prompt fijo: `construir_prompt_redactor(perfil, modo, hay_archivos, hay_sin_original)` la agrega **desde el código** (`INSTRUCCION_RESPUESTA_CON_ARCHIVO` /
+  `INSTRUCCION_RESPUESTA_SIN_ORIGINAL`) solo en el modo `respuesta` y solo si el estado trae `archivos` / `archivos_no_disponibles`. La regla base dice ahora "no menciones botones, descargas ni
+  archivos descargables, salvo que la entrada lo indique expresamente".
+- `evaluar_agente.py`: métrica nueva `boton_ok` (la respuesta no menciona un "botón" si la API no entrega ningún archivo, con la misma compuerta de la API) y `FRASES_NEGATIVAS` con límite de palabra.
+- Tests: el prompt sin archivos no pide ningún botón en ningún modo ni perfil; con archivos o sin original, la instrucción aparece solo en `respuesta`; el redactor la recibe solo cuando corresponde; la métrica
+  detecta el botón inexistente y no se confunde con "humano se encuentra". Total: 347 tests.
+
+**Re-evaluación con Gemini** (36 casos afectados, flash-lite en los cuatro agentes, `evaluacion/resultados_fase6_boton.json`): se evaluaron **20** antes de agotarse la cuota diaria de `gemini-3.5-flash-lite`
+(`ref-01..05`, `tema-01..05`, `inv-04`, `seg-01..03`, `amp-01..02`, `glob-01/04/05`, `tc-seg-01`). **Ninguna respuesta menciona ya un botón inexistente** (`boton` 1,00; antes lo hacían todas); intención 1,00.
+Un caso empeoró: `seg-03` ("¿Desde cuándo rige ese cambio?" tras el Decreto 083 de 2018): esta vez el redactor dijo que los documentos no especifican la fecha y marcó "sin información pertinente" (antes dio la
+fecha de expedición); es variación del modelo sobre una pregunta límite, no relacionada con el botón, con una sola muestra. **Quedaron sin re-evaluar 16 casos** (`mal-01..03`, `voz-num-01..03`, `arch-01..09`, `arch-11`)
+por la cuota diaria; `arch-*` se verificó antes con la corrección de la fase 4 y su comportamiento depende de los modos `entrega` y `respuesta con archivo`, cubiertos por tests. Conviene repetirlos cuando se renueve la cuota:
+`uv run python evaluacion/evaluar_agente.py --pausa 20 --ids mal-01 mal-02 mal-03 voz-num-01 voz-num-02 voz-num-03 arch-01 arch-02 arch-03 arch-04 arch-05 arch-06 arch-07 arch-08 arch-09 arch-11 seg-03`.

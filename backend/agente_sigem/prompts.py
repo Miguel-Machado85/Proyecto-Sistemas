@@ -278,17 +278,24 @@ REGLAS IMPORTANTES:
 5. Si los fragmentos solo cubren parte de la pregunta, responde esa parte y di con claridad qué
    no aparece en los documentos.
 6. Responde siempre en español.
-7. NUNCA escribas URLs, enlaces ni rutas de archivos: si el usuario puede descargar el documento, la
-   interfaz muestra un botón de descarga debajo de tu respuesta.
+7. NUNCA escribas URLs, enlaces ni rutas de archivos. No menciones botones, descargas ni archivos
+   descargables, salvo que la entrada lo indique expresamente.
 """
+
+# Se agregan desde el código (construir_prompt_redactor) solo cuando el estado trae archivos o documentos sin
+# original: en el prompt fijo, el modelo las aplicaba también a respuestas que no tenían ningún botón.
+INSTRUCCION_RESPUESTA_CON_ARCHIVO = """
+ARCHIVO PARA DESCARGAR: la entrada lista un ARCHIVO(S) PARA DESCARGAR. Cierra con una frase corta diciendo que el
+documento queda disponible en el botón de descarga debajo del mensaje (sin escribir enlaces)."""
+
+INSTRUCCION_RESPUESTA_SIN_ORIGINAL = """
+ORIGINAL NO DISPONIBLE: la entrada indica que el original NO está disponible para descarga. Dilo en una frase
+al final, sin mencionar ningún botón."""
 
 INSTRUCCIONES_MODO_REDACTOR = {
     "respuesta": """
 MODO: RESPUESTA
 Responde la pregunta usando solo los fragmentos numerados de la evidencia y cita cada dato en línea.
-Si la entrada indica ARCHIVO(S) PARA DESCARGAR, cierra con una frase corta diciendo que el documento queda
-disponible en el botón de descarga debajo del mensaje (sin escribir enlaces). Si indica que el original NO está
-disponible para descarga, dilo en una frase al final.
 Indica con el campo `informacion_encontrada` si los fragmentos contenían información pertinente para la pregunta:
 false solo cuando tu respuesta dice que no hay información sobre lo preguntado.""",
 
@@ -318,8 +325,17 @@ Si el usuario nombró un documento, indícale que revise el tipo, el número o e
 }
 
 
-def construir_prompt_redactor(perfil: str, modo: str) -> str:
-    """Reglas base + instrucciones del modo + estilo del perfil (P0 si el perfil no se reconoce)."""
+def construir_prompt_redactor(perfil: str, modo: str, hay_archivos: bool = False, hay_sin_original: bool = False) -> str:
+    """Reglas base + instrucciones del modo + estilo del perfil (P0 si el perfil no se reconoce).
+
+    Las menciones al botón de descarga en una respuesta con contenido solo se piden cuando el estado trae
+    archivos (`hay_archivos`) o documentos sin original (`hay_sin_original`); los demás modos ya las traen.
+    """
     estilo = ESTILO_POR_PERFIL.get(perfil, ESTILO_POR_PERFIL["P0"])
     instrucciones = INSTRUCCIONES_MODO_REDACTOR.get(modo, INSTRUCCIONES_MODO_REDACTOR["respuesta"])
+    if modo == "respuesta":
+        if hay_archivos:
+            instrucciones += INSTRUCCION_RESPUESTA_CON_ARCHIVO
+        if hay_sin_original:
+            instrucciones += INSTRUCCION_RESPUESTA_SIN_ORIGINAL
     return PROMPT_REDACTOR_BASE + instrucciones + "\n" + estilo

@@ -1,0 +1,1224 @@
+{
+  "fecha": "2026-10-24T16:37:53",
+  "modelos": {
+    "analista": "gemini-3.5-flash-lite",
+    "investigador": "gemini-3.5-flash-lite",
+    "evaluador": "gemini-3.5-flash-lite",
+    "redactor": "gemini-3.5-flash-lite"
+  },
+  "reranker": true,
+  "pausa_s": 20.0,
+  "abortado": "Cuota diaria de Gemini agotada: se detuvo la corrida (resultados parciales guardados).",
+  "resumen": {
+    "ampliacion": {
+      "casos": 2,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": null,
+      "entrega": null,
+      "informacion": 1.0,
+      "negativa": null,
+      "boton": 1.0,
+      "tiempo_s_promedio": 56.1
+    },
+    "busqueda_global_con_doc_activo": {
+      "casos": 3,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": null,
+      "entrega": null,
+      "informacion": 1.0,
+      "negativa": null,
+      "boton": 1.0,
+      "tiempo_s_promedio": 55.9
+    },
+    "inventario": {
+      "casos": 1,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": null,
+      "entrega": null,
+      "informacion": 1.0,
+      "negativa": null,
+      "boton": 1.0,
+      "tiempo_s_promedio": 26.7
+    },
+    "mal_escrita": {
+      "casos": 1,
+      "errores": 1,
+      "degradados": 0,
+      "intencion": null,
+      "archivos": null,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": null,
+      "entrega": null,
+      "informacion": null,
+      "negativa": null,
+      "boton": null,
+      "tiempo_s_promedio": null
+    },
+    "referencia_exacta": {
+      "casos": 5,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": null,
+      "entrega": null,
+      "informacion": 1.0,
+      "negativa": null,
+      "boton": 1.0,
+      "tiempo_s_promedio": 15.1
+    },
+    "seguimiento": {
+      "casos": 4,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 0.75,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": null,
+      "entrega": null,
+      "informacion": 0.75,
+      "negativa": null,
+      "boton": 1.0,
+      "tiempo_s_promedio": 43.3
+    },
+    "tema_sin_palabras_clave": {
+      "casos": 5,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": null,
+      "entrega": null,
+      "informacion": 1.0,
+      "negativa": null,
+      "boton": 1.0,
+      "tiempo_s_promedio": 14.6
+    },
+    "GLOBAL": {
+      "casos": 21,
+      "errores": 1,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 0.95,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": null,
+      "entrega": null,
+      "informacion": 0.95,
+      "negativa": null,
+      "boton": 1.0,
+      "tiempo_s_promedio": 31.4
+    }
+  },
+  "casos": [
+    {
+      "id": "ref-01",
+      "categoria": "referencia_exacta",
+      "perfil": "P0",
+      "razonamiento_analista": "El usuario pregunta por el contenido de un decreto específico sin pedir el archivo.",
+      "degradado": [],
+      "mensaje": "¿Qué dice el Decreto 083 de 2018?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "El Decreto 083 de 2018 fue expedido por la Alcaldesa Municipal de Marinilla (encargada) con el fin de modificar el horario de atención al público en la Inspección Municipal de Policía, buscando mayor eficiencia y eficacia en las funciones institucionales y respondiendo a las exigencias de la Ley 1801 de 2016 sobre el Código Nacional de Policía y Convivencia [Decreto 083 de 2018, p. 1, 2]. \n\nLas disposiciones principales del decreto son:\n- Artículo Primero: Modifica el horario de atención al público en la Inspección Municipal de Policía, el cual se prestará de lunes a jueves de 7:30 a.m. a 11:00 a.m. en la jornada de la mañana, y de 1:30 p.m. a 4:00 p.m. en la jornada de la tarde. El día viernes el horario será de 7:30 a.m. a 11:00 a.m. en la mañana, y en la tarde se extenderá hasta las 4:00 p.m. [Decreto 083 de 2018, p. 2].\n- Artículo Segundo: Ordena la publicación del decreto en las carteleras de la Administración Municipal y en la página web del municipio [Decreto 083 de 2018, p. 2].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: pregunta=¿Qué dice el Decreto 083 de 2018?, tipo=decreto, numero=83, anio=2018",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "boton_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 18.0,
+      "intentos": 1
+    },
+    {
+      "id": "ref-02",
+      "categoria": "referencia_exacta",
+      "perfil": "P2",
+      "razonamiento_analista": "Consulta sobre el contenido y tema de una resolución específica.",
+      "degradado": [],
+      "mensaje": "Necesito saber de qué trata la Resolución 4496 de 2018",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "La Resolución 4496 de 2018 trata sobre la adopción del documento denominado \"Manual de Políticas Contables\" para el Municipio de Marinilla, actualizado bajo el Nuevo Marco Normativo para las Entidades de Gobierno [Resolución 4496 de 2018, p. 3, Resolución 4496 de 2018, p. 6]. Este manual es de obligatorio cumplimiento para todas las dependencias del municipio y los servidores responsables de los procesos contables a partir del periodo contable 2018 [Resolución 4496 de 2018, p. 3, Resolución 4496 de 2018, p. 7].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: pregunta=¿De qué trata esta resolución?, anio=2018, tipo=resolucion, numero=4496",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P2",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "boton_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 19.4,
+      "intentos": 1
+    },
+    {
+      "id": "ref-03",
+      "categoria": "referencia_exacta",
+      "perfil": "P1",
+      "razonamiento_analista": "El usuario solicita una explicación sobre el contenido de la Ley 387 de 1997, sin pedir el archivo.",
+      "degradado": [],
+      "mensaje": "Explícame la Ley 387 de 1997",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "14362_ley387de1997.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "14362_ley387de1997.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "La Ley 387 de 1997 adopta medidas para prevenir el desplazamiento forzado y para atender, proteger y estabilizar a las personas desplazadas por la violencia en Colombia [Ley 387 1997, p. 1]. Los puntos principales son:\n\n* **Quién es una persona desplazada:** Es quien se ha visto forzada a migrar dentro del país y a dejar su hogar o trabajo porque su vida, seguridad o libertad están en peligro por la violencia [Ley 387 1997, p. 1].\n* **Derechos de la población desplazada:** Tienen derecho a no ser discriminados, a la reunificación familiar, a la libertad de movimiento, a regresar a su lugar de origen y a recibir ayuda humanitaria [Ley 387 1997, p. 1, p. 5].\n* **Atención Humanitaria de Emergencia:** El Gobierno da asistencia inmediata en alimentación, aseo, atención médica y psicológica, transporte y alojamiento temporal tras el desplazamiento [Ley 387 1997, p. 6].\n* **Comités de atención:** Se crean comités municipales, distritales y departamentales presididos por el alcalde o gobernador para apoyar a la población desplazada [Ley 387 1997, p. 3].\n* **Ayudas y proyectos:** Se establecen programas de apoyo agropecuario, líneas de crédito para microempresas y planes para facilitar el retorno o la reubicación [Ley 387 1997, p. 4, p. 7].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: pregunta=¿De qué trata la Ley 387 de 1997 y cuáles son sus puntos principales?, tipo=ley,…",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P1",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "boton_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 13.7,
+      "intentos": 1
+    },
+    {
+      "id": "ref-04",
+      "categoria": "referencia_exacta",
+      "perfil": "P3",
+      "razonamiento_analista": "El usuario pregunta por el contenido específico de un decreto municipal con número y año determinados.",
+      "degradado": [],
+      "mensaje": "¿Qué establece el Decreto 232 de 2015?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "2423_decretono232.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "2423_decretono232.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "El Decreto 232 de 2015 establece las tarifas para los certificados tipo carné que expide el municipio para los beneficiarios de los programas sociales del SISBEN [Decreto No 232 Diciembre 29 de 2015, p. 1]. Las tarifas fijadas por hoja según el concepto son:\n- Nivel tres o superior: 3.100,00 [Decreto No 232 Diciembre 29 de 2015, p. 1]\n- Nivel dos: 1.500,00 [Decreto No 232 Diciembre 29 de 2015, p. 1]\n\nAsimismo, el decreto determina que rige a partir del primero de enero de dos mil dieciséis (señalado textualmente como dos mil catorce en el texto del artículo segundo) [Decreto No 232 Diciembre 29 de 2015, p. 1].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: numero=232, anio=2015, pregunta=¿Qué establece el Decreto 232 de 2015?, tipo=decreto",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P3",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "boton_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 14.7,
+      "intentos": 1
+    },
+    {
+      "id": "ref-05",
+      "categoria": "referencia_exacta",
+      "perfil": "P0",
+      "razonamiento_analista": "El usuario pregunta por el contenido e implicaciones de una resolución específica.",
+      "degradado": [],
+      "mensaje": "Resolución 4397 de 2017, ¿qué impone?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "23661_resolucion-no-4397.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "23661_resolucion-no-4397.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "La Resolución 4397 de 2017 impone una sanción por no enviar información por un valor de $11.363.000 al contribuyente HARIPIELES S.A.S., responsable del Impuesto de Industria y Comercio, de acuerdo con el artículo 651 del Estatuto Tributario Nacional y el artículo 333 del Acuerdo 10 de 2017 (Estatuto Municipal) [Resolución 4397 de 2017, p. 5]. Asimismo, la medida contempla la posibilidad de que la sanción se reduzca al setenta por ciento (70%) de la suma determinada si se cancela dentro de los dos meses siguientes a la notificación del acto administrativo [Resolución 4397 de 2017, p. 5].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: anio=2017, pregunta=¿Qué impone la Resolución 4397 de 2017?, tipo=resolucion, numero=4397",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "boton_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 9.8,
+      "intentos": 1
+    },
+    {
+      "id": "tema-01",
+      "categoria": "tema_sin_palabras_clave",
+      "perfil": "P0",
+      "razonamiento_analista": "Pregunta sobre tarifas de transporte, que regula un decreto municipal.",
+      "degradado": [],
+      "mensaje": "¿Cuánto cuesta el taxi?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "En el municipio de Marinilla, la tarifa mínima de transporte público terrestre automotor individual en vehículo tipo taxi es de cinco mil quinientos pesos ($5.500) [Decreto 001 de 2019, p. 2]. Adicionalmente, se establecen recargos nocturnos entre las 10:00 p.m. y las 6:00 a.m. que equivalen a quinientos pesos ($500) para trayectos urbanos, tres mil pesos ($3.000) para rurales, cinco mil pesos ($5.000) en el oriente antioqueño y diez mil pesos ($10.000) para el área metropolitana [Decreto 001 de 2019, p. 2]. El costo por hora de espera es de veinte mil pesos ($20.000), valor que sirve de base para calcular fracciones menores de tiempo [Decreto 001 de 2019, p. 2]. Asimismo, se fijan tarifas máximas específicas para diversos trayectos desde el parque y otros puntos de la ciudad, tales como:\n- Parque - María Auxiliadora: $5.500 [Decreto 001 de 2019, p. 2, Decreto 001 de 2019, p. 3]\n- Parque - Planta Tratamiento: $6.000 [Decreto 001 de 2019, p. 2, Decreto 001 de 2019, p. 3]\n- Parque - Ciudadela: $6.000 [Decreto 001 de 2019, p. 2, Decreto 001 de 2019, p. 3]\n- Parque - Alto San José: $5.700 [Decreto 001 de 2019, p. 2, Decreto 001 de 2019, p. 3]\n- Parque - Antenas: $5.800 [Decreto 001 de 2019, p. 2, Decreto 001 de 2019, p. 3]",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: consulta=tarifas del servicio de taxi en Marinilla",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "leer_documento: paginas=[3], archivo=22598_decreto-no-0012019.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "boton_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 19.8,
+      "intentos": 1
+    },
+    {
+      "id": "tema-02",
+      "categoria": "tema_sin_palabras_clave",
+      "perfil": "P0",
+      "razonamiento_analista": "Pregunta cotidiana sobre horarios de licor regulados por decreto municipal.",
+      "degradado": [],
+      "mensaje": "¿Hasta qué hora se puede vender trago en las fiestas del pueblo?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "22593_decreto-no-1572018.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "22593_decreto-no-1572018.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Durante las fiestas populares y culturales en el municipio de Marinilla, los establecimientos abiertos al público con venta de licor pueden tener ejecución de música hasta las 2:30 a.m. y el cierre definitivo es a las 3:00 de la mañana, según lo establecido para las fechas de celebración [Decreto 157 de 2018, p. 2].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: consulta=horario venta consumo licor festividades",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "boton_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 8.1,
+      "intentos": 1
+    },
+    {
+      "id": "tema-03",
+      "categoria": "tema_sin_palabras_clave",
+      "perfil": "P1",
+      "razonamiento_analista": "Pregunta sobre regulaciones de ruido y perifoneo en espacio público, un tema típicamente regulado por decretos o acuerdos municipales.",
+      "degradado": [],
+      "mensaje": "¿Puedo poner música con parlantes en la calle o anunciar con megáfono?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "2399_decretono148_001.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "2399_decretono148_001.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Sí se puede usar perifoneo o altoparlantes, pero debes cumplir estas reglas:\n\n* Necesitas un permiso previo de la Secretaría de Agricultura y Ambiente del Municipio de Marinilla [Decreto No 148 de 12 de Agosto, p. 5, Decreto No 148 de 12 de Agosto, p. 4].\n* El horario permitido es de 9:00 AM a 12:00 M y de 2:00 PM a 5:00 PM [Decreto No 148 de 12 de Agosto, p. 5].\n* Los mensajes solo pueden ser de tipo cultural, religioso, deportivo, político o de información comunitaria [Decreto No 148 de 12 de Agosto, p. 5].\n* Está prohibido anunciar la venta de productos usando megáfonos o sistemas de amplificación con pregoneros [Decreto No 148 de 12 de Agosto, p. 5].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: consulta=uso de parlantes en la calle perifoneo megáfonos ruido Marinilla",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P1",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "boton_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 8.9,
+      "intentos": 1
+    },
+    {
+      "id": "tema-04",
+      "categoria": "tema_sin_palabras_clave",
+      "perfil": "P0",
+      "razonamiento_analista": "Pregunta sobre seguridad y porte de armas, tema regulado por decretos o resoluciones municipales o nacionales aplicables en el municipio.",
+      "degradado": [],
+      "mensaje": "¿Se puede andar con un arma por el pueblo?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "2420_decretono017.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "2420_decretono017.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "En el municipio de Marinilla, la administración municipal tiene la facultad de restringir de manera general el permiso para el porte y la tenencia de armas de fuego a personas naturales, jurídicas o inmuebles rurales durante periodos determinados, como por ejemplo en las festividades populares tradicionales [Decreto No 017 Enero 05 de 2016, p. 1]. No se dispone en los documentos de más detalles sobre restricciones permanentes fuera de estas medidas temporales.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: consulta=porte de armas regulaciones restricciones Marinilla",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "boton_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 17.9,
+      "intentos": 1
+    },
+    {
+      "id": "tema-05",
+      "categoria": "tema_sin_palabras_clave",
+      "perfil": "P1",
+      "razonamiento_analista": "Pregunta sobre horarios de atención de una dependencia municipal, regulada por actos administrativos locales.",
+      "degradado": [],
+      "mensaje": "¿Hasta qué hora atienden en la inspección de policía?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "10322_decreto-no-0832018.pdf",
+        "2404_decretono191.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "2404_decretono191.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "El horario de atención al público en la Inspección Municipal de Policía es el siguiente: \n- De lunes a jueves: por la mañana de 7:30 a.m. a 11:00 a.m., y por la tarde de 1:30 p.m. a 5:00 p.m. [Decreto No 191 de 05 de Noviembre, p. 1]. \n- El día viernes: por la mañana de 7:30 a.m. a 11:00 a.m., y por la tarde hasta las 4:00 p.m. [Decreto No 191 de 05 de Noviembre, p. 1].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: consulta=horario de atencion al publico inspeccion de policia",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P1",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "boton_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 18.3,
+      "intentos": 1
+    },
+    {
+      "id": "inv-04",
+      "categoria": "inventario",
+      "perfil": "P3",
+      "razonamiento_analista": "Pregunta de búsqueda general sobre normas de horarios de atención al público en el municipio.",
+      "degradado": [],
+      "mensaje": "¿Qué normas hay sobre horarios de atención al público?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "10322_decreto-no-0832018.pdf",
+        "22552_decreto-no-1442018.pdf",
+        "2404_decretono191.pdf",
+        "2405_decretono200.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "10322_decreto-no-0832018.pdf",
+        "22552_decreto-no-1442018.pdf",
+        "22593_decreto-no-1572018.pdf",
+        "2404_decretono191.pdf",
+        "2405_decretono200.pdf",
+        "2408_decretono207.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "En relación con los horarios de atención al público, existen varias disposiciones normativas en el municipio: El Decreto 083 de 2018 modifica el horario de atención al público en la Inspección Municipal de Policía [Decreto 083 de 2018, p. 1], estableciéndose de lunes a jueves en la mañana de 7:30 a.m. a 11:00 a.m., en la tarde de 1:30 p.m. a 4:00 p.m., y el día viernes en la mañana de 7:30 a.m. a 11:00 a.m. y en la tarde hasta las 4:00 p.m. [Decreto 083 de 2018, p. 1]. Asimismo, se cuenta con el Decreto No 191 de 05 de Noviembre de 2015 que modifica el horario en la Inspección de Policía [Decreto No 191 de 05 de Noviembre], el Decreto No 200 de Noviembre 23 de 2015 que modifica el horario en la Secretaría de Cultura y Turismo [Decreto No 200 Noviembre 23 de 2015], el Decreto 144 de 2018 sobre suspensión temporal de atención [Decreto 144 de 2018], el Decreto 157 de 2018 respecto al horario de establecimientos abiertos al público con venta de licor [Decreto 157 de 2018], y el Decreto No 207 de Diciembre 07 de 2015 sobre suspensión de atención [Decreto No 207 Diciembre 07 de 2015].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "listar_documentos: tema=horarios de atención al público",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: consulta=horario de atención al público en la inspección municipal de policía, archivo=10…",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P3",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "boton_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 26.7,
+      "intentos": 1
+    },
+    {
+      "id": "seg-01",
+      "categoria": "seguimiento",
+      "perfil": "P3",
+      "razonamiento_analista": "Es una pregunta corta de seguimiento sobre el documento activo acerca de su periodo de vigencia.",
+      "degradado": [],
+      "mensaje": "¿Para qué periodo tiene vigencia?",
+      "intencion_esperada": "seguimiento",
+      "intencion_obtenida": "seguimiento",
+      "archivos_esperados": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "El Plan Estratégico de Gestión del Talento Humano de la Administración Municipal de Marinilla tiene vigencia para el periodo 2018-2020 [Resolución No. 3615, p. 8]. Adicionalmente, durante este periodo la oficina de Recursos Humanos se concentrará en desarrollar estrategias para optimizar la calidad de vida laboral de los funcionarios [Resolución No. 3615, p. 12].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: seguimiento",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: archivo=18399_resolucion-3615-plan-estrategico-20182020-1.pdf, consulta=periodo vigencia …",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P3",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "boton_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 41.6,
+      "intentos": 1
+    },
+    {
+      "id": "seg-02",
+      "categoria": "seguimiento",
+      "perfil": "P0",
+      "razonamiento_analista": "Pregunta de seguimiento sobre el documento activo pidiendo detalles específicos de las tarifas para buses.",
+      "degradado": [],
+      "mensaje": "¿y para los buses cuánto es?",
+      "intencion_esperada": "seguimiento",
+      "intencion_obtenida": "seguimiento",
+      "archivos_esperados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Para los vehículos tipo bus y bus mixto, las tarifas generales según las rutas desde el punto de acopio son las siguientes: Punto de acopio - La Milagrosa $2.400, Punto de acopio - Alto de Chocho $2.400, Punto de acopio - Cimarronas $2.400, Punto de acopio - Cascajo Abajo $2.400, Punto de acopio - Cascajo Arriba $2.700, Punto de acopio - Alto del Mercado Vereda $2.500, Punto de acopio - El Socorro $2.400, Punto de acopio - El Chagualo $2.000, Punto de acopio - San Bosco $2.400, Punto de acopio - Las Mercedes $2.500, Punto de acopio - Gaviria $2.700, Punto de acopio - Montañita $2.900, Punto de acopio - La Esperanza $2.700, Punto de acopio - Chocho Mayo $2.800, Punto de acopio - La Esmeralda $3.100, Punto de acopio - Santa Cruz $2.900, Punto de acopio - Campo Alegre $2.000, Punto de acopio - La Asunción $2.900, Punto de acopio - La Peña $3.400, y Punto de acopio - Llanadas $3.600 [Decreto 001 de 2019, p. 4]. Adicionalmente, existen otras tarifas para rutas específicas como Punto de acopio - Salto (arriba) $4.000 y Punto de acopio - Salto (abajo) $4.500 [Decreto 001 de 2019, p. 8].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: seguimiento",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: consulta=tarifas para los buses transporte pasajes, archivo=22598_decreto-no-0012019.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "boton_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 47.1,
+      "intentos": 1
+    },
+    {
+      "id": "seg-03",
+      "categoria": "seguimiento",
+      "perfil": "P2",
+      "razonamiento_analista": "Pregunta de seguimiento sobre la fecha de vigencia referida al documento activo.",
+      "degradado": [],
+      "mensaje": "¿Desde cuándo rige ese cambio?",
+      "intencion_esperada": "seguimiento",
+      "intencion_obtenida": "seguimiento",
+      "archivos_esperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Lo siento, en los documentos proporcionados no se especifica desde qué fecha exacta rige o empieza a aplicarse el cambio de horario establecido en el Decreto 083 de 2018 [Decreto 083 de 2018, p. 1].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: seguimiento",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: consulta=vigencia cambio de horario rige desde cuando, archivo=10322_decreto-no-0832018.p…",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "leer_documento: archivo=10322_decreto-no-0832018.pdf, paginas=[2]",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Reintentando: Los fragmentos recuperados no muestran la fecha de vigencia o desde cuándo rige el cambio de horario del Decreto 083 de 2018.",
+          "icono": "✅"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: archivo=10322_decreto-no-0832018.pdf, consulta=vigencia rige a partir de fecha de expedic…",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "leer_documento: archivo=10322_decreto-no-0832018.pdf, paginas=[2]",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P2 · sin información pertinente en los fragmentos",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": false,
+        "boton_ok": true,
+        "informacion_ok": false
+      },
+      "tiempo_s": 48.1,
+      "intentos": 1
+    },
+    {
+      "id": "amp-01",
+      "categoria": "ampliacion",
+      "perfil": "P1",
+      "razonamiento_analista": "Es una pregunta de seguimiento que pide más información sobre el documento activo.",
+      "degradado": [],
+      "mensaje": "Háblame más",
+      "intencion_esperada": "seguimiento",
+      "intencion_obtenida": "seguimiento",
+      "archivos_esperados": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "La Resolución No. 3615 adopta el plan estratégico de talento humano para los servidores públicos del municipio de Marinilla para la vigencia 2018-2020 [Resolución No. 3615, p. 1]. Su propósito es establecer y divulgar las políticas y directrices que orientan la planeación de la gestión del talento humano, armonizándola con la planeación estratégica y el Plan Nacional de Desarrollo [Resolución No. 3615, p. 3]. \n\nLos puntos principales del documento son:\n* **Objetivo general:** Articular las prácticas de gestión del talento humano para que aporten al desarrollo organizacional y mejoren la calidad de vida de los servidores públicos [Resolución No. 3615, p. 4].\n* **Procesos que comprende la gestión:**\n  * Ingreso: vinculación e inducción [Resolución No. 3615, p. 4].\n  * Permanencia: capacitación, evaluación del desempeño, bienestar, estímulos, plan de vacantes, previsión de empleos y teletrabajo [Resolución No. 3615, p. 4].\n  * Retiro: situación por necesidades del servicio o pensión [Resolución No. 3615, p. 4].\n* **Referentes normativos:** Se basa en normas como la Ley 909 de 2004, el Decreto Ley 1567 de 1998, el Decreto 1083 de 2015, el Decreto 4665 de 2007 y el Decreto 1072 de 2015 [Resolución No. 3615, p. 1, 4].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: seguimiento",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "leer_documento: archivo=18399_resolucion-3615-plan-estrategico-20182020-1.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P1",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "boton_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 67.3,
+      "intentos": 1
+    },
+    {
+      "id": "amp-02",
+      "categoria": "ampliacion",
+      "perfil": "P0",
+      "razonamiento_analista": "Pregunta de seguimiento que pide más detalles sobre el documento activo.",
+      "degradado": [],
+      "mensaje": "Explícamelo con más detalle por favor",
+      "intencion_esperada": "seguimiento",
+      "intencion_obtenida": "seguimiento",
+      "archivos_esperados": [
+        "14358_ley1532de2012.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "14358_ley1532de2012.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "La Ley 1532 de 2012 regula el funcionamiento del programa Familias en Acción, el cual se encuentra bajo la dirección y coordinación del Departamento Administrativo para la Prosperidad Social [Ley 1532 de 2012, p. 1]. Este programa consiste en la entrega condicionada y periódica de una transferencia monetaria directa para complementar los ingresos y mejorar la salud y educación de los menores de 18 años en familias en condición de pobreza y vulnerabilidad [Ley 1532 de 2012, p. 1]. Sus objetivos principales son contribuir a la superación y prevención de la pobreza y a la formación de capital humano [Ley 1532 de 2012, p. 1].\n\nEntre los beneficiarios se incluyen las familias en situación de pobreza según los criterios del Gobierno Nacional, familias en situación de desplazamiento, familias indígenas (validadas mediante listados censales de sus cabildos y sin la aplicación del Sisbén) y familias afrodescendientes en pobreza extrema [Ley 1532 de 2012, p. 1, p. 2]. El 100% de las familias que cumplan los requisitos pueden ser beneficiarias, pero se pierden los derechos al programa si los menores de 18 años sufren de desescolarización, explotación laboral, desnutrición, maltrato, abandono o negligencia notificados por el ICBF, casos en los cuales las ayudas pueden otorgarse a adultos del núcleo familiar que no vulneren sus derechos [Ley 1532 de 2012, p. 2].\n\nEl programa se implementa en todo el territorio nacional [Ley 1532 de 2012, p. 2]. Los subsidios y sus montos son definidos por el Gobierno Nacional a través del Departamento Administrativo para la Prosperidad Social y el Departamento Nacional de Planeación, y se revisan anualmente con un reajuste no menor al IPC de ingresos bajos [Ley 1532 de 2012, p. 2]. El otorgamiento del apoyo monetario está condicionado al cumplimiento de compromisos de corresponsabilidad y se verifica antes de los pagos [Ley 1532 de 2012, p. 3].\n\nLos pagos se efectúan cada dos meses mediante productos financieros para fomentar la bancarización, privilegiando el pago a las mujeres del hogar como medida de empoderamiento, y prohibiendo realizar afiliaciones en los noventa días previos a una contienda electoral (excepto para familias desplazadas) [Ley 1532 de 2012, p. 4]. Adicionalmente, para su funcionamiento en las regiones, se pueden suscribir convenios con alcaldías y gobernaciones, y se cuenta con un sistema de información y esquemas de evaluación para el seguimiento y monitoreo [Ley 1532 de 2012, p. 3, p. 4].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: seguimiento",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "leer_documento: archivo=14358_ley1532de2012.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "boton_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 45.0,
+      "intentos": 1
+    },
+    {
+      "id": "glob-01",
+      "categoria": "busqueda_global_con_doc_activo",
+      "perfil": "P1",
+      "razonamiento_analista": "Pide una búsqueda general sobre un tema en el repositorio, no sobre el documento activo.",
+      "degradado": [],
+      "mensaje": "¿Qué normas SIGEM hay sobre talento humano?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Sobre talento humano hay la Resolución No. 3615 del 29 de octubre de 2018. Por medio de esta norma se adopta el plan estratégico de talento humano para los servidores públicos del municipio de Marinilla para los años 2018 a 2020 [Resolución No. 3615].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "listar_documentos: tema=talento humano",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P1",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "boton_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 54.4,
+      "intentos": 1
+    },
+    {
+      "id": "glob-04",
+      "categoria": "busqueda_global_con_doc_activo",
+      "perfil": "P0",
+      "razonamiento_analista": "El usuario pregunta explícitamente por un documento diferente al activo (Decreto 83 de 2018) y su contenido, por lo que es una consulta nueva al SIGEM.",
+      "degradado": [],
+      "mensaje": "¿Qué modifica el Decreto 83 de 2018?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "El Decreto 83 de 2018 modifica el horario de atención al público en la Inspección Municipal de Policía [Decreto 083 de 2018, p. 1]. Esta modificación se realiza debido a las nuevas exigencias de la Ley 1801 de 2018 sobre el Código Nacional de Policía y Convivencia, con el fin de ampliar el trámite interno de situaciones administrativas y cumplir con los deberes legales, buscando una mayor eficiencia y eficacia en las funciones institucionales [Decreto 083 de 2018, p. 1]. El nuevo horario establecido es de lunes a jueves de 7:30 a.m. a 11:00 a.m. y de 1:30 p.m. a 4:00 p.m., y el viernes de 7:30 a.m. a 11:00 a.m. y en la tarde hasta las 4:00 p.m. [Decreto 083 de 2018, p. 1].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: anio=2018, pregunta=¿Qué modifica el Decreto 83 de 2018?, numero=83, tipo=decreto",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "boton_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 53.0,
+      "intentos": 1
+    },
+    {
+      "id": "glob-05",
+      "categoria": "busqueda_global_con_doc_activo",
+      "perfil": "P3",
+      "razonamiento_analista": "El usuario solicita un archivo específico utilizando un código identificador numérico interno.",
+      "degradado": [],
+      "mensaje": "Necesito el documento 18399",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": true,
+      "respuesta": "La Resolución No. 3615 contiene las directrices, programas y componentes relacionados con la gestión del talento humano en la administración municipal. Entre sus aspectos principales se encuentran: el Plan de Bienestar e Incentivos enfocado en mejorar la calidad de vida y el clima organizacional [Resolución No. 3615, p. 19]; el enfoque estratégico de la gestión del talento humano bajo los principios de justicia, equidad y transparencia [Resolución No. 3615, p. 12]; los lineamientos del Modelo Estándar de Control Interno (MECI 2014) [Resolución No. 3615, p. 3]; los valores institucionales como compromiso, honestidad y respeto según el Código de Ética [Resolución No. 3615, p. 11]; los programas de inducción y reinducción [Resolución No. 3615, p. 18]; el Plan de Seguridad y Salud en el Trabajo (SST) [Resolución No. 3615, p. 21]; el Plan Anual de Vacantes en cumplimiento de la Ley 909 de 2004 [Resolución No. 3615, p. 14]; y los subprocesos de ingreso, permanencia y retiro [Resolución No. 3615, p. 9].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: codigo=18399, pregunta=Contenido del documento 18399",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=18399_resolucion-3615-plan-estrategico-20182020-1.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Reintentando: Los fragmentos recuperados corresponden a la Resolución No. 3615 sobre talento humano y clima organizacional, pero no mencionan ni contienen información sobre el archivo con código interno 18399.",
+          "icono": "✅"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: pregunta=contenido del documento con codigo interno 18399, codigo=18399",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=18399_resolucion-3615-plan-estrategico-20182020-1.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P3",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "boton_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 60.3,
+      "intentos": 1
+    },
+    {
+      "id": "tc-seg-01",
+      "categoria": "seguimiento",
+      "perfil": "P0",
+      "razonamiento_analista": "Pregunta corta que consulta un detalle específico (vigencia) sobre el documento activo.",
+      "degradado": [],
+      "mensaje": "¿Para qué periodo tiene vigencia?",
+      "intencion_esperada": "seguimiento",
+      "intencion_obtenida": "seguimiento",
+      "archivos_esperados": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "La Resolución No. 3615 adopta el plan estratégico de talento humano para el periodo comprendido entre los años 2018 y 2020 [Resolución No. 3615, p. 1]. Dicho plan fue aprobado específicamente para el periodo 2018-2020 mediante el artículo primero de la misma resolución [Resolución No. 3615, p. 2].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: seguimiento",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: archivo=18399_resolucion-3615-plan-estrategico-20182020-1.pdf, consulta=periodo vigencia …",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "boton_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 36.4,
+      "intentos": 1
+    },
+    {
+      "id": "mal-01",
+      "categoria": "mal_escrita",
+      "perfil": "P0",
+      "mensaje": "decrto 83 de 2018 horaro de atension",
+      "error": "Error calling model 'gemini-3.5-flash-lite' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 500, model: gemini-3.5-fl",
+      "metricas": {},
+      "tiempo_s": 0.0
+    }
+  ]
+}
