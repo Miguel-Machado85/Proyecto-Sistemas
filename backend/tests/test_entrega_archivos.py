@@ -20,7 +20,7 @@ from fakes_llm import (
     llamada,
 )
 from fastapi.testclient import TestClient
-from grafo_falso import AIMessage, AnalisisConsulta, EvaluacionEvidencia, M_EVALUADOR, instalar_grafo
+from grafo_falso import AIMessage, AnalisisConsulta, EvaluacionEvidencia, instalar_grafo
 from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.memory import MemorySaver
 

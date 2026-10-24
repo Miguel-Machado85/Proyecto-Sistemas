@@ -453,7 +453,7 @@ Lee CLAUDE.md. Fase 5: mostrar en frontend/index.html los archivos que devuelve 
 2. Accesibilidad para el perfil P1 (sin experiencia digital): texto del botón explícito ("Descargar Decreto 001 de 2019 (PDF)"), aria-label, tamaño táctil de al menos 44 px y foco visible.
 3. Si la descarga devuelve 404, muestra un mensaje amable en el chat en vez de una página de error.
 4. Si en la fase 2 se persistieron los archivos en el historial, píntalos también al recargar el hilo; si no, no hagas nada con el historial.
-5. Explícame cómo probarlo a mano (qué preguntar y qué debería verse) y haz commit.
+5. Explícame cómo probarlo a mano (qué preguntar y qué debería verse) y haz commit. 
 ```
 
 ### Fase 6: Evaluación, documentación y PR
@@ -482,3 +482,53 @@ Lee CLAUDE.md y docs/ARCHIVOS_AGENTE.md. Fase 6: dejar todo evaluado, documentad
 | Versión del servidor Chroma distinta del cliente | Imagen fijada a la versión verificada en la fase 0 |
 | PDF en Chroma pero no en Drive | El reporte de sincronización los lista; `preparar_descarga` responde "no disponible" y el redactor lo dice con amabilidad |
 | Conflictos con el login del compañero | Dueños por archivo (sección 5) y `git merge main` al inicio de cada fase |
+
+
+---
+
+## 9. Estado de implementación (octubre de 2026)
+
+Las seis fases se implementaron en la rama `feature-archivosAgente` (un commit por fase, orden real 0 → 1 → 2 → 4 → 5 → 3 → 6). El PR va hacia `feature-Sprint7`, no hacia `main`.
+Esta sección lista lo que **se desvía** de la especificación y por qué.
+
+### Desviaciones
+
+| # | Especificación | Implementación | Razón |
+|---|---|---|---|
+| 1 | `AnalisisConsulta` solo gana `solicita_archivo` | Además `incluye_contenido` | Para distinguir "solo el archivo" de "archivo y explicación". La tool que identifica el documento siempre devuelve fragmentos, así que sin esa señal "pásame el decreto" terminaba en un resumen. Regla de producto: *dame / necesito / quiero / pásame* piden **archivo y contenido**; solo *descargar / PDF / archivo / enlace* piden solo el archivo. |
+| 2 | Campo de estado `archivos` | Además `archivos_no_disponibles` | Para explicar un documento que existe pero no tiene original (modo `descarga_no_disponible`), sin usar el texto del error de la tool. |
+| 3 | Atajo del evaluador: archivos sin evidencia → redactor | Los `candidatos` ganan a los `archivos` (en el evaluador y en `elegir_modo`) | Si hay varios documentos posibles no se entrega ninguno que el modelo haya elegido por su cuenta: primero se pide aclaración. |
+| 4 | Modo `entrega` del redactor | Además `descarga_no_disponible`; en modo `entrega` no hay salida estructurada ni fuentes | El modelo veía la regla de `informacion_encontrada` y la copiaba al texto de la respuesta; ahora esa regla vive solo en el modo `respuesta`. |
+| 5 | `/health` agrega `heartbeat()` | `503` con `"chroma":"no disponible"` si el servidor no responde (solo en modo `http`) | Decisión del equipo: que el healthcheck del contenedor refleje que el RAG está caído. |
+| 6 | Imagen `chromadb/chroma` "con la misma versión" | `chromadb/chroma:1.5.9` y `chromadb==1.5.9` fijado en `pyproject.toml` | Verificado en la fase 0. La imagen no trae `curl` ni Python: el healthcheck usa `/dev/tcp` de bash. |
+| 7 | Verificación de la migración: top-8 igual en origen y destino | Se compara cada lado con el top-8 **exacto** (fuerza bruta) y el destino no puede recuperar peor que el origen | HNSW es aproximado y se construye distinto en cada instalación: en 1 de 10 muestras el top-8 difería y el destino era el exacto. El script trabaja sobre una copia de `chroma_db` (el original no se toca). |
+| 8 | `RepositorioArchivos`: `subir`, `descargar`, `retirar`, `listar` | Además `enlace_ver` y `proveedor`; `descargar` pide el primer trozo al llamarse | `enlace_ver` hace posible `DRIVE_MODO_ENTREGA=redirect`; así un 403/404 sale como `503`/`404` antes de empezar a responder. |
+| 9 | Servicio de Drive reutilizable | Un `build` por operación | El cliente HTTP de googleapiclient no es seguro entre hilos y la descarga corre en el pool de hilos. |
+| 10 | OAuth "In production" | Probado con la app en modo *Pruebas* (el token caduca a los 7 días) | Publicar exige URL de página principal y de política de privacidad. El código y la documentación sirven igual para ambos modos; la renovación es `autorizar_drive.py`. |
+| 11 | Endpoint de descarga | `503` también si el proveedor registrado en la fila no coincide con el repositorio activo; sin `Content-Length` | Evita buscar un archivo de Drive en el disco local (o al revés) y que un tamaño guardado erróneo corte la descarga. |
+| 12 | Ingesta: subir → Chroma → fila | Si falla el registro de la fila también se deshace Chroma y se retira el original; el resultado lleva `id_externo`, `proveedor_original` y, en su caso, `advertencias`; revertir es reintentable (`original_retirado` en el manifiesto) | Un documento que el agente encuentra pero no puede entregar es peor que un error visible; un 403 a medias no debe dejar el lote bloqueado. |
+| 13 | Persistencia opcional de `archivos` en `turnos` | **No se implementó** | Era opcional. Al recargar un hilo se ve el texto "Aquí tienes…" pero no el botón. |
+| 14 | `<a href download>` en `index.html` | El clic hace `fetch` y descarga el blob | Un enlace directo mostraría una página de error JSON ante un 404; además el atributo `download` se ignora entre orígenes distintos (frontend y API en puertos distintos). |
+| 15 | El catálogo se reconstruye si cambió `collection.count()` | Con candado; si `count()` falla se conserva el catálogo anterior | No tumbar las tools porque Chroma tarde un instante. `invalidar_cache_documentos()` sigue existiendo. |
+| 16 | "≈72 PDF" | El catálogo tiene 71; la carpeta de Drive tiene 69 | `2401_decretono187.pdf` y `2403_decretono184.pdf` no están en Drive: responden "no disponible para descarga" hasta que se suban con `sincronizar_drive.py --subir-faltantes`. |
+
+### Acceso a la carpeta de Drive
+La configuración definitiva es: la carpeta compartida **por correo** con la cuenta del backend como **Editor**, y el acceso general del enlace en **Lector** o restringido. Con una carpeta
+en una unidad personal, el token de un Editor que no es dueño **no puede mandar a la papelera los archivos del dueño** (`canTrash: false`); `retirar` solo actúa sobre lo que sube la
+propia cuenta del backend, que es justo lo que revierte la ingesta. Los archivos que suba el backend ocupan el espacio de esa cuenta.
+
+### Resultados de la evaluación (fase 6)
+- **Tests:** 317, sin llamadas a Gemini, a Chroma servidor ni a Drive.
+- **Recuperación contra el servidor Chroma** (33 casos originales, con reranker): hit@8 **0,79** / MRR **0,67**, idéntico caso por caso a la medición de la fase 1. Frente a la línea base previa a la migración
+  (0,88 / 0,77) las diferencias son `ref-04`, `amb-02`, `glob-04` y `glob-02` (casos de referencia que ahora resuelven el analista y las tools, y el reranker), y `tema-04` mejora. Los 10 casos nuevos
+  de `solicitud_archivo` dan 0,90 (el que falla, `arch-09` "pásamelo", necesita al analista y al documento activo). Archivos: `evaluacion/fase6b_servidor_con_reranker.json`.
+- **Agente completo** (`evaluar_agente.py --pausa 20`, 54 casos, 14 categorías, los cuatro modelos en `gemini-3.5-flash-lite`; `evaluacion/resultados_fase6_completo.json`):
+  intención 1,00, archivos 1,00, candidatos 1,00, alerta 1,00, negativa 1,00, `solicita_archivo` 1,00, `incluye_contenido` 1,00, entrega 1,00, `info` 0,98 (ver abajo); 0 errores y 0 degradados;
+  mediana 15 s por caso (incluye las pausas de 20 s entre turnos de los casos de varios turnos).
+
+### Hallazgo abierto de la evaluación
+La instrucción que se añadió al modo `respuesta` del redactor ("si la entrada indica ARCHIVO(S) PARA DESCARGAR, cierra diciendo que el documento queda disponible en el botón…") la aplica
+el modelo flash-lite en **casi todas** las respuestas con contenido: 24 de las 35 respuestas que mencionan el botón lo hacen sin que haya archivo que entregar (p. ej. `ref-01`, `tema-02`, `seg-02`).
+El usuario leería "queda disponible en el botón de descarga" sin que aparezca ningún botón. La métrica `info` (0,98) marcó `glob-01` por un falso positivo de la propia métrica ("hum**ano se encuentra**"
+contiene "no se encuentra"), pero el defecto de fondo es real. Corrección propuesta (pendiente de decisión): dejar de pedirlo en el prompt fijo y añadir esa línea desde el código solo cuando el estado
+trae `archivos`, con un test, y añadir a `evaluar_agente.py` una métrica que detecte la mención al botón sin archivo entregado.

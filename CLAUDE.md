@@ -11,7 +11,7 @@
 8. LLM: Gemini (flash-lite para clasificar, flash para investigar y redactar); las decisiones las toman los agentes, no regex.
 9. Se migra a un sistema multi-agente (analista → investigador → evaluador → redactor) con Gemini.
 10. Etapa 1 (migración agéntica, terminada): rama `feature-agentico`, un commit por fase.
-11. Etapa 2 (actual): entrega de documentos del agente, Google Drive y Chroma como servicio; rama `feature-archivosAgente`, un commit por fase.
+11. Etapa 2 (actual): entrega de documentos del agente, Google Drive y Chroma como servicio; rama `feature-archivosAgente`, un commit por fase; el PR va hacia `feature-Sprint7` (no `main` todavía).
 
 ## Fuente de verdad
 - Etapa actual: **`docs/ARCHIVOS_AGENTE.md`** manda sobre cualquier otra suposición (incluido lo que diga un prompt de fase).
@@ -54,7 +54,7 @@ Orden de ejecución: **0 → 1 → 2 → 4 → 5 → 3 → 6** (solo la 3 necesi
 - [x] **Fase 3** — La ingesta del admin sube el original a Drive al indexar y lo retira al revertir
 - [x] **Fase 4** — El agente detecta cuándo se pide el archivo y lo entrega (`solicita_archivo`, `preparar_descarga`)
 - [x] **Fase 5** — `index.html` muestra el botón de descarga (texto y voz)
-- [ ] **Fase 6** — Evaluación, documentación (`home.md`, READMEs) y PR a `main`
+- [x] **Fase 6** — Evaluación, documentación (`home.md`, READMEs) y PR (hacia `feature-Sprint7`, no `main`). **Hallazgo abierto:** ver 'Fase 6' en las notas
 
 ## Fases de la etapa 1 (migración agéntica, terminada)
 - [x] **Fase 0** — Preparación: rama, CLAUDE.md, dependencias, verificación del entorno, dataset y línea base de recuperación
@@ -378,3 +378,19 @@ Fallos: `tema-04` (arma/porte de armas), `mal-01` ("decrto 83… horaro de atens
 - **Tests:** 317. `test_ingest.py` (27: orden subir→embeddings→upsert, fila y manifiesto, fallo de Chroma/subida/registro, omitidos, advertencia, revertir los tres lugares, reintentos) y
   `tests/test_documento_nuevo.py` (extremo a extremo con Chroma en memoria, SQLite, `RepositorioLocal` y las tools reales: "Decreto 045 de 2026" lo encuentran `buscar_documento_por_referencia`, `listar_documentos`
   (año 2026), `buscar_fragmentos`, `leer_documento` (páginas 1,2 en orden) y `preparar_descarga`; tras revertir ninguna; también sin invalidación explícita, simulando otro worker).
+
+### Etapa 2, Fase 6 — evaluación, documentación y PR (2026-10-24)
+- **`git merge origin/feature-Sprint7`:** ya estaba al día (`feature-Sprint7` == `main` == `f74111f`); el login del compañero **aún no está en ninguna rama remota**, así que no hubo conflictos.
+  El PR va hacia `feature-Sprint7`; no se hizo merge ni push a ninguna rama compartida.
+- **Documentación:** `backend/README.md`, `README.md`, `backend/.env.example`, `docs/home_actualizacion.md` (para la wiki: Compose con `chroma`, Chroma ya no embebido, Drive y descarga, `solicita_archivo` y
+  `preparar_descarga`, credenciales de Drive paso a paso, "Known pending items") y la sección 9 "Estado de implementación" de `docs/ARCHIVOS_AGENTE.md` (16 desviaciones con su razón). Los permisos de Drive
+  se documentan como la configuración definitiva (Editor por correo + enlace en Lector).
+- **Recuperación contra el servidor (33 casos):** hit@8 0,79 / MRR 0,67, igual a la fase 1 caso por caso; frente a la línea base previa (0,88 / 0,77) difieren `ref-04`, `amb-02`, `glob-04`, `glob-02` (mejora `tema-04`).
+- **Agente completo (54 casos, flash-lite en los 4 agentes, `--pausa 20`):** intención/archivos/candidatos/alerta/negativa/`solicita_archivo`/`incluye_contenido`/entrega 1,00; `info` 0,98; 0 errores, 0 degradados.
+- **HALLAZGO ABIERTO (sin corregir, pendiente de decisión):** la frase añadida al modo `respuesta` del redactor ("…el documento queda disponible en el botón de descarga debajo del mensaje") la usa flash-lite en
+  24 de 35 respuestas **sin archivo que entregar** (el usuario leería un botón inexistente). `info`=NO en `glob-01` es un falso positivo de la métrica ("hum**ano se encuentra**" contiene "no se encuentra").
+  Corrección propuesta: añadir esa línea desde el código solo si `estado["archivos"]` no está vacío (no en el prompt fijo), test que lo proteja y una métrica en `evaluar_agente.py` que detecte "botón" sin archivo entregado;
+  usar límites de palabra en `FRASES_NEGATIVAS`.
+- **Limpieza:** sin secretos en el diff, `backend/secrets/`, `.env` y `chroma_db/` no están en Git; los únicos `print` nuevos son de los scripts CLI; se quitaron dos imports muertos y un escape inválido en tests.
+  `evaluar_agente.py` y `evaluar_recuperacion.py` ya no exigen la carpeta local de Chroma si `CHROMA_MODO=http`.
+- **Test inestable:** además del ya anotado, `test_verificar_detecta_un_destino_que_recupera_peor` falló una vez en una corrida completa (317 en verde en las otras ~12 corridas y en bucles); sin reproducir ni capturar el mensaje.

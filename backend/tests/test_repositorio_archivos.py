@@ -1,7 +1,6 @@
 """Repositorio de archivos (local y Drive con cliente falso), tabla archivos_documento y config de Drive. Sin red."""
 
 import json
-from pathlib import Path
 from types import SimpleNamespace
 
 import httplib2

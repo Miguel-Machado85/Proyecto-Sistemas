@@ -335,7 +335,7 @@ def test_preparar_descarga_de_archivo_inexistente_sugiere_parecidos(almacen, mon
     assert "No existe" in resultado["error"] and "sugerencias" in resultado
 
 
-@pytest.mark.parametrize("peligroso", ["../../etc/passwd", "..\secreto.pdf", ""])
+@pytest.mark.parametrize("peligroso", ["../../etc/passwd", "..\\secreto.pdf", ""])
 def test_preparar_descarga_solo_acepta_nombres_del_catalogo(almacen, monkeypatch, peligroso):
     monkeypatch.setattr(tools.db, "obtener_archivo", lambda nombre: object())
 
