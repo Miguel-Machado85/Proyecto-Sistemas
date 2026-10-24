@@ -2,7 +2,7 @@
 
 Se engancha vía el sistema de callbacks de LangChain/LangGraph, así que no
 hay que instrumentar agent.py a mano: cada nodo del grafo, cada llamada a
-Ollama y cada llamada al retriever quedan trazadas automáticamente en cuanto
+Gemini y cada llamada al retriever quedan trazadas automáticamente en cuanto
 le pasamos este handler a agente_sigem.invoke(..., config={"callbacks": [...]}).
 
 Igual que con el cliente de Gemini en audio.py, el CallbackHandler se crea

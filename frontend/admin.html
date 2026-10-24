@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administración documental · Alcaldía de Marinilla</title>
+<style>
+  :root { --blue:#004884; --sky:#218ff0; --ink:#1c2530; --muted:#607080; --line:#d9e1e8; --panel:#f5f8fa; --danger:#b42318; --ok:#087443; }
+  * { box-sizing:border-box; }
+  body { margin:0; color:var(--ink); background:#fff; font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  .topbar { background:var(--blue); padding:16px 24px; }
+  .topbar img { height:28px; display:block; }
+  main { width:min(960px, calc(100% - 32px)); margin:0 auto; padding:32px 0 56px; }
+  .entity { display:flex; align-items:center; gap:16px; margin-bottom:28px; }
+  .entity img { width:58px; height:58px; object-fit:contain; }
+  h1 { font-size:25px; margin:0; }
+  .eyebrow { margin:3px 0 0; color:var(--muted); font-size:14px; }
+  h2 { font-size:18px; margin:0 0 16px; }
+  .section { border-top:1px solid var(--line); padding:24px 0; }
+  .grid { display:grid; grid-template-columns:minmax(0, 1fr) minmax(240px, .7fr); gap:18px; }
+  label { display:block; color:#334155; font-size:14px; font-weight:600; margin:0 0 7px; }
+  input, textarea { width:100%; font:inherit; color:var(--ink); border:1px solid #b9c5d0; border-radius:5px; padding:10px 11px; background:#fff; }
+  input:focus, textarea:focus { outline:3px solid rgba(33,143,240,.28); border-color:var(--sky); }
+  input[type=file] { padding:9px; }
+  .file-input-native { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; clip-path:inset(50%); }
+  .file-picker { display:inline-flex; align-items:center; justify-content:center; min-height:40px; padding:10px 14px; border-radius:5px; cursor:pointer; color:#fff; background:var(--sky); font-size:14px; font-weight:650; }
+  .file-picker:hover { background:#127dd7; }
+  .file-picker:focus-within { outline:3px solid rgba(33,143,240,.28); }
+  textarea { min-height:72px; resize:vertical; }
+  button { font:inherit; font-weight:650; border:0; border-radius:5px; padding:10px 16px; cursor:pointer; background:var(--sky); color:#fff; }
+  button:hover { background:#127dd7; }
+  button:disabled { cursor:not-allowed; opacity:.55; }
+  .secondary { background:#e8eef3; color:#163852; }
+  .secondary:hover { background:#d8e3eb; }
+  .actions { display:flex; align-items:center; gap:12px; margin-top:16px; }
+  .danger-button { background:#fff0ee; color:var(--danger); border:1px solid #f2bbb5; }
+  .danger-button:hover { background:#ffe0dc; }
+  .hint { color:var(--muted); font-size:13px; line-height:1.45; margin:8px 0 0; }
+  .status { display:none; margin:16px 0 0; padding:11px 13px; border-radius:5px; background:#eaf3fb; color:#154e78; }
+  .status.error { background:#fff0ee; color:var(--danger); }
+  .status.ok { background:#e8f7ee; color:var(--ok); }
+  .summary { margin:0 0 16px; color:var(--muted); }
+  .document { border:1px solid var(--line); border-radius:6px; padding:16px; margin:12px 0; background:var(--panel); }
+  .document-head { display:flex; justify-content:space-between; gap:16px; align-items:start; margin-bottom:14px; }
+  .filename { overflow-wrap:anywhere; font-weight:700; }
+  .badge { white-space:nowrap; border-radius:999px; padding:4px 8px; font-size:12px; font-weight:650; background:#dbeafe; color:#164e88; }
+  .badge.error { background:#ffe4e0; color:var(--danger); }
+  .badge.indexado { background:#ddf5e6; color:var(--ok); }
+  .metadata { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .wide { grid-column:1 / -1; }
+  .result { margin:8px 0 0; font-size:14px; color:var(--muted); }
+  .file-queue { margin-top:14px; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+  .file-queue[hidden] { display:none; }
+  .file-row { display:flex; align-items:center; gap:10px; padding:10px 12px; border-bottom:1px solid var(--line); background:#fff; }
+  .file-row:last-child { border-bottom:0; }
+  .file-icon { width:32px; height:36px; display:grid; place-items:center; flex:0 0 auto; border-radius:3px; color:#fff; background:#b42318; font-size:10px; font-weight:800; }
+  .file-icon.image { background:#087443; }
+  .file-info { min-width:0; flex:1; }
+  .file-name { overflow-wrap:anywhere; font-weight:650; font-size:14px; }
+  .file-kind { color:var(--muted); font-size:12px; margin-top:2px; }
+  .remove-file { width:32px; height:32px; padding:0; display:grid; place-items:center; border:1px solid #c9d3dc; color:#475569; background:#fff; font-size:22px; line-height:1; }
+  .remove-file:hover { background:#fff0ee; color:var(--danger); border-color:#f2bbb5; }
+  .review-scroll { max-height:540px; overflow-y:auto; padding:0 4px 0 0; }
+  .progress-panel { border:1px solid var(--line); border-radius:6px; padding:18px; background:var(--panel); }
+  #rollback-actions[hidden] { display:none; }
+  .progress-label { display:flex; justify-content:space-between; gap:12px; font-size:14px; font-weight:650; margin-bottom:10px; }
+  .progress-track { width:100%; height:12px; overflow:hidden; background:#dce5ec; border-radius:999px; }
+  .progress-fill { height:100%; width:0; background:var(--sky); transition:width .35s ease; }
+  .progress-detail { min-height:20px; margin:10px 0 0; color:var(--muted); font-size:14px; }
+  .progress-status { margin:12px 0 0; }
+  .results-list { margin-top:18px; border-top:1px solid var(--line); }
+  .result-row { display:flex; gap:12px; align-items:flex-start; padding:13px 0; border-bottom:1px solid var(--line); }
+  .result-row:last-child { border-bottom:0; }
+  .result-icon { width:26px; height:30px; display:grid; place-items:center; flex:0 0 auto; border-radius:3px; color:#fff; background:#087443; font-size:10px; font-weight:800; }
+  .result-icon.omitido,.result-icon.error,.result-icon.rechazado { background:#b42318; }
+  .result-info { min-width:0; flex:1; }
+  .result-title { font-weight:700; overflow-wrap:anywhere; }
+  .result-text { margin-top:3px; color:var(--muted); font-size:13px; }
+  @media (max-width:640px) { main { width:min(100% - 24px, 960px); padding-top:24px; } .grid,.metadata { grid-template-columns:1fr; } .wide { grid-column:auto; } .entity { align-items:flex-start; } .actions { align-items:stretch; flex-direction:column; } }
+</style>
+</head>
+<body>
+  <header class="topbar"><img src="assets/govco-logo-blanco.svg" alt="gov.co"></header>
+  <main>
+    <section class="entity">
+      <img src="assets/logo-alcaldia-marinilla.png" alt="Escudo de la Alcaldía de Marinilla">
+      <div><h1>Administración documental</h1><p class="eyebrow">Repositorio SIGEM · Carga e indexación de documentos</p></div>
+    </section>
+
+    <section class="section">
+      <h2>Acceso y documentos</h2>
+      <div class="grid">
+        <div>
+          <label for="token">Token de administrador</label>
+          <input id="token" type="password" autocomplete="off" placeholder="Token configurado en el servidor">
+        </div>
+        <div>
+          <label for="files">Documentos</label>
+          <label class="file-picker" for="files">Elegir documentos</label>
+          <input id="files" class="file-input-native" type="file" accept=".pdf,.png,application/pdf,image/png" multiple>
+          <p id="selection-summary" class="hint" aria-live="polite" hidden></p>
+        </div>
+      </div>
+      <p class="hint">Se aceptan hasta 20 PDF o PNG por lote. Primero se preparan y se revisan; solo se generan embeddings al confirmar la indexación.</p>
+      <div id="file-queue" class="file-queue" hidden></div>
+      <div class="actions"><button id="prepare" type="button">Preparar documentos</button><button id="cancel" class="danger-button" type="button">Cancelar operación</button></div>
+      <p id="status" class="status" role="status"></p>
+    </section>
+
+    <section id="review-section" class="section" hidden>
+      <h2>Revisión de metadata</h2>
+      <p id="summary" class="summary"></p>
+      <div id="documents" class="review-scroll" tabindex="0"></div>
+      <div class="actions"><button id="index" type="button">Indexar documentos listos</button><button id="reload" class="secondary" type="button">Actualizar estado</button></div>
+    </section>
+
+    <section id="progress-section" class="section" hidden>
+      <h2>Progreso de indexación</h2>
+      <div class="progress-panel">
+        <div class="progress-label"><span id="progress-title">En espera</span><span id="progress-percent">0%</span></div>
+        <div class="progress-track" role="progressbar" aria-label="Progreso de indexación" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="progress-fill" class="progress-fill"></div></div>
+        <p id="progress-detail" class="progress-detail"></p>
+        <p id="progress-status" class="status progress-status" role="status"></p>
+        <div id="results-list" class="results-list" hidden></div>
+        <div id="rollback-actions" class="actions" hidden><button id="rollback" class="danger-button" type="button">Revertir indexación</button></div>
+      </div>
+    </section>
+  </main>
+<script>
+  (function () {
+    var API = 'http://localhost:8001/admin';
+    var token = document.getElementById('token');
+    var files = document.getElementById('files');
+    var prepare = document.getElementById('prepare');
+    var index = document.getElementById('index');
+    var reload = document.getElementById('reload');
+    var cancel = document.getElementById('cancel');
+    var status = document.getElementById('status');
+    var section = document.getElementById('review-section');
+    var summary = document.getElementById('summary');
+    var documents = document.getElementById('documents');
+    var fileQueue = document.getElementById('file-queue');
+    var selectionSummary = document.getElementById('selection-summary');
+    var progressSection = document.getElementById('progress-section');
+    var progressTitle = document.getElementById('progress-title');
+    var progressPercent = document.getElementById('progress-percent');
+    var progressFill = document.getElementById('progress-fill');
+    var progressDetail = document.getElementById('progress-detail');
+    var progressStatus = document.getElementById('progress-status');
+    var resultsList = document.getElementById('results-list');
+    var rollbackActions = document.getElementById('rollback-actions');
+    var rollback = document.getElementById('rollback');
+    var lote = null;
+    var selectedFiles = [];
+    var polling = null;
+
+    function headers() { return { 'X-Admin-Token': token.value.trim() }; }
+    function setStatus(message, kind) { status.textContent = message; status.className = 'status ' + (kind || ''); status.style.display = 'block'; }
+    function setProgressStatus(message, kind) { progressStatus.textContent = message; progressStatus.className = 'status progress-status ' + (kind || ''); progressStatus.style.display = 'block'; }
+    function clearProgressStatus() { progressStatus.textContent = ''; progressStatus.style.display = 'none'; }
+    function escapeHtml(value) { var node = document.createElement('div'); node.textContent = value == null ? '' : String(value); return node.innerHTML; }
+    function labelState(state) { return state === 'listo' ? 'Listo para indexar' : state === 'indexado' ? 'Indexado' : state === 'omitido' ? 'Omitido' : state === 'error' || state === 'rechazado' ? 'Con error' : state; }
+    function fileType(file) { return file.name.toLowerCase().endsWith('.png') ? 'image' : 'pdf'; }
+    function fileTypeName(file) { return fileType(file) === 'image' ? 'Imagen PNG' : 'Documento PDF'; }
+
+    function renderFileQueue() {
+      fileQueue.hidden = selectedFiles.length === 0;
+      selectionSummary.hidden = selectedFiles.length === 0;
+      selectionSummary.textContent = selectedFiles.length === 0
+        ? ''
+        : selectedFiles.length + (selectedFiles.length === 1 ? ' documento seleccionado.' : ' documentos seleccionados.');
+      fileQueue.innerHTML = selectedFiles.map(function (file, position) {
+        var type = fileType(file);
+        return '<div class="file-row"><span class="file-icon ' + type + '">' + (type === 'image' ? 'PNG' : 'PDF') + '</span>' +
+          '<div class="file-info"><div class="file-name">' + escapeHtml(file.name) + '</div><div class="file-kind">' + fileTypeName(file) + ' · ' + Math.round(file.size / 1024) + ' KB</div></div>' +
+          '<button class="remove-file" type="button" data-remove="' + position + '" title="Quitar ' + escapeHtml(file.name) + '" aria-label="Quitar ' + escapeHtml(file.name) + '">&times;</button></div>';
+      }).join('');
+    }
+
+    function resetOperation() {
+      stopPolling();
+      lote = null;
+      selectedFiles = [];
+      files.value = '';
+      renderFileQueue();
+      documents.innerHTML = '';
+      section.hidden = true;
+      progressSection.hidden = true;
+      resultsList.hidden = true;
+      rollbackActions.hidden = true;
+      clearProgressStatus();
+    }
+
+    function stopPolling() { if (polling) { window.clearInterval(polling); polling = null; } }
+    function progressMessage(progress) {
+      if (!progress) return 'Iniciando indexación…';
+      var base = 'Documento ' + progress.documentos_procesados + ' de ' + progress.documentos_totales;
+      if (progress.archivo_actual) base += ': ' + progress.archivo_actual;
+      if (progress.fase === 'generando_embeddings') base += ' · embeddings ' + progress.fragmentos_documento_procesados + '/' + progress.fragmentos_documento_total;
+      if (progress.fase === 'guardando_en_chroma') base += ' · guardando documento completo en Chroma';
+      return base;
+    }
+
+    function startPolling() {
+      stopPolling();
+      polling = window.setInterval(async function () {
+        if (!lote || lote.estado !== 'indexando') { stopPolling(); return; }
+        try {
+          var updated = await request('/lotes/' + encodeURIComponent(lote.lote_id), { headers:headers() });
+          render(updated);
+          if (updated.estado !== 'indexando') stopPolling();
+        } catch (error) {
+          stopPolling();
+          status.style.display = 'none';
+          setProgressStatus(error.message, 'error');
+        }
+      }, 1200);
+    }
+
+    function progresoPorcentaje(data) {
+      var progress = data.progreso || {};
+      var total = Math.max(progress.documentos_totales || 0, 1);
+      var completados = progress.documentos_procesados || 0;
+      var fraccion = progress.fragmentos_documento_total
+        ? (progress.fragmentos_documento_procesados || 0) / progress.fragmentos_documento_total
+        : 0;
+      return Math.min(100, Math.round(((completados + fraccion) / total) * 100));
+    }
+
+    function textoResultado(result) {
+      if (result.estado === 'indexado') return 'Añadido a Chroma con ' + result.fragmentos_indexados + ' fragmento(s).';
+      if (result.estado === 'omitido') return result.error || 'No se añadió porque ya existe.';
+      return result.error || 'No fue posible indexar este documento.';
+    }
+
+    function renderProgress(data) {
+      var visible = data.estado === 'indexando' || data.estado === 'indexado';
+      progressSection.hidden = !visible;
+      if (!visible) return;
+      var percent = data.estado === 'indexado' ? 100 : progresoPorcentaje(data);
+      var progress = data.progreso || {};
+      progressTitle.textContent = data.estado === 'indexado' ? 'Indexación finalizada' : 'Indexando documentos';
+      progressPercent.textContent = percent + '%';
+      progressFill.style.width = percent + '%';
+      progressFill.parentElement.setAttribute('aria-valuenow', String(percent));
+      progressDetail.textContent = data.estado === 'indexado'
+        ? 'Proceso completado. Consulta el resultado de cada documento a continuación.'
+        : progressMessage(progress);
+      var results = data.resultados || [];
+      resultsList.hidden = data.estado !== 'indexado';
+      resultsList.innerHTML = data.estado === 'indexado'
+        ? '<h3>Resultado del lote</h3>' + results.map(function (result) {
+          var type = result.archivo && result.archivo.toLowerCase().endsWith('.png') ? 'PNG' : 'PDF';
+          return '<div class="result-row"><span class="result-icon ' + escapeHtml(result.estado) + '">' + type + '</span><div class="result-info"><div class="result-title">' + escapeHtml(result.archivo) + '</div><div class="result-text">' + escapeHtml(textoResultado(result)) + '</div></div><span class="badge ' + escapeHtml(result.estado) + '">' + labelState(result.estado) + '</span></div>';
+        }).join('')
+        : '';
+      rollbackActions.hidden = data.estado !== 'indexado' || !results.some(function (result) { return result.estado === 'indexado'; });
+    }
+
+    function render(data) {
+      lote = data;
+      section.hidden = false;
+      var list = data.documentos || [];
+      var ready = list.filter(function (d) { return d.estado === 'listo'; }).length;
+      var results = data.resultados || [];
+      summary.textContent = data.estado === 'indexando'
+        ? 'La metadata está bloqueada mientras se indexa. El avance aparece al final.'
+        : data.estado === 'indexado'
+        ? 'Revisión completada. Consulta el resultado del lote al final.'
+        : ready + ' de ' + list.length + ' documentos están listos para indexar.';
+      documents.innerHTML = list.map(function (doc) {
+        var meta = doc.metadata_sugerida || {};
+        var result = results.filter(function (r) { return r.archivo === doc.archivo; })[0];
+        var finalState = result ? result.estado : doc.estado;
+        var error = (result && result.error) || doc.error;
+        var disabled = doc.estado !== 'listo' || data.estado !== 'pendiente' ? ' disabled' : '';
+        var deleteButton = data.estado === 'pendiente'
+          ? '<button class="remove-file" type="button" data-delete="' + escapeHtml(doc.archivo) + '" title="Quitar ' + escapeHtml(doc.archivo) + ' del lote" aria-label="Quitar ' + escapeHtml(doc.archivo) + ' del lote">&times;</button>'
+          : '';
+        return '<article class="document" data-file="' + escapeHtml(doc.archivo) + '">' +
+          '<div class="document-head"><div><div class="filename"><span class="file-icon ' + (doc.archivo.toLowerCase().endsWith('.png') ? 'image' : 'pdf') + '" style="display:inline-grid;vertical-align:middle;margin-right:8px">' + (doc.archivo.toLowerCase().endsWith('.png') ? 'PNG' : 'PDF') + '</span>' + escapeHtml(doc.archivo) + '</div><div class="hint">' + (doc.tamano_bytes ? Math.round(doc.tamano_bytes / 1024) + ' KB · ' : '') + (doc.paginas_detectadas ? doc.paginas_detectadas + ' página(s)' : '') + '</div></div><span class="badge ' + escapeHtml(finalState) + '">' + labelState(finalState) + '</span>' + deleteButton + '</div>' +
+          (doc.estado === 'listo' ? '<div class="metadata">' +
+            '<div class="wide"><label>Título</label><input data-field="titulo" value="' + escapeHtml(meta.titulo) + '"' + disabled + '></div>' +
+            '<div><label>Fecha de expedición</label><input data-field="fecha_expedicion" value="' + escapeHtml(meta.fecha_expedicion) + '" placeholder="YYYY-MM-DD"' + disabled + '></div>' +
+            '<div><label>Categoría</label><input data-field="categoria" value="' + escapeHtml(meta.categoria) + '"' + disabled + '></div>' +
+            '<div class="wide"><label>Descripción</label><textarea data-field="descripcion"' + disabled + '>' + escapeHtml(meta.descripcion) + '</textarea></div>' +
+          '</div>' : '') +
+          (error && data.estado !== 'indexado' ? '<p class="result">' + escapeHtml(error) + '</p>' : '') +
+        '</article>';
+      }).join('');
+      index.disabled = data.estado !== 'pendiente' || ready === 0;
+      renderProgress(data);
+    }
+
+    async function request(url, options) {
+      var response = await fetch(API + url, options);
+      if (!response.ok) { var body = await response.json().catch(function () { return {}; }); throw new Error(body.detail || 'El servidor respondió ' + response.status + '.'); }
+      return response.json();
+    }
+
+    prepare.addEventListener('click', async function () {
+      if (!token.value.trim()) { setStatus('Ingresa el token de administrador.', 'error'); return; }
+      if (!selectedFiles.length) { setStatus('Selecciona al menos un PDF o PNG.', 'error'); return; }
+      prepare.disabled = true;
+      setStatus('Preparando documentos y detectando metadata…');
+      try {
+        var form = new FormData();
+        selectedFiles.forEach(function (file) { form.append('files', file); });
+        render(await request('/lotes', { method:'POST', headers:headers(), body:form }));
+        setStatus('Lote preparado. Revisa los documentos listos antes de indexarlos.', 'ok');
+      } catch (error) { setStatus(error.message, 'error'); }
+      finally { prepare.disabled = false; }
+    });
+
+    index.addEventListener('click', async function () {
+      if (!lote) return;
+      var cambios = Array.prototype.map.call(documents.querySelectorAll('.document[data-file]'), function (card) {
+        var data = { archivo: card.dataset.file };
+        Array.prototype.forEach.call(card.querySelectorAll('[data-field]'), function (field) { data[field.dataset.field] = field.value.trim() || null; });
+        return data;
+      });
+      index.disabled = true;
+      setStatus('Indexando el lote. Puede tardar mientras Gemini genera los embeddings…');
+      try {
+        var updated = await request('/lotes/' + encodeURIComponent(lote.lote_id) + '/indexar', { method:'POST', headers:Object.assign({ 'Content-Type':'application/json' }, headers()), body:JSON.stringify({ documentos:cambios }) });
+        render(updated);
+        status.style.display = 'none';
+        clearProgressStatus();
+        startPolling();
+      } catch (error) { status.style.display = 'none'; setProgressStatus(error.message, 'error'); index.disabled = false; }
+    });
+
+    reload.addEventListener('click', async function () {
+      if (!lote) return;
+      try { render(await request('/lotes/' + encodeURIComponent(lote.lote_id), { headers:headers() })); }
+      catch (error) {
+        if (lote.estado === 'indexando' || lote.estado === 'indexado') setProgressStatus(error.message, 'error');
+        else setStatus(error.message, 'error');
+      }
+    });
+
+    files.addEventListener('change', function () {
+      Array.prototype.forEach.call(files.files, function (file) {
+        var allowed = /\.(pdf|png)$/i.test(file.name);
+        var duplicate = selectedFiles.some(function (current) { return current.name === file.name && current.size === file.size && current.lastModified === file.lastModified; });
+        if (allowed && !duplicate) selectedFiles.push(file);
+      });
+      files.value = '';
+      renderFileQueue();
+    });
+
+    fileQueue.addEventListener('click', function (event) {
+      var button = event.target.closest('[data-remove]');
+      if (!button) return;
+      selectedFiles.splice(Number(button.dataset.remove), 1);
+      renderFileQueue();
+    });
+
+    documents.addEventListener('click', async function (event) {
+      var button = event.target.closest('[data-delete]');
+      if (!button || !lote) return;
+      var archivo = button.dataset.delete;
+      if (!window.confirm('Se quitará ' + archivo + ' y su metadata del lote. ¿Continuar?')) return;
+      try {
+        var updated = await request('/lotes/' + encodeURIComponent(lote.lote_id) + '/documentos/' + encodeURIComponent(archivo), { method:'DELETE', headers:headers() });
+        selectedFiles = selectedFiles.filter(function (file) { return file.name !== archivo; });
+        renderFileQueue();
+        render(updated);
+        setStatus('Documento quitado del lote.', 'ok');
+      } catch (error) { setStatus(error.message, 'error'); }
+    });
+
+    cancel.addEventListener('click', async function () {
+      if (!lote) { resetOperation(); setStatus('Selección cancelada.', 'ok'); return; }
+      if (lote.estado === 'indexado') { setStatus('El lote ya fue indexado y no se puede cancelar.', 'error'); return; }
+      if (!window.confirm('Se eliminarán los documentos pendientes de este lote. ¿Continuar?')) return;
+      cancel.disabled = true;
+      try {
+        await request('/lotes/' + encodeURIComponent(lote.lote_id) + '/cancelar', { method:'POST', headers:headers() });
+        resetOperation();
+        setStatus('Operación cancelada y lote pendiente eliminado.', 'ok');
+      } catch (error) { setStatus(error.message, 'error'); }
+      finally { cancel.disabled = false; }
+    });
+
+    rollback.addEventListener('click', async function () {
+      if (!lote || lote.estado !== 'indexado') return;
+      if (!window.confirm('Se eliminarán de Chroma todos los documentos añadidos por este lote y volverán a pendientes. ¿Continuar?')) return;
+      rollback.disabled = true;
+      try {
+        var updated = await request('/lotes/' + encodeURIComponent(lote.lote_id) + '/revertir-indexacion', { method:'POST', headers:headers() });
+        render(updated);
+        setStatus('Indexación revertida. Los documentos volvieron a quedar pendientes.', 'ok');
+      } catch (error) { setProgressStatus(error.message, 'error'); }
+      finally { rollback.disabled = false; }
+    });
+  }());
+</script>
+</body>
+</html>

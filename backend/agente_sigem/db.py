@@ -1,4 +1,8 @@
-"""Historial de conversación (texto + referencia al audio en S3), en PostgreSQL."""
+"""Historial de conversación (texto + referencia a audios), persistido en PostgreSQL.
+
+El documento activo ya no se guarda aquí: vive en el estado del grafo (checkpointer).
+La tabla `contextos_sigem` de bases existentes se deja intacta; create_all nunca borra tablas.
+"""
 from datetime import datetime, timezone
 
 from sqlalchemy import Column, DateTime, Integer, String, Text, create_engine

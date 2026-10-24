@@ -1,0 +1,622 @@
+{
+  "fecha": "2026-10-10T11:59:48",
+  "k": 8,
+  "sin_reranker": false,
+  "embedding_model": "gemini-embedding-2",
+  "resumen": {
+    "ampliacion": {
+      "casos": 2,
+      "hit@8": 1.0,
+      "mrr": 1.0
+    },
+    "busqueda_global_con_doc_activo": {
+      "casos": 5,
+      "hit@8": 1.0,
+      "mrr": 0.767
+    },
+    "inventario": {
+      "casos": 4,
+      "hit@8": 1.0,
+      "mrr": 0.583
+    },
+    "mal_escrita": {
+      "casos": 3,
+      "hit@8": 0.667,
+      "mrr": 0.667
+    },
+    "referencia_ambigua": {
+      "casos": 2,
+      "hit@8": 1.0,
+      "mrr": 0.625
+    },
+    "referencia_exacta": {
+      "casos": 5,
+      "hit@8": 1.0,
+      "mrr": 1.0
+    },
+    "seguimiento": {
+      "casos": 4,
+      "hit@8": 1.0,
+      "mrr": 1.0
+    },
+    "tema_sin_palabras_clave": {
+      "casos": 5,
+      "hit@8": 0.8,
+      "mrr": 0.8
+    },
+    "voz_numeros_en_palabras": {
+      "casos": 3,
+      "hit@8": 0.333,
+      "mrr": 0.333
+    },
+    "GLOBAL": {
+      "casos": 33,
+      "hit@8": 0.879,
+      "mrr": 0.77
+    }
+  },
+  "casos": [
+    {
+      "id": "ref-01",
+      "categoria": "referencia_exacta",
+      "perfil": "P0",
+      "consulta": "¿Qué dice el Decreto 083 de 2018?",
+      "esperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "recuperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "hit": true,
+      "rr": 1.0
+    },
+    {
+      "id": "ref-02",
+      "categoria": "referencia_exacta",
+      "perfil": "P2",
+      "consulta": "Necesito saber de qué trata la Resolución 4496 de 2018",
+      "esperados": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "recuperados": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "hit": true,
+      "rr": 1.0
+    },
+    {
+      "id": "ref-03",
+      "categoria": "referencia_exacta",
+      "perfil": "P1",
+      "consulta": "Explícame la Ley 387 de 1997",
+      "esperados": [
+        "14362_ley387de1997.pdf"
+      ],
+      "recuperados": [
+        "14362_ley387de1997.pdf"
+      ],
+      "hit": true,
+      "rr": 1.0
+    },
+    {
+      "id": "ref-04",
+      "categoria": "referencia_exacta",
+      "perfil": "P3",
+      "consulta": "¿Qué establece el Decreto 232 de 2015?",
+      "esperados": [
+        "2423_decretono232.pdf"
+      ],
+      "recuperados": [
+        "2423_decretono232.pdf"
+      ],
+      "hit": true,
+      "rr": 1.0
+    },
+    {
+      "id": "ref-05",
+      "categoria": "referencia_exacta",
+      "perfil": "P0",
+      "consulta": "Resolución 4397 de 2017, ¿qué impone?",
+      "esperados": [
+        "23661_resolucion-no-4397.pdf"
+      ],
+      "recuperados": [
+        "23661_resolucion-no-4397.pdf"
+      ],
+      "hit": true,
+      "rr": 1.0
+    },
+    {
+      "id": "amb-01",
+      "categoria": "referencia_ambigua",
+      "perfil": "P1",
+      "consulta": "¿Qué dice la Resolución 4397?",
+      "esperados": [
+        "23655_resolucion-4397.pdf",
+        "23661_resolucion-no-4397.pdf"
+      ],
+      "recuperados": [
+        "23655_resolucion-4397.pdf",
+        "23661_resolucion-no-4397.pdf",
+        "23654_resolucion-4497.pdf",
+        "23653_resolucion-4496.pdf",
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "hit": true,
+      "rr": 1.0
+    },
+    {
+      "id": "amb-02",
+      "categoria": "referencia_ambigua",
+      "perfil": "P0",
+      "consulta": "Quiero el Decreto 116",
+      "esperados": [
+        "22529_decreto-no-1162018.pdf",
+        "22531_decreto-no-1262018.pdf"
+      ],
+      "recuperados": [
+        "23608_decreto-no-0042019.pdf",
+        "14359_decreto-1290del-22deabril-2008.pdf",
+        "2402_decretono185.pdf",
+        "22531_decreto-no-1262018.pdf",
+        "2391_2decreto_103_2015.pdf"
+      ],
+      "hit": true,
+      "rr": 0.25
+    },
+    {
+      "id": "tema-01",
+      "categoria": "tema_sin_palabras_clave",
+      "perfil": "P0",
+      "consulta": "¿Cuánto cuesta el taxi?",
+      "esperados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "recuperados": [
+        "22598_decreto-no-0012019.pdf",
+        "22597_decreto-no-1622018.pdf",
+        "23608_decreto-no-0042019.pdf",
+        "22596_decreto-no-1612018.pdf",
+        "14359_decreto-1290del-22deabril-2008.pdf",
+        "2391_2decreto_103_2015.pdf"
+      ],
+      "hit": true,
+      "rr": 1.0
+    },
+    {
+      "id": "tema-02",
+      "categoria": "tema_sin_palabras_clave",
+      "perfil": "P0",
+      "consulta": "¿Hasta qué hora se puede vender trago en las fiestas del pueblo?",
+      "esperados": [
+        "22593_decreto-no-1572018.pdf"
+      ],
+      "recuperados": [
+        "22593_decreto-no-1572018.pdf",
+        "2404_decretono191.pdf",
+        "2399_decretono148_001.pdf",
+        "2420_decretono017.pdf",
+        "2406_decretono201.pdf",
+        "14354_decreto-no-0862018.pdf"
+      ],
+      "hit": true,
+      "rr": 1.0
+    },
+    {
+      "id": "tema-03",
+      "categoria": "tema_sin_palabras_clave",
+      "perfil": "P1",
+      "consulta": "¿Puedo poner música con parlantes en la calle o anunciar con megáfono?",
+      "esperados": [
+        "2399_decretono148_001.pdf"
+      ],
+      "recuperados": [
+        "2399_decretono148_001.pdf",
+        "2391_2decreto_103_2015.pdf",
+        "14362_ley387de1997.pdf"
+      ],
+      "hit": true,
+      "rr": 1.0
+    },
+    {
+      "id": "tema-04",
+      "categoria": "tema_sin_palabras_clave",
+      "perfil": "P0",
+      "consulta": "¿Se puede andar con un arma por el pueblo?",
+      "esperados": [
+        "2420_decretono017.pdf"
+      ],
+      "recuperados": [
+        "14358_ley1532de2012.pdf",
+        "14359_decreto-1290del-22deabril-2008.pdf",
+        "14362_ley387de1997.pdf",
+        "2399_decretono148_001.pdf",
+        "14360_ley-1190de-2008.pdf"
+      ],
+      "hit": false,
+      "rr": 0.0
+    },
+    {
+      "id": "tema-05",
+      "categoria": "tema_sin_palabras_clave",
+      "perfil": "P1",
+      "consulta": "¿Hasta qué hora atienden en la inspección de policía?",
+      "esperados": [
+        "10322_decreto-no-0832018.pdf",
+        "2404_decretono191.pdf"
+      ],
+      "recuperados": [
+        "2404_decretono191.pdf",
+        "10322_decreto-no-0832018.pdf",
+        "22593_decreto-no-1572018.pdf",
+        "2399_decretono148_001.pdf",
+        "2391_2decreto_103_2015.pdf",
+        "14359_decreto-1290del-22deabril-2008.pdf"
+      ],
+      "hit": true,
+      "rr": 1.0
+    },
+    {
+      "id": "inv-01",
+      "categoria": "inventario",
+      "perfil": "P0",
+      "consulta": "¿Qué decretos hay de 2019?",
+      "esperados": [
+        "22598_decreto-no-0012019.pdf",
+        "23608_decreto-no-0042019.pdf",
+        "23634_decreto-no-0022019.pdf",
+        "23635_decreto-no-0052019.pdf",
+        "23638_resolucion-no-00772019.pdf"
+      ],
+      "recuperados": [
+        "23602_decreto-158-informacion-exogena-firmado.pdf",
+        "23608_decreto-no-0042019.pdf",
+        "14354_decreto-no-0862018.pdf",
+        "22594_decreto-no-1592018.pdf",
+        "22595_decreto-no-1602018.pdf",
+        "22592_decreto-no-1552018.pdf",
+        "2391_2decreto_103_2015.pdf"
+      ],
+      "hit": true,
+      "rr": 0.5
+    },
+    {
+      "id": "inv-02",
+      "categoria": "inventario",
+      "perfil": "P2",
+      "consulta": "¿Qué leyes tienen en el repositorio?",
+      "esperados": [
+        "14358_ley1532de2012.pdf",
+        "14360_ley-1190de-2008.pdf",
+        "14362_ley387de1997.pdf"
+      ],
+      "recuperados": [
+        "2391_2decreto_103_2015.pdf",
+        "14359_decreto-1290del-22deabril-2008.pdf",
+        "14360_ley-1190de-2008.pdf",
+        "14362_ley387de1997.pdf",
+        "14358_ley1532de2012.pdf"
+      ],
+      "hit": true,
+      "rr": 0.3333333333333333
+    },
+    {
+      "id": "inv-03",
+      "categoria": "inventario",
+      "perfil": "P1",
+      "consulta": "Dime las resoluciones de 2018",
+      "esperados": [
+        "23652_resolucion-3892.pdf",
+        "23653_resolucion-4496.pdf",
+        "23654_resolucion-4497.pdf",
+        "23655_resolucion-4397.pdf"
+      ],
+      "recuperados": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf",
+        "23655_resolucion-4397.pdf",
+        "23654_resolucion-4497.pdf",
+        "23652_resolucion-3892.pdf",
+        "23608_decreto-no-0042019.pdf"
+      ],
+      "hit": true,
+      "rr": 0.5
+    },
+    {
+      "id": "inv-04",
+      "categoria": "inventario",
+      "perfil": "P3",
+      "consulta": "¿Qué normas hay sobre horarios de atención al público?",
+      "esperados": [
+        "10322_decreto-no-0832018.pdf",
+        "22552_decreto-no-1442018.pdf",
+        "2404_decretono191.pdf",
+        "2405_decretono200.pdf"
+      ],
+      "recuperados": [
+        "10322_decreto-no-0832018.pdf",
+        "2399_decretono148_001.pdf",
+        "2404_decretono191.pdf",
+        "2391_2decreto_103_2015.pdf",
+        "2405_decretono200.pdf",
+        "22593_decreto-no-1572018.pdf"
+      ],
+      "hit": true,
+      "rr": 1.0
+    },
+    {
+      "id": "seg-01",
+      "categoria": "seguimiento",
+      "perfil": "P3",
+      "consulta": "Resolución No. 3615 plan estratégico de talento humano ¿Para qué periodo tiene vigencia?",
+      "esperados": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "recuperados": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "hit": true,
+      "rr": 1.0
+    },
+    {
+      "id": "seg-02",
+      "categoria": "seguimiento",
+      "perfil": "P0",
+      "consulta": "Decreto 001 de 2019 tarifas buses transporte",
+      "esperados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "recuperados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "hit": true,
+      "rr": 1.0
+    },
+    {
+      "id": "seg-03",
+      "categoria": "seguimiento",
+      "perfil": "P2",
+      "consulta": "Decreto 083 de 2018 horario inspección de policía vigencia",
+      "esperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "recuperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "hit": true,
+      "rr": 1.0
+    },
+    {
+      "id": "amp-01",
+      "categoria": "ampliacion",
+      "perfil": "P1",
+      "consulta": "Resolución No. 3615 plan estratégico de talento humano",
+      "esperados": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "recuperados": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "hit": true,
+      "rr": 1.0
+    },
+    {
+      "id": "amp-02",
+      "categoria": "ampliacion",
+      "perfil": "P0",
+      "consulta": "Ley 1532 de 2012 Familias en Acción",
+      "esperados": [
+        "14358_ley1532de2012.pdf"
+      ],
+      "recuperados": [
+        "14358_ley1532de2012.pdf"
+      ],
+      "hit": true,
+      "rr": 1.0
+    },
+    {
+      "id": "glob-01",
+      "categoria": "busqueda_global_con_doc_activo",
+      "perfil": "P1",
+      "consulta": "¿Qué normas SIGEM hay sobre talento humano?",
+      "esperados": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "recuperados": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf",
+        "23637_decreto-no-0132019.pdf"
+      ],
+      "hit": true,
+      "rr": 1.0
+    },
+    {
+      "id": "glob-02",
+      "categoria": "busqueda_global_con_doc_activo",
+      "perfil": "P0",
+      "consulta": "¿Qué documentos existen sobre presupuesto municipal?",
+      "esperados": [
+        "10323_decreto-no-0842018.pdf",
+        "23634_decreto-no-0022019.pdf",
+        "23635_decreto-no-0052019.pdf"
+      ],
+      "recuperados": [
+        "23660_decreto-no-0072019.pdf",
+        "2419_decretono016.pdf",
+        "10323_decreto-no-0842018.pdf",
+        "10330_decreto-no-0802018.pdf",
+        "14353_decreto-no-0942018.pdf",
+        "14354_decreto-no-0862018.pdf"
+      ],
+      "hit": true,
+      "rr": 0.3333333333333333
+    },
+    {
+      "id": "glob-03",
+      "categoria": "busqueda_global_con_doc_activo",
+      "perfil": "P2",
+      "consulta": "Busca decretos sobre transporte",
+      "esperados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "recuperados": [
+        "2398_decretono140.pdf",
+        "22598_decreto-no-0012019.pdf",
+        "2403_decretono184.pdf",
+        "23608_decreto-no-0042019.pdf",
+        "2399_decretono148_001.pdf",
+        "2391_2decreto_103_2015.pdf"
+      ],
+      "hit": true,
+      "rr": 0.5
+    },
+    {
+      "id": "glob-04",
+      "categoria": "busqueda_global_con_doc_activo",
+      "perfil": "P0",
+      "consulta": "¿Qué modifica el Decreto 83 de 2018?",
+      "esperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "recuperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "hit": true,
+      "rr": 1.0
+    },
+    {
+      "id": "glob-05",
+      "categoria": "busqueda_global_con_doc_activo",
+      "perfil": "P3",
+      "consulta": "Necesito el documento 18399",
+      "esperados": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "recuperados": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "hit": true,
+      "rr": 1.0
+    },
+    {
+      "id": "tc-seg-01",
+      "categoria": "seguimiento",
+      "perfil": "P0",
+      "consulta": "Resolución No. 3615 plan estratégico de talento humano ¿Para qué periodo tiene vigencia?",
+      "esperados": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "recuperados": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "hit": true,
+      "rr": 1.0
+    },
+    {
+      "id": "mal-01",
+      "categoria": "mal_escrita",
+      "perfil": "P0",
+      "consulta": "decrto 83 de 2018 horaro de atension",
+      "esperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "recuperados": [
+        "2391_2decreto_103_2015.pdf",
+        "2397_decretono118.pdf",
+        "14359_decreto-1290del-22deabril-2008.pdf",
+        "2401_decretono187.pdf",
+        "14358_ley1532de2012.pdf",
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "hit": false,
+      "rr": 0.0
+    },
+    {
+      "id": "mal-02",
+      "categoria": "mal_escrita",
+      "perfil": "P2",
+      "consulta": "resolusion 4496 politicas contables",
+      "esperados": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "recuperados": [
+        "23653_resolucion-4496.pdf",
+        "23655_resolucion-4397.pdf",
+        "23654_resolucion-4497.pdf",
+        "23652_resolucion-3892.pdf"
+      ],
+      "hit": true,
+      "rr": 1.0
+    },
+    {
+      "id": "mal-03",
+      "categoria": "mal_escrita",
+      "perfil": "P0",
+      "consulta": "ke dice la ley 387 sobre el desplasamiento",
+      "esperados": [
+        "14362_ley387de1997.pdf"
+      ],
+      "recuperados": [
+        "14362_ley387de1997.pdf"
+      ],
+      "hit": true,
+      "rr": 1.0
+    },
+    {
+      "id": "voz-num-01",
+      "categoria": "voz_numeros_en_palabras",
+      "perfil": "P0",
+      "consulta": "qué dice el decreto ochenta y tres de dos mil dieciocho",
+      "esperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "recuperados": [
+        "22531_decreto-no-1262018.pdf",
+        "22547_decreto-no-1292018.pdf",
+        "22549_decreto-no-1312018.pdf",
+        "2391_2decreto_103_2015.pdf",
+        "23604_decreto-no-1662018.pdf",
+        "14354_decreto-no-0862018.pdf",
+        "16378_dereto-no-1082018.pdf",
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "hit": false,
+      "rr": 0.0
+    },
+    {
+      "id": "voz-num-02",
+      "categoria": "voz_numeros_en_palabras",
+      "perfil": "P1",
+      "consulta": "háblame de la resolución cuatro mil cuatrocientos noventa y seis de dos mil dieciocho",
+      "esperados": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "recuperados": [
+        "23653_resolucion-4496.pdf",
+        "23654_resolucion-4497.pdf",
+        "23655_resolucion-4397.pdf",
+        "2391_2decreto_103_2015.pdf",
+        "23644_resolucion-0306-baja-de-inventario--activos-fijos.pdf"
+      ],
+      "hit": true,
+      "rr": 1.0
+    },
+    {
+      "id": "voz-num-03",
+      "categoria": "voz_numeros_en_palabras",
+      "perfil": "P0",
+      "consulta": "necesito el decreto uno de dos mil diecinueve",
+      "esperados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "recuperados": [
+        "23602_decreto-158-informacion-exogena-firmado.pdf",
+        "23608_decreto-no-0042019.pdf",
+        "14354_decreto-no-0862018.pdf",
+        "2391_2decreto_103_2015.pdf",
+        "22594_decreto-no-1592018.pdf",
+        "23636_decreto-no-0062019.pdf"
+      ],
+      "hit": false,
+      "rr": 0.0
+    }
+  ]
+}

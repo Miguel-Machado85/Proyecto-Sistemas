@@ -1,0 +1,380 @@
+{
+  "fecha": "2026-10-11T23:20:44",
+  "modelos": {
+    "analista": "gemini-3.5-flash-lite",
+    "investigador": "gemini-3.5-flash-lite",
+    "evaluador": "gemini-3.5-flash-lite",
+    "redactor": "gemini-3.5-flash-lite"
+  },
+  "reranker": true,
+  "pausa_s": 20.0,
+  "abortado": "Cuota diaria de Gemini agotada: se detuvo la corrida (resultados parciales guardados).",
+  "resumen": {
+    "inventario": {
+      "casos": 1,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": null,
+      "alerta": null,
+      "informacion": 1.0,
+      "negativa": null,
+      "tiempo_s_promedio": 9.4
+    },
+    "referencia_exacta": {
+      "casos": 1,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": null,
+      "alerta": null,
+      "informacion": 1.0,
+      "negativa": null,
+      "tiempo_s_promedio": 15.3
+    },
+    "referencia_inexistente": {
+      "casos": 2,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": null,
+      "candidatos": null,
+      "alerta": null,
+      "informacion": null,
+      "negativa": 1.0,
+      "tiempo_s_promedio": 23.9
+    },
+    "seguimiento": {
+      "casos": 1,
+      "errores": 1,
+      "degradados": 0,
+      "intencion": null,
+      "archivos": null,
+      "candidatos": null,
+      "alerta": null,
+      "informacion": null,
+      "negativa": null,
+      "tiempo_s_promedio": null
+    },
+    "tema_sin_palabras_clave": {
+      "casos": 1,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": null,
+      "alerta": null,
+      "informacion": 1.0,
+      "negativa": null,
+      "tiempo_s_promedio": 13.6
+    },
+    "GLOBAL": {
+      "casos": 6,
+      "errores": 1,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": null,
+      "alerta": null,
+      "informacion": 1.0,
+      "negativa": 1.0,
+      "tiempo_s_promedio": 17.2
+    }
+  },
+  "casos": [
+    {
+      "id": "ref-01",
+      "categoria": "referencia_exacta",
+      "perfil": "P0",
+      "razonamiento_analista": "El usuario solicita información sobre un decreto específico proporcionando su número y año.",
+      "degradado": [],
+      "mensaje": "¿Qué dice el Decreto 083 de 2018?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "respuesta": "El Decreto 083 de 2018 modifica el horario de atención al público en la Inspección Municipal de Policía de Marinilla [Decreto 083 de 2018, p. 1]. Esta modificación se realiza debido a las nuevas exigencias de la Ley 1801 de 2018 (Código Nacional de Policía y Convivencia), que ampliaron los trámites internos de situaciones administrativas para cumplir con los deberes legales [Decreto 083 de 2018, p. 1], y buscando una mayor eficiencia y eficacia en las funciones institucionales [Decreto 083 de 2018, p. 1]. El nuevo horario establecido es de lunes a jueves de 7:30 a.m. a 11:00 a.m. y de 1:30 p.m. a 4:00 p.m.; y el viernes de 7:30 a.m. a 11:00 a.m. y en la tarde hasta las 4:00 p.m. [Decreto 083 de 2018, p. 1]. Asimismo, se ordena la publicación del decreto en las carteleras de la Administración Municipal y en la página web del municipio [Decreto 083 de 2018, p. 1].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: tipo=decreto, anio=2018, pregunta=¿Qué dice el Decreto 83 de 2018?, numero=83",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 15.3,
+      "intentos": 1
+    },
+    {
+      "id": "inex-01",
+      "categoria": "referencia_inexistente",
+      "perfil": "P0",
+      "razonamiento_analista": "El usuario pregunta por un decreto específico con número y año.",
+      "degradado": [],
+      "mensaje": "¿Qué dice el Decreto 999 de 2018?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "respuesta": "Lo siento, pero en los documentos provistos no hay información acerca del Decreto 999 de 2018.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: numero=999, tipo=decreto, anio=2018, pregunta=Qué dice el Decreto 999 de 2018",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: consulta=Decreto 999 de 2018",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Reintentando: Los fragmentos recuperados corresponden a otros decretos (como el 1290 de 2008, 004 de 2019, 103 de 2015) y resoluciones, pero ninguno menciona el Decreto 999 de 2018.",
+          "icono": "✅"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: anio=2018, pregunta=Decreto 999 de 2018, tipo=decreto, numero=999",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: consulta=Decreto 999 de 2018",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0 · sin información pertinente en los fragmentos",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "negativa_ok": true
+      },
+      "tiempo_s": 23.8,
+      "intentos": 1
+    },
+    {
+      "id": "inex-02",
+      "categoria": "referencia_inexistente",
+      "perfil": "P2",
+      "razonamiento_analista": "El usuario solicita una resolución específica con número y año.",
+      "degradado": [],
+      "mensaje": "Necesito la Resolución 12 de 2020",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "respuesta": "Lo siento, en los documentos del repositorio disponibles no se encuentra información relacionada con la Resolución 12 de 2020.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: numero=12, anio=2020, tipo=resolucion, pregunta=Resolución 12 de 2020",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: consulta=Resolución 12 de 2020",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "listar_documentos: tipo=resolucion, anio=2020",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Reintentando: Los fragmentos recuperados corresponden a otros decretos y resoluciones (como el Decreto 1290 de 2008, Resoluciones de 2018 y 2019), pero no contienen la Resolución 12 de 2020 solicitada.",
+          "icono": "✅"
+        },
+        {
+          "agente": "investigador",
+          "accion": "listar_documentos: anio=2020, tipo=resolucion",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: consulta=resolucion 12 de 2020",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P2 · sin información pertinente en los fragmentos",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "negativa_ok": true
+      },
+      "tiempo_s": 24.0,
+      "intentos": 1
+    },
+    {
+      "id": "tema-02",
+      "categoria": "tema_sin_palabras_clave",
+      "perfil": "P0",
+      "razonamiento_analista": "Pregunta sobre horarios y regulación de venta de licor en eventos públicos, gestionada mediante decretos municipales.",
+      "degradado": [],
+      "mensaje": "¿Hasta qué hora se puede vender trago en las fiestas del pueblo?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "22593_decreto-no-1572018.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "22593_decreto-no-1572018.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "respuesta": "Durante las fiestas populares y culturales en el Municipio de Marinilla (celebradas del 3 al 7 de enero), los establecimientos abiertos al público con venta de licor pueden operar con ejecución de música hasta las 2:30 a.m. y tienen un cierre definitivo a las 3:00 de la mañana [Decreto 157 de 2018, p. 2].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: consulta=horarios venta y consumo de licor fiestas municipales Marinilla",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 13.6,
+      "intentos": 1
+    },
+    {
+      "id": "inv-04",
+      "categoria": "inventario",
+      "perfil": "P3",
+      "razonamiento_analista": "Pregunta de búsqueda general sobre los horarios de atención al público regulados por el municipio.",
+      "degradado": [],
+      "mensaje": "¿Qué normas hay sobre horarios de atención al público?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "10322_decreto-no-0832018.pdf",
+        "22552_decreto-no-1442018.pdf",
+        "2404_decretono191.pdf",
+        "2405_decretono200.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "10322_decreto-no-0832018.pdf",
+        "22552_decreto-no-1442018.pdf",
+        "22593_decreto-no-1572018.pdf",
+        "2404_decretono191.pdf",
+        "2405_decretono200.pdf",
+        "2408_decretono207.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "respuesta": "En relación con los horarios de atención al público, existen varias disposiciones normativas en el municipio:\n\n1. **Inspección Municipal de Policía:** \n- El **Decreto 083 de 2018** modifica el horario de atención al público de la Inspección Municipal de Policía, estableciéndolo de lunes a jueves de 7:30 a.m. a 11:00 a.m. y de 1:30 p.m. a 4:00 p.m.; y los viernes en la mañana de 7:30 a.m. a 11:00 a.m., y en la tarde hasta las 4:00 p.m. [Decreto 083 de 2018, p. 1]. Esta modificación se fundamenta en las exigencias de la Ley 1801 de 2016 (Código Nacional de Policía y Convivencia) y en la facultad otorgada por el Decreto Municipal 051 de 2006 para disponer horarios especiales [Decreto 083 de 2018, p. 1].\n- Previamente se expidió el **Decreto No. 191 de 2015** sobre el mismo tema en dicha dependencia [Decreto No 191 de 05 de Noviembre].\n\n2. **Secretaría de Cultura y Turismo:** \n- El **Decreto No. 200 de 2015** modificó el horario de atención al público en esta secretaría [Decreto No 200 Noviembre 23 de 2015].\n\n3. **Suspensiones temporales de atención:** \n- Se han dictado normas para suspender la atención al público en fechas específicas, como el **Decreto 144 de 2018** (suspensión el 14 de diciembre de 2018) [Decreto 144 de 2018] y el **Decreto No. 207 de 2015** (suspensión el 11 de diciembre de 2015) [Decreto No 207 Diciembre 07 de 2015].\n\n4. **Establecimientos abiertos al público:** \n- El **Decreto 157 de 2018** regula y modifica el horario de los establecimientos abiertos al público con venta de licor durante las festividades de fin de año y las fiestas populares y culturales de la Vaca en la Torre [Decreto 157 de 2018].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "listar_documentos: tema=horarios de atención al público",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: archivo=10322_decreto-no-0832018.pdf, consulta=horario de atención al público en la inspe…",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P3",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 9.4,
+      "intentos": 1
+    },
+    {
+      "id": "seg-02",
+      "categoria": "seguimiento",
+      "perfil": "P0",
+      "mensaje": "¿y para los buses cuánto es?",
+      "error": "Error calling model 'gemini-3.5-flash-lite' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 500, model: gemini-3.5-fl",
+      "metricas": {},
+      "tiempo_s": 0.0
+    }
+  ]
+}
