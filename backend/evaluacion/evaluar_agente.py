@@ -8,6 +8,10 @@ Mide sobre el ÚLTIMO turno de cada caso:
                    cuando el caso espera candidatos).
   - candidatos_ok: hay candidatos cuando el caso los espera (`candidatos_esperados`).
   - alerta_ok:     `es_alerta` es True cuando se espera `no_comprensible`.
+  - solicita_archivo_ok / incluye_contenido_ok: el analista marcó `solicita_archivo` / `incluye_contenido` como
+                   dice `solicita_archivo_esperado` / `incluye_contenido_esperado` (solo en casos que lo definen).
+  - entrega_ok:    con `solicita_archivo_esperado`, el archivo esperado llegó en `archivos` (lo que ve el usuario) si se
+                   esperaba entrega, o `archivos` quedó vacío si no.
 
 IMPORTANTE (cuota): cada consulta con búsqueda gasta entre 3 y 6 llamadas a Gemini y el dataset tiene
 unos 50 turnos. El plan gratuito de `gemini-3.5-flash` permite ~20 solicitudes/día; para una corrida
@@ -79,17 +83,25 @@ def evaluar_caso(agente, ejecutar_turno, caso: dict, pausa: float, sello: str) -
     analisis = resultado.get("analisis") or {}
     archivos_fuentes = {f.get("archivo") for f in resultado.get("fuentes", [])}
     archivos_candidatos = {c.get("archivo") for c in resultado.get("candidatos", [])}
+    # Lo que el usuario recibe como botón: misma compuerta que la API (solo si el analista marcó solicita_archivo).
+    archivos_entregados = {a.get("archivo") for a in resultado.get("archivos", [])} if analisis.get("solicita_archivo") else set()
     esperados = set(caso.get("archivos_esperados", []))
     espera_candidatos = bool(caso.get("candidatos_esperados"))
 
     metricas = {"intencion_ok": analisis.get("intencion") == caso["intencion_esperada"]}
     if esperados:
-        encontrados = archivos_candidatos if espera_candidatos else archivos_fuentes
+        encontrados = archivos_candidatos if espera_candidatos else archivos_fuentes | archivos_entregados
         metricas["archivos_ok"] = bool(esperados & encontrados)
     if espera_candidatos:
         metricas["candidatos_ok"] = bool(resultado.get("candidatos"))
     if caso["intencion_esperada"] == "no_comprensible":
         metricas["alerta_ok"] = bool(resultado.get("es_alerta"))
+    if "solicita_archivo_esperado" in caso:
+        espera_archivo = bool(caso["solicita_archivo_esperado"])
+        metricas["solicita_archivo_ok"] = bool(analisis.get("solicita_archivo")) == espera_archivo
+        if "incluye_contenido_esperado" in caso:
+            metricas["incluye_contenido_ok"] = bool(analisis.get("incluye_contenido")) == bool(caso["incluye_contenido_esperado"])
+        metricas["entrega_ok"] = bool(esperados & archivos_entregados) if espera_archivo else not archivos_entregados
 
     sin_informacion = respuesta_sin_informacion(resultado)
     if caso["categoria"] == "referencia_inexistente":
@@ -111,6 +123,9 @@ def evaluar_caso(agente, ejecutar_turno, caso: dict, pausa: float, sello: str) -
         "archivos_esperados": sorted(esperados),
         "archivos_en_fuentes": sorted(a for a in archivos_fuentes if a),
         "archivos_en_candidatos": sorted(a for a in archivos_candidatos if a),
+        "archivos_entregados": sorted(a for a in archivos_entregados if a),
+        "solicita_archivo_obtenido": bool(analisis.get("solicita_archivo")),
+        "incluye_contenido_obtenido": bool(analisis.get("incluye_contenido")),
         "respuesta": resultado["messages"][-1].text,
         "pasos": resultado.get("pasos", []),
         "metricas": metricas,
@@ -200,6 +215,8 @@ def resumir(resultados: list[dict]) -> dict:
             "archivos": porcentaje(sin_error, "archivos_ok"),
             "candidatos": porcentaje(sin_error, "candidatos_ok"),
             "alerta": porcentaje(sin_error, "alerta_ok"),
+            "solicita_archivo": porcentaje(sin_error, "solicita_archivo_ok"),
+            "entrega": porcentaje(sin_error, "entrega_ok"),
             "informacion": porcentaje(sin_error, "informacion_ok"),
             "negativa": porcentaje(sin_error, "negativa_ok"),
             "tiempo_s_promedio": round(sum(r["tiempo_s"] for r in sin_error) / len(sin_error), 1) if sin_error else None,
@@ -214,14 +231,14 @@ def mostrar_resumen(resumen: dict, linea_base: dict | None) -> None:
     def fmt(valor):
         return "  -  " if valor is None else f"{valor:5.2f}"
 
-    print(f"\n{'categoría':<34}{'n':>3}{'err':>4}{'degr':>5}{'intención':>11}{'archivos':>10}{'candid.':>9}{'alerta':>8}{'info':>6}{'neg.':>6}{'seg':>7}{'base hit@8':>12}")
+    print(f"\n{'categoría':<34}{'n':>3}{'err':>4}{'degr':>5}{'intención':>11}{'archivos':>10}{'candid.':>9}{'alerta':>8}{'info':>6}{'neg.':>6}{'sol.arch':>9}{'entrega':>8}{'seg':>7}{'base hit@8':>12}")
     for categoria, m in resumen.items():
         base = ""
         if linea_base and categoria in linea_base:
             base = fmt(linea_base[categoria].get("hit@8"))
         print(
             f"{categoria:<34}{m['casos']:>3}{m['errores']:>4}{m['degradados']:>5}{fmt(m['intencion']):>11}{fmt(m['archivos']):>10}"
-            f"{fmt(m['candidatos']):>9}{fmt(m['alerta']):>8}{fmt(m['informacion']):>6}{fmt(m['negativa']):>6}{(m['tiempo_s_promedio'] or 0):>7.1f}{base:>12}"
+            f"{fmt(m['candidatos']):>9}{fmt(m['alerta']):>8}{fmt(m['informacion']):>6}{fmt(m['negativa']):>6}{fmt(m['solicita_archivo']):>9}{fmt(m['entrega']):>8}{(m['tiempo_s_promedio'] or 0):>7.1f}{base:>12}"
         )
 
 

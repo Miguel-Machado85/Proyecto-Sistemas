@@ -16,7 +16,9 @@ from typing import Literal
 from langchain_core.documents import Document
 from langchain_core.tools import tool
 
-from . import reranker, retrieval
+from urllib.parse import quote
+
+from . import db, reranker, retrieval
 from .catalogo import DocumentoCatalogado, normalizar
 
 logger = logging.getLogger(__name__)
@@ -287,6 +289,49 @@ def leer_documento(archivo: str, paginas: list[int] | None = None) -> str:
         return _error(f"No fue posible leer el documento: {error}")
 
 
+@tool
+def preparar_descarga(archivo: str) -> str:
+    """Prepara la descarga del archivo ORIGINAL (PDF) de un documento ya identificado.
+
+    Úsala solo cuando el usuario pidió el archivo o el documento. `archivo` es el nombre del PDF
+    tal como aparece en las fuentes o candidatos (p. ej. "22598_decreto-no-0012019.pdf"). Si todavía
+    no sabes cuál es el documento, identifícalo antes con `buscar_documento_por_referencia` o
+    `buscar_fragmentos`; si hay varios candidatos, NO elijas por el usuario. Llámala una vez por documento.
+
+    Devuelve `archivos` con el título del documento listo para descargar, o un `error` si ese documento
+    no está disponible para descarga. NO escribas ni inventes enlaces: la interfaz muestra el botón.
+    """
+    try:
+        catalogo = retrieval.obtener_catalogo_documentos()
+        documento = next((d for d in catalogo.documentos if d.archivo == (archivo or "").strip()), None)
+        if documento is None:
+            similares = catalogo.similares(archivo or "", limite=MAX_SUGERENCIAS)
+            return _json(
+                fuentes=[],
+                fragmentos=[],
+                sugerencias=[_datos_documento(d) for d in similares],
+                error=f"No existe el archivo {archivo} en el repositorio SIGEM.",
+            )
+        if db.obtener_archivo(documento.archivo) is None:
+            return _json(
+                fuentes=[],
+                fragmentos=[],
+                motivo="no_disponible",
+                titulo=documento.titulo,
+                archivo=documento.archivo,
+                error=f"El documento {documento.titulo} está en SIGEM pero su original no está disponible para descarga.",
+            )
+        datos = _datos_documento(documento)
+        return _json(
+            fuentes=[],
+            fragmentos=[],
+            archivos=[{**datos, "url_descarga": f"/documentos/{quote(documento.archivo)}/descargar"}],
+        )
+    except Exception as error:
+        logger.exception("preparar_descarga falló")
+        return _error(f"No fue posible preparar la descarga: {error}")
+
+
 HERRAMIENTAS_INVESTIGADOR = [
     buscar_documento_por_referencia,
     listar_documentos,
@@ -297,3 +342,12 @@ HERRAMIENTAS_INVESTIGADOR = [
 # Un argumento inválido (p. ej. un tipo fuera del Literal) también debe volver como JSON, no como excepción.
 for _herramienta in HERRAMIENTAS_INVESTIGADOR:
     _herramienta.handle_validation_error = _error_de_argumentos
+
+# Va aparte: el investigador solo la recibe cuando el analista marcó `solicita_archivo`.
+HERRAMIENTAS_DESCARGA = [preparar_descarga]
+preparar_descarga.handle_validation_error = _error_de_argumentos
+
+
+def herramientas_investigador(solicita_archivo: bool = False) -> list:
+    """Tools del subagente: las de búsqueda y, solo si el usuario pidió el archivo, `preparar_descarga`."""
+    return list(HERRAMIENTAS_INVESTIGADOR) + (list(HERRAMIENTAS_DESCARGA) if solicita_archivo else [])

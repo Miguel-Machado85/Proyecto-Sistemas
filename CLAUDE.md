@@ -52,7 +52,7 @@ Orden de ejecución: **0 → 1 → 2 → 4 → 5 → 3 → 6** (solo la 3 necesi
 - [x] **Fase 1** — Chroma como servicio aparte (contenedor), índice migrado sin regenerar embeddings
 - [x] **Fase 2** — Módulo `repositorio_archivos` (Drive o local), tabla `archivos_documento`, endpoint de descarga, 71 documentos enlazados
 - [ ] **Fase 3** — La ingesta del admin sube el original a Drive al indexar y lo retira al revertir
-- [ ] **Fase 4** — El agente detecta cuándo se pide el archivo y lo entrega (`solicita_archivo`, `preparar_descarga`)
+- [x] **Fase 4** — El agente detecta cuándo se pide el archivo y lo entrega (`solicita_archivo`, `preparar_descarga`)
 - [ ] **Fase 5** — `index.html` muestra el botón de descarga (texto y voz)
 - [ ] **Fase 6** — Evaluación, documentación (`home.md`, READMEs) y PR a `main`
 
@@ -322,3 +322,29 @@ Fallos: `tema-04` (arma/porte de armas), `mal-01` ("decrto 83… horaro de atens
 - **Tests:** 237 (`test_repositorio_archivos.py`, `test_descarga_y_sincronizacion.py`; cliente de Drive falso, sin red). Probado el stack real: tabla creada, 404 de catálogo y de fila.
 - **Probado con Drive real (token de lector, modo Pruebas):** `sincronizar_drive.py` en simulación listó 69 archivos en la carpeta y enlazó 69 de los 71 del catálogo (todos por nombre exacto, 0 dudosos, 0 huérfanos). **Faltan en Drive:** `2401_decretono187.pdf` y `2403_decretono184.pdf` (no se podrán descargar hasta subirlos). Descarga real de `10322_decreto-no-0832018.pdf`: 409451 bytes = tamaño en Drive, empieza por `%PDF-`; `enlace_ver` devuelve el `webViewLink`; un id inexistente da el mensaje claro de 404. No se probó subir/retirar (el usuario aún es Lector; no se hacen escrituras de prueba en la carpeta real).
 - **OAuth en modo Pruebas:** el token caduca a los 7 días (repetir `scripts/autorizar_drive.py`); el usuario autorizador debe estar en 'Usuarios de prueba'. `--aplicar` ya se corrió (2026-10-23) contra el Postgres de Compose (DATABASE_URL=localhost:55432): 69 filas `drive` en `archivos_documento`. Verificado por el endpoint del contenedor: `GET /documentos/10322_decreto-no-0832018.pdf/descargar` → 200, 409451 bytes, `%PDF-`, `Content-Disposition: attachment` con el nombre original; `2401_decretono187.pdf` (sin original en Drive) → 404 amable. Para repetir desde el host: `DATABASE_URL=postgresql://sigem:sigem@localhost:55432/sigem CHROMA_MODO=local uv run python scripts/sincronizar_drive.py`.
+
+### Etapa 2, Fase 4 — el agente entrega documentos (2026-10-23)
+- **Regla de producto (decidida con el equipo):** un ciudadano que dice "dame / necesito / quiero / pásame el decreto 83" suele querer entenderlo, así que esos verbos piden **archivo + contenido**
+  (`solicita_archivo=true`, `incluye_contenido=true`: se redacta con fragmentos y además se entrega el botón). Solo "descargar / PDF / archivo / enlace / dónde puedo bajarlo" piden **solo el archivo**
+  (`incluye_contenido=false`). Sin referencia ni documento activo ("pásame el archivo") es `ambigua`.
+- **Estado:** `AnalisisConsulta.solicita_archivo` e `incluye_contenido` (este último, adición a la spec: sin él no se distingue "solo archivo" de "archivo y resumen", porque la tool que identifica el
+  documento siempre devuelve fragmentos); `EstadoAgente.archivos` y `archivos_no_disponibles` (adición a la spec: para explicar un documento sin original), sin reducer y reiniciados por turno.
+  `analista._coherente` fuerza ambos a false si la intención no busca, e `incluye_contenido` a false si no hay `solicita_archivo`.
+- **Tool `tools.preparar_descarga(archivo)`:** valida contra el catálogo y contra `archivos_documento`; devuelve `archivos` (con `url_descarga` relativa, `quote`d) o `error` (+`motivo:"no_disponible"`).
+  Está en `HERRAMIENTAS_DESCARGA`, **fuera** de `HERRAMIENTAS_INVESTIGADOR`; `tools.herramientas_investigador(solicita_archivo)` arma la lista y `prompts.construir_prompt_investigador` añade las instrucciones
+  solo en ese caso (sin la bandera el modelo no ve la tool ni su mención).
+- **Investigador:** `acumular_resultados` devuelve un `NamedTuple` `Resultados` (+`archivos` máx. 3 sin duplicados, +`archivos_no_disponibles`). Si el pedido es solo de archivo y hay archivo (o "no disponible"),
+  descarta `evidencia`/`fuentes` (los fragmentos solo servían para identificar el documento).
+- **Evaluador:** atajo sin LLM `(archivos o no_disponibles) y sin evidencia` → redactor; los `candidatos` siguen ganando (se pide aclaración antes de entregar nada).
+- **Redactor:** modos `entrega` y `descarga_no_disponible` (sin salida estructurada, sin fuentes; `documento_activo` = archivo entregado); `elegir_modo`: evidencia → respuesta, candidatos → aclaración,
+  archivos → entrega, no disponibles → descarga_no_disponible. Regla en el prompt base: **nunca URLs**. El modelo ve solo títulos, nunca la `url_descarga`.
+- **API:** `ArchivoDescargable{titulo,archivo,url_descarga}` y `archivos: []` en `ChatResponse`/`ChatVozResponse` (aditivo; verificado en el OpenAPI del contenedor). `_archivos(resultado)` es la compuerta:
+  devuelve `[]` si `analisis.solicita_archivo` es false. `ejecutar_turno` reinicia `archivos` y `archivos_no_disponibles`. No se implementó la persistencia opcional en `/historial`.
+- **Defecto hallado con Gemini real y corregido:** la regla "indica `informacion_encontrada`" estaba en `PROMPT_REDACTOR_BASE`; en los modos sin salida estructurada (entrega, aclaración, sin resultados) el modelo la copiaba
+  al texto ("… informacion_encontrada: false") y en un caso se confundió y dijo que no había información. Ahora esa regla vive solo en el modo `respuesta` (test que lo protege).
+- **Evaluación (flash-lite en los 4 agentes, `--pausa 20`, 11 casos `solicitud_archivo`, `evaluacion/resultados_fase4_solicitud_archivo.json` y `…_reintento.json`):** intención 1.00, archivos 1.00,
+  `solicita_archivo` 1.00, `incluye_contenido` 1.00, entrega 1.00, información 1.00 tras el arreglo (0.90 antes: arch-06). Analista solo, con extras: "Necesito el documento 18399" y "Quiero el decreto 116 de 2018" →
+  archivo + contenido; "pásame el archivo" → ambigua; saludo → nada. No se re-corrieron las demás categorías con Gemini (el prompt del analista cambió: conviene una pasada completa antes del PR, Fase 6).
+- **Tests:** 296 (`tests/test_entrega_archivos.py` con 37 casos, más ampliaciones en `test_tools`, `test_api`, `test_evaluacion`). `test_chroma_servicio::test_verificar_detecta_registros_faltantes` falló una vez en una
+  corrida completa y no se reprodujo en 4 corridas posteriores (posible estado compartido de `EphemeralClient` entre tests); vigilar.
+- **Dataset:** 11 casos `solicitud_archivo` (`solicita_archivo_esperado`, `incluye_contenido_esperado`); `evaluar_agente.py` reporta `solicita_archivo_ok`, `incluye_contenido_ok` y `entrega_ok` (columnas `sol.arch` y `entrega`).

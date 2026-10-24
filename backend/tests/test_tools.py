@@ -285,3 +285,82 @@ def test_herramientas_del_investigador_exportadas():
     nombres = [herramienta.name for herramienta in tools.HERRAMIENTAS_INVESTIGADOR]
 
     assert nombres == ["buscar_documento_por_referencia", "listar_documentos", "buscar_fragmentos", "leer_documento"]
+
+
+# ── preparar_descarga ──
+
+def test_preparar_descarga_devuelve_el_archivo_con_url_relativa(almacen, monkeypatch):
+    monkeypatch.setattr(tools.db, "obtener_archivo", lambda nombre: object())
+
+    resultado = ejecutar(tools.preparar_descarga, archivo="d1_2019.pdf")
+
+    assert resultado["archivos"] == [{
+        "titulo": "Decreto 001 de 2019", "archivo": "d1_2019.pdf",
+        "fecha_expedicion": "2019-01-03T08:00:00",
+        "descripcion": "Por medio del cual se fijan las tarifas para el servicio público de transporte de taxis",
+        "url_descarga": "/documentos/d1_2019.pdf/descargar",
+    }]
+    assert "error" not in resultado
+
+
+def test_preparar_descarga_codifica_el_nombre_en_la_url(almacen, monkeypatch):
+    monkeypatch.setattr(tools.db, "obtener_archivo", lambda nombre: object())
+    store = retrieval.obtener_vector_store()
+    store.add_documents([fragmento("acta con espacio.pdf", "Acuerdo 005 de 2020", "2020-03-01T08:00:00", 0, "texto")])
+    catalogo = CatalogoDocumentos.desde_metadatas(store.get(include=["metadatas"])["metadatas"])
+    monkeypatch.setattr(retrieval, "obtener_catalogo_documentos", lambda: catalogo)
+
+    assert ejecutar(tools.preparar_descarga, archivo="acta con espacio.pdf")["archivos"][0]["url_descarga"] == (
+        "/documentos/acta%20con%20espacio.pdf/descargar"
+    )
+
+
+def test_preparar_descarga_de_documento_sin_fila_dice_que_no_esta_disponible(almacen, monkeypatch):
+    monkeypatch.setattr(tools.db, "obtener_archivo", lambda nombre: None)
+
+    resultado = ejecutar(tools.preparar_descarga, archivo="d1_2019.pdf")
+
+    assert "archivos" not in resultado
+    assert resultado["motivo"] == "no_disponible"
+    assert resultado["titulo"] == "Decreto 001 de 2019" and resultado["archivo"] == "d1_2019.pdf"
+    assert "no está disponible para descarga" in resultado["error"]
+
+
+def test_preparar_descarga_de_archivo_inexistente_sugiere_parecidos(almacen, monkeypatch):
+    monkeypatch.setattr(tools.db, "obtener_archivo", lambda nombre: object())
+
+    resultado = ejecutar(tools.preparar_descarga, archivo="decreto-inventado.pdf")
+
+    assert "archivos" not in resultado and "motivo" not in resultado
+    assert "No existe" in resultado["error"] and "sugerencias" in resultado
+
+
+@pytest.mark.parametrize("peligroso", ["../../etc/passwd", "..\secreto.pdf", ""])
+def test_preparar_descarga_solo_acepta_nombres_del_catalogo(almacen, monkeypatch, peligroso):
+    monkeypatch.setattr(tools.db, "obtener_archivo", lambda nombre: object())
+
+    assert "archivos" not in ejecutar(tools.preparar_descarga, archivo=peligroso)
+
+
+def test_preparar_descarga_no_lanza_si_la_base_de_datos_falla(almacen, monkeypatch):
+    def explota(nombre):
+        raise RuntimeError("postgres caído")
+
+    monkeypatch.setattr(tools.db, "obtener_archivo", explota)
+
+    resultado = ejecutar(tools.preparar_descarga, archivo="d1_2019.pdf")
+
+    assert resultado["fuentes"] == [] and "postgres caído" in resultado["error"]
+
+
+def test_preparar_descarga_con_argumentos_invalidos_devuelve_json():
+    resultado = ejecutar(tools.preparar_descarga)  # falta `archivo`
+
+    assert "error" in resultado
+
+
+def test_preparar_descarga_va_aparte_de_las_herramientas_de_busqueda():
+    assert tools.preparar_descarga not in tools.HERRAMIENTAS_INVESTIGADOR
+    assert [t.name for t in tools.herramientas_investigador(False)] == [t.name for t in tools.HERRAMIENTAS_INVESTIGADOR]
+    assert [t.name for t in tools.herramientas_investigador(True)][-1] == "preparar_descarga"
+    assert len(tools.herramientas_investigador(True)) == len(tools.HERRAMIENTAS_INVESTIGADOR) + 1

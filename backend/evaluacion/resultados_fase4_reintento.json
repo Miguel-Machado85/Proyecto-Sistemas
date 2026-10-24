@@ -1,0 +1,276 @@
+{
+  "fecha": "2026-10-23T23:25:47",
+  "modelos": {
+    "analista": "gemini-3.5-flash-lite",
+    "investigador": "gemini-3.5-flash-lite",
+    "evaluador": "gemini-3.5-flash-lite",
+    "redactor": "gemini-3.5-flash-lite"
+  },
+  "reranker": true,
+  "pausa_s": 20.0,
+  "abortado": null,
+  "resumen": {
+    "solicitud_archivo": {
+      "casos": 4,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": 1.0,
+      "entrega": 1.0,
+      "informacion": 1.0,
+      "negativa": null,
+      "tiempo_s_promedio": 9.7
+    },
+    "GLOBAL": {
+      "casos": 4,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": 1.0,
+      "entrega": 1.0,
+      "informacion": 1.0,
+      "negativa": null,
+      "tiempo_s_promedio": 9.7
+    }
+  },
+  "casos": [
+    {
+      "id": "arch-01",
+      "categoria": "solicitud_archivo",
+      "perfil": "P2",
+      "razonamiento_analista": "El usuario solicita explícitamente descargar el archivo PDF del Decreto 1 de 2019.",
+      "degradado": [],
+      "mensaje": "Descárgame el Decreto 001 de 2019",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Aquí tiene el Decreto 001 de 2019 listo para descargar; lo encuentra en el botón que aparece debajo de este mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: pregunta=Decreto 1 de 2019 archivo descarga, anio=2019, numero=1, tipo=decreto",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=22598_decreto-no-0012019.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Archivo listo para entregar",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P2",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 14.7,
+      "intentos": 1
+    },
+    {
+      "id": "arch-03",
+      "categoria": "solicitud_archivo",
+      "perfil": "P0",
+      "razonamiento_analista": "El usuario solicita específicamente el archivo PDF de una resolución concreta.",
+      "degradado": [],
+      "mensaje": "Mándame el PDF de la Resolución 4496 de 2018",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Aquí tiene el archivo de la Resolución 4496 de 2018, el cual puede encontrar y descargar en el botón que aparece debajo de este mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: numero=4496, pregunta=Resolución 4496 de 2018 archivo PDF, anio=2018, tipo=resolucion",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=23653_resolucion-4496.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Archivo listo para entregar",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 5.5,
+      "intentos": 1
+    },
+    {
+      "id": "arch-06",
+      "categoria": "solicitud_archivo",
+      "perfil": "P3",
+      "razonamiento_analista": "El usuario solicita explícitamente dónde ver el archivo completo de una ley específica.",
+      "degradado": [],
+      "mensaje": "¿Dónde puedo ver la Ley 387 de 1997 completa?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "14362_ley387de1997.pdf"
+      ],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [
+        "14362_ley387de1997.pdf"
+      ],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Aquí tiene el documento Ley 387 1997, el cual puede encontrar y descargar directamente en el botón que aparece debajo de este mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: tipo=ley, pregunta=texto completo de la Ley 387 de 1997, anio=1997, numero=387",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=14362_ley387de1997.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Archivo listo para entregar",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P3",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 12.9,
+      "intentos": 1
+    },
+    {
+      "id": "arch-11",
+      "categoria": "solicitud_archivo",
+      "perfil": "P0",
+      "razonamiento_analista": "El usuario solicita explícitamente la descarga del archivo PDF de un decreto específico, con números en palabras convertidos a dígitos.",
+      "degradado": [],
+      "mensaje": "descárgame el decreto ochenta y tres de dos mil dieciocho",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Aquí tiene el Decreto 083 de 2018; lo puede encontrar directamente en el botón de descarga que aparece debajo de este mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: numero=83, tipo=decreto, pregunta=descargar el archivo del decreto 83 de 2018, anio=2018",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=10322_decreto-no-0832018.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Archivo listo para entregar",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 5.8,
+      "intentos": 1
+    }
+  ]
+}

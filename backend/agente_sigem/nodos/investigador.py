@@ -2,6 +2,7 @@
 
 import json
 import logging
+from typing import NamedTuple
 
 from langchain.agents import create_agent
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
@@ -12,12 +13,13 @@ from .. import tools
 from ..config import config as configuracion
 from ..estado import PREFIJO_REINTENTO
 from ..llm import crear_llm, es_error_de_cuota
-from ..prompts import PROMPT_INVESTIGADOR
+from ..prompts import construir_prompt_investigador
 from ._comun import paso
 
 logger = logging.getLogger(__name__)
 
 LONGITUD_MAXIMA_ARGUMENTOS = 90
+MAX_ARCHIVOS = 3
 
 
 def _motivo_reintento(estado: dict) -> str | None:
@@ -46,6 +48,12 @@ def construir_encargo(estado: dict) -> str:
             "Busca dentro de ese archivo."
         )
 
+    if analisis.get("solicita_archivo"):
+        partes.append(
+            "El usuario pide el ARCHIVO del documento: identifica el documento y llama preparar_descarga con el nombre del PDF."
+            + (" Además pide su contenido: reúne también la evidencia." if analisis.get("incluye_contenido") else "")
+        )
+
     motivo = _motivo_reintento(estado)
     if motivo:
         partes.append(
@@ -67,19 +75,29 @@ def _clave_evidencia(fragmento: dict) -> tuple:
     return (fuente.get("archivo"), fuente.get("pagina"), str(fragmento.get("contenido", ""))[:160])
 
 
-def acumular_resultados(estado: dict, mensajes: list) -> tuple[list[dict], list[dict], list[dict], list[dict]]:
-    """Recorre los ToolMessage del subagente y suma evidencia, fuentes y candidatos sin duplicados.
+class Resultados(NamedTuple):
+    evidencia: list[dict]
+    fuentes: list[dict]
+    candidatos: list[dict]
+    pasos_nuevos: list[dict]
+    archivos: list[dict]
+    archivos_no_disponibles: list[dict]
 
-    Devuelve (evidencia, fuentes, candidatos, pasos_nuevos).
-    """
+
+def acumular_resultados(estado: dict, mensajes: list) -> Resultados:
+    """Recorre los ToolMessage del subagente y suma evidencia, fuentes, candidatos y archivos sin duplicados."""
     evidencia = list(estado.get("evidencia", []))
     fuentes = list(estado.get("fuentes", []))
     candidatos = list(estado.get("candidatos", []))
+    archivos = list(estado.get("archivos", []))
+    archivos_no_disponibles = list(estado.get("archivos_no_disponibles", []))
     pasos_nuevos = []
 
     claves_evidencia = {_clave_evidencia(f) for f in evidencia}
     claves_fuentes = {(f.get("archivo"), f.get("pagina")) for f in fuentes}
     claves_candidatos = {c.get("archivo") for c in candidatos}
+    claves_archivos = {a.get("archivo") for a in archivos}
+    claves_no_disponibles = {a.get("archivo") for a in archivos_no_disponibles}
 
     for mensaje in mensajes:
         if isinstance(mensaje, AIMessage):
@@ -138,16 +156,24 @@ def acumular_resultados(estado: dict, mensajes: list) -> tuple[list[dict], list[
             if candidato.get("archivo") not in claves_candidatos:
                 claves_candidatos.add(candidato.get("archivo"))
                 candidatos.append(candidato)
+        for archivo in contenido.get("archivos", []):
+            if archivo.get("archivo") not in claves_archivos and len(archivos) < MAX_ARCHIVOS:
+                claves_archivos.add(archivo.get("archivo"))
+                archivos.append(archivo)
+        if contenido.get("motivo") == "no_disponible" and contenido.get("archivo") not in claves_no_disponibles:
+            claves_no_disponibles.add(contenido.get("archivo"))
+            archivos_no_disponibles.append({"titulo": contenido.get("titulo"), "archivo": contenido.get("archivo")})
 
-    return evidencia, fuentes, candidatos, pasos_nuevos
+    return Resultados(evidencia, fuentes, candidatos, pasos_nuevos, archivos, archivos_no_disponibles)
 
 
-def _ejecutar_subagente(encargo: str, config: RunnableConfig | None) -> list:
+def _ejecutar_subagente(encargo: str, config: RunnableConfig | None, solicita_archivo: bool = False) -> list:
     """Corre el subagente con historial nuevo y devuelve sus mensajes (incluso si se agota el límite)."""
     subagente = create_agent(
         model=crear_llm(configuracion.INVESTIGADOR_MODEL, 0.1),
-        tools=tools.HERRAMIENTAS_INVESTIGADOR,
-        system_prompt=PROMPT_INVESTIGADOR,
+        # preparar_descarga solo existe para el modelo cuando el analista marcó solicita_archivo.
+        tools=tools.herramientas_investigador(solicita_archivo),
+        system_prompt=construir_prompt_investigador(solicita_archivo),
         # Sin checkpointer propio ni heredado: cada intento empieza con historial vacío.
         checkpointer=False,
     )
@@ -179,12 +205,19 @@ def fragmentos_primero(evidencia: list[dict]) -> list[dict]:
 
 
 def investigador(estado: dict, config: RunnableConfig | None = None) -> dict:
-    mensajes = _ejecutar_subagente(construir_encargo(estado), config)
-    evidencia, fuentes, candidatos, pasos_nuevos = acumular_resultados(estado, mensajes)
+    analisis = estado.get("analisis") or {}
+    solicita_archivo = bool(analisis.get("solicita_archivo"))
+    mensajes = _ejecutar_subagente(construir_encargo(estado), config, solicita_archivo)
+    evidencia, fuentes, candidatos, pasos_nuevos, archivos, no_disponibles = acumular_resultados(estado, mensajes)
+    if solicita_archivo and not analisis.get("incluye_contenido") and (archivos or no_disponibles):
+        # Pidió solo el archivo: los fragmentos solo servían para identificar el documento, no se redacta un resumen.
+        evidencia, fuentes = [], []
     return {
         "evidencia": fragmentos_primero(evidencia),
         "fuentes": fuentes,
         "candidatos": candidatos,
+        "archivos": archivos,
+        "archivos_no_disponibles": no_disponibles,
         # Cuenta ejecuciones del investigador: MAX_INTENTOS_BUSQUEDA es el máximo de pasadas.
         "intentos_busqueda": estado.get("intentos_busqueda", 0) + 1,
         "pasos": estado.get("pasos", []) + pasos_nuevos,

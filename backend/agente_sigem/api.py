@@ -57,12 +57,19 @@ class CandidatoDocumento(BaseModel):
     descripcion: str | None = None
 
 
+class ArchivoDescargable(BaseModel):
+    titulo: str
+    archivo: str
+    url_descarga: str  # relativa (/documentos/{archivo}/descargar): el frontend la completa con su API_URL
+
+
 class ChatResponse(BaseModel):
     respuesta: str
     thread_id: str
     pasos: list[PasoAgente]
     fuentes: list[FuenteSigem] = []
     candidatos: list[CandidatoDocumento] = []
+    archivos: list[ArchivoDescargable] = []
     tiempo_ms: float
 
 class ChatVozResponse(BaseModel):
@@ -73,6 +80,7 @@ class ChatVozResponse(BaseModel):
     respuesta_audio_url: str | None
     fuentes: list[FuenteSigem] = []
     candidatos: list[CandidatoDocumento] = []
+    archivos: list[ArchivoDescargable] = []
     alerta: bool = False
 
 
@@ -117,6 +125,8 @@ def ejecutar_turno(agente, thread_id: str, mensaje: str, perfil: str, origen: st
             "consulta_actual": "",
             "pasos": [],
             "es_alerta": False,
+            "archivos": [],
+            "archivos_no_disponibles": [],
         },
         config=config_graph,
     )
@@ -132,6 +142,16 @@ def _fuentes(resultado: dict) -> list[FuenteSigem]:
 
 def _candidatos(resultado: dict) -> list[CandidatoDocumento]:
     return [CandidatoDocumento(**candidato) for candidato in resultado.get("candidatos", [])]
+
+
+def _archivos(resultado: dict) -> list[ArchivoDescargable]:
+    """Compuerta determinística: solo hay archivos si el analista marcó que el usuario los pidió."""
+    if not (resultado.get("analisis") or {}).get("solicita_archivo"):
+        return []
+    return [
+        ArchivoDescargable(titulo=a.get("titulo") or a["archivo"], archivo=a["archivo"], url_descarga=a["url_descarga"])
+        for a in resultado.get("archivos", [])
+    ]
 
 
 def _pasos(resultado: dict) -> list[PasoAgente]:
@@ -291,6 +311,7 @@ async def endpoint_chat(request: ChatRequest, http_request: Request):
             pasos=_pasos(resultado),
             fuentes=_fuentes(resultado),
             candidatos=_candidatos(resultado),
+            archivos=_archivos(resultado),
             tiempo_ms=round((time.time() - inicio) * 1000, 1),
         )
     except Exception as e:
@@ -386,6 +407,7 @@ async def endpoint_chat_voz(
         respuesta_audio_url=storage.url_firmada(respuesta_key),
         fuentes=_fuentes(resultado),
         candidatos=_candidatos(resultado),
+        archivos=_archivos(resultado),
     )
 
 

@@ -16,10 +16,10 @@ from agente_sigem import api, prompts
 from agente_sigem.catalogo import CatalogoDocumentos
 from agente_sigem.config import config
 
-CLAVES_CHAT = {"respuesta", "thread_id", "pasos", "fuentes", "candidatos", "tiempo_ms"}
+CLAVES_CHAT = {"respuesta", "thread_id", "pasos", "fuentes", "candidatos", "archivos", "tiempo_ms"}
 CLAVES_VOZ = {
     "transcripcion", "respuesta", "thread_id", "pregunta_audio_url", "respuesta_audio_url",
-    "fuentes", "candidatos", "alerta",
+    "fuentes", "candidatos", "archivos", "alerta",
 }
 CLAVES_PASO = {"agente", "accion", "icono"}
 CLAVES_FUENTE = {"titulo", "archivo", "pagina", "fecha_expedicion", "descripcion"}
