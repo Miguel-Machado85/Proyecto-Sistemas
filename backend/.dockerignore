@@ -5,6 +5,7 @@ catalogo_chroma/
 evaluacion/
 tests/
 .env
+secrets/
 .env.*
 !.env.example
 __pycache__/

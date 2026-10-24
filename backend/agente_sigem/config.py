@@ -1,9 +1,19 @@
 import os
+import re
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+def extraer_id_carpeta_drive(valor: str | None) -> str | None:
+    """Acepta el ID de una carpeta de Drive o su URL completa (…/folders/<id>?…) y devuelve el ID."""
+    if not valor or not valor.strip():
+        return None
+    valor = valor.strip()
+    coincidencia = re.search(r"/folders/([A-Za-z0-9_-]+)", valor) or re.search(r"[?&]id=([A-Za-z0-9_-]+)", valor)
+    return coincidencia.group(1) if coincidencia else valor
 
 
 class Config:
@@ -75,6 +85,16 @@ class Config:
     S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
     # Las URLs firmadas expiran; así el bucket puede quedar privado sin problema.
     PRESIGNED_URL_EXPIRATION = int(os.getenv("PRESIGNED_URL_EXPIRATION", 3600))
+
+    # ── Archivos originales: repositorio de documentos (Drive o carpeta local) ──
+    # local: carpeta UPLOAD_ROOT/repositorio (desarrollo y tests, no necesita credenciales).
+    # drive: carpeta de Google Drive con OAuth de usuario (token generado con scripts/autorizar_drive.py).
+    ARCHIVOS_BACKEND = os.getenv("ARCHIVOS_BACKEND", "local").strip().lower()
+    GOOGLE_DRIVE_FOLDER_ID = extraer_id_carpeta_drive(os.getenv("GOOGLE_DRIVE_FOLDER_ID"))
+    GOOGLE_OAUTH_CLIENT_FILE = Path(os.getenv("GOOGLE_OAUTH_CLIENT_FILE", Path(__file__).resolve().parent.parent / "secrets" / "oauth-client.json"))
+    GOOGLE_OAUTH_TOKEN_FILE = Path(os.getenv("GOOGLE_OAUTH_TOKEN_FILE", Path(__file__).resolve().parent.parent / "secrets" / "oauth-token.json"))
+    # stream: el backend descarga de Drive y reenvía el archivo | redirect: 302 al enlace de Drive.
+    DRIVE_MODO_ENTREGA = os.getenv("DRIVE_MODO_ENTREGA", "stream").strip().lower()
 
     # ── Langfuse (observabilidad/tracing del agente) ──
     # Si estas dos quedan vacías, el tracing simplemente se desactiva:

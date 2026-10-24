@@ -50,7 +50,7 @@ cd backend && uv run python evaluacion/evaluar_recuperacion.py
 Orden de ejecución: **0 → 1 → 2 → 4 → 5 → 3 → 6** (solo la 3 necesita permiso de Editor en Drive). Prioridad si aprieta el tiempo: 2 → 4 → 5.
 - [x] **Fase 0** — Rama lista, `CLAUDE.md` con las nuevas reglas, versiones verificadas
 - [x] **Fase 1** — Chroma como servicio aparte (contenedor), índice migrado sin regenerar embeddings
-- [ ] **Fase 2** — Módulo `repositorio_archivos` (Drive o local), tabla `archivos_documento`, endpoint de descarga, 71 documentos enlazados
+- [x] **Fase 2** — Módulo `repositorio_archivos` (Drive o local), tabla `archivos_documento`, endpoint de descarga, 71 documentos enlazados
 - [ ] **Fase 3** — La ingesta del admin sube el original a Drive al indexar y lo retira al revertir
 - [ ] **Fase 4** — El agente detecta cuándo se pide el archivo y lo entrega (`solicita_archivo`, `preparar_descarga`)
 - [ ] **Fase 5** — `index.html` muestra el botón de descarga (texto y voz)
@@ -303,3 +303,21 @@ Fallos: `tema-04` (arma/porte de armas), `mal-01` ("decrto 83… horaro de atens
   reordenamientos marginales. No es un error de migración: mismos vectores, índice ANN distinto.
 - **Tests:** 187 (`tests/test_chroma_servicio.py`: cliente por modo, `/health`, catálogo que ve documentos de otro cliente sin invalidar, migración con `EphemeralClient`).
 - **Pruebas con modelos:** se usó `gemini-3.5-flash-lite` en los cuatro agentes (variables de sesión) cuando hizo falta; el script de recuperación solo gasta embeddings.
+
+### Etapa 2, Fase 2 — repositorio de archivos y Drive (2026-10-23)
+- **Módulo `agente_sigem/repositorio_archivos.py`:** `RepositorioArchivos` (Protocol: `subir`, `descargar`, `retirar`, `listar`, `enlace_ver`, `proveedor`), `RepositorioLocal`
+  (`UPLOAD_ROOT/repositorio`, id aleatorio, papelera `_papelera/`) y `RepositorioDrive` (Drive v3, `supportsAllDrives=True` siempre; `retirar` = `files.update(trashed=True)`, nunca `delete`;
+  un servicio `build` por operación porque httplib2 no es seguro entre hilos). `obtener_repositorio()` (lru_cache) según `ARCHIVOS_BACKEND` (por defecto `local`); crearlo no lee credenciales.
+- **Errores:** `ErrorRepositorio` con mensajes en español (403 al escribir → "el usuario de Drive no tiene permiso de Editor sobre la carpeta"; 401/`RefreshError` → token inválido o caducado;
+  404; 429/rateLimit). `descargar()` pide el primer trozo al llamarse, así un 403/404 sale ANTES de empezar a responder.
+- **Token OAuth:** carga perezosa de `GOOGLE_OAUTH_TOKEN_FILE`, refresco automático y reescritura (si el montaje es de solo lectura solo avisa). Sin archivo/dañado/caducado la API arranca igual;
+  solo `/documentos/{archivo}/descargar` responde **503** (mensaje genérico, sin rutas).
+- **`config.py`:** `ARCHIVOS_BACKEND`, `GOOGLE_DRIVE_FOLDER_ID` (acepta ID o URL; `extraer_id_carpeta_drive`), `GOOGLE_OAUTH_CLIENT_FILE/TOKEN_FILE` (por defecto `backend/secrets/`), `DRIVE_MODO_ENTREGA`.
+  `backend/secrets/` en `.gitignore` y `.dockerignore`; Compose lo monta en `/app/secrets:ro`.
+- **`db.py`:** tabla `archivos_documento` (PK `nombre_archivo`) con `registrar_archivo` (merge), `obtener_archivo`, `eliminar_registro_archivo`. Verificada en el Postgres de Compose.
+- **Endpoint `GET /documentos/{archivo}/descargar`:** el parámetro solo se compara con el catálogo (404 amable); sin fila → 404 "aún no está disponible"; proveedor distinto al activo → 503;
+  `stream` con `Content-Disposition: attachment; filename*=UTF-8''<nombre_archivo original>` (sin Content-Length) o `redirect` 302 (si no hay enlace, cae a stream).
+- **Scripts:** `scripts/autorizar_drive.py` (InstalledAppFlow, alcance `drive`, docstring con "In production" o el token caduca a los 7 días) y `scripts/sincronizar_drive.py`
+  (simulación por defecto; `--aplicar`; `--subir-faltantes DIR` solo sube con `--aplicar`; empareja por nombre exacto, luego normalizado; dudosos y duplicados no se enlazan).
+- **Tests:** 237 (`test_repositorio_archivos.py`, `test_descarga_y_sincronizacion.py`; cliente de Drive falso, sin red). Probado el stack real: tabla creada, 404 de catálogo y de fila.
+- **Pendiente (necesita credenciales):** correr `sincronizar_drive.py` en simulación contra la carpeta real y luego `--aplicar` con confirmación. Sin `oauth-client.json` no se pudo probar Drive real.

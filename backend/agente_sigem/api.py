@@ -2,17 +2,18 @@ import asyncio
 import logging
 import time
 from contextlib import asynccontextmanager
+from urllib.parse import quote
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse, StreamingResponse
 from google import genai
 from google.genai import errors as genai_errors
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 
-from . import db, reranker, retrieval, storage
+from . import db, repositorio_archivos, reranker, retrieval, storage
 from .admin import router as admin_router
 from .agent import construir_grafo
 from .audio import synthesize, transcribe
@@ -227,6 +228,40 @@ def sugerencias_documentos(q: str = ""):
         )
         for documento in obtener_catalogo_documentos().sugerencias(q)
     ]
+
+def _detalle_503_descarga(error: Exception) -> str:
+    logger.warning("Descarga no disponible: %s", error)
+    return "La descarga de documentos no está disponible en este momento. Intenta de nuevo más tarde."
+
+
+@app.get("/documentos/{archivo}/descargar", tags=["sigem"])
+def descargar_documento(archivo: str):
+    """Entrega el original de un documento indexado (streaming o redirect, según DRIVE_MODO_ENTREGA)."""
+    # El parámetro solo se compara con los nombres del catálogo: nunca forma parte de una ruta de disco.
+    if not any(documento.archivo == archivo for documento in obtener_catalogo_documentos().documentos):
+        raise HTTPException(status_code=404, detail="No encontré ese documento en el repositorio de la Alcaldía.")
+    registro = db.obtener_archivo(archivo)
+    if registro is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Ese documento aún no está disponible para descarga. Puedes consultar su contenido en el chat.",
+        )
+    try:
+        repositorio = repositorio_archivos.obtener_repositorio()
+        if registro.proveedor != repositorio.proveedor:
+            raise repositorio_archivos.ErrorRepositorio(
+                f"El documento está en '{registro.proveedor}' pero el repositorio activo es '{repositorio.proveedor}'."
+            )
+        if config.DRIVE_MODO_ENTREGA == "redirect":
+            enlace = repositorio.enlace_ver(registro.id_externo)
+            if enlace:
+                return RedirectResponse(enlace, status_code=302)
+        trozos = repositorio.descargar(registro.id_externo)
+    except repositorio_archivos.ErrorRepositorio as error:
+        raise HTTPException(status_code=503, detail=_detalle_503_descarga(error)) from error
+    cabeceras = {"Content-Disposition": f"attachment; filename*=UTF-8''{quote(archivo)}"}
+    return StreamingResponse(trozos, media_type=registro.mime_type or "application/octet-stream", headers=cabeceras)
+
 
 @app.post("/chat", response_model=ChatResponse)
 async def endpoint_chat(request: ChatRequest, http_request: Request):

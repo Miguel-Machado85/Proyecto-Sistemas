@@ -15,6 +15,9 @@ services:
       CHROMA_MODO: http
       CHROMA_HOST: chroma
       CHROMA_PORT: "8000"
+      # Rutas de las credenciales de Drive dentro del contenedor (montadas desde backend/secrets).
+      GOOGLE_OAUTH_CLIENT_FILE: /app/secrets/oauth-client.json
+      GOOGLE_OAUTH_TOKEN_FILE: /app/secrets/oauth-token.json
       # Caché de Hugging Face del reranker (montada como volumen hf-cache).
       HF_HOME: /app/.cache/huggingface
       # 1 = no consultar huggingface.co (útil cuando el volumen hf-cache ya tiene el modelo, o en redes con proxy TLS).
@@ -26,6 +29,8 @@ services:
     volumes:
       # Originales y lotes administrativos: persisten fuera de Chroma para auditoría/reindexación.
       - ./backend/documentos:/app/documentos
+      # Credenciales OAuth de Drive (solo lectura; nunca dentro de la imagen).
+      - ./backend/secrets:/app/secrets:ro
       - hf-cache:/app/.cache/huggingface
     depends_on:
       db:
