@@ -11,6 +11,13 @@ services:
       DATABASE_URL: postgresql://sigem:sigem@db:5432/sigem
       # Memoria conversacional persistente: sobrevive a reinicios del contenedor.
       CHECKPOINTER: postgres
+      # Chroma corre como servicio aparte (servicio `chroma`); el backend ya no abre una carpeta local.
+      CHROMA_MODO: http
+      CHROMA_HOST: chroma
+      CHROMA_PORT: "8000"
+      # Rutas de las credenciales de Drive dentro del contenedor (montadas desde backend/secrets).
+      GOOGLE_OAUTH_CLIENT_FILE: /app/secrets/oauth-client.json
+      GOOGLE_OAUTH_TOKEN_FILE: /app/secrets/oauth-token.json
       # Caché de Hugging Face del reranker (montada como volumen hf-cache).
       HF_HOME: /app/.cache/huggingface
       # 1 = no consultar huggingface.co (útil cuando el volumen hf-cache ya tiene el modelo, o en redes con proxy TLS).
@@ -20,12 +27,15 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
-      - ./backend/chroma_db:/app/chroma_db
       # Originales y lotes administrativos: persisten fuera de Chroma para auditoría/reindexación.
       - ./backend/documentos:/app/documentos
+      # Credenciales OAuth de Drive (solo lectura; nunca dentro de la imagen).
+      - ./backend/secrets:/app/secrets:ro
       - hf-cache:/app/.cache/huggingface
     depends_on:
       db:
+        condition: service_healthy
+      chroma:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health', timeout=4)"]
@@ -53,6 +63,22 @@ services:
       retries: 5
     restart: unless-stopped
 
+  chroma:
+    # Misma versión que el paquete chromadb del backend (cliente y servidor de versiones distintas suelen fallar).
+    image: chromadb/chroma:1.5.9
+    ports:
+      # Solo para migración y depuración desde esta máquina; el backend usa la red interna de Compose.
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - chroma-data:/data
+    healthcheck:
+      # La imagen no trae curl ni python: chequeo HTTP con /dev/tcp de bash.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/8000 && printf 'GET /api/v2/heartbeat HTTP/1.0\r\n\r\n' >&3 && head -n1 <&3 | grep -q 200"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   frontend:
     build:
       context: ./frontend
@@ -65,3 +91,4 @@ services:
 volumes:
   postgres-data:
   hf-cache:
+  chroma-data:

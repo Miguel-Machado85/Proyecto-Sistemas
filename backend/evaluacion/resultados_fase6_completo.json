@@ -1,0 +1,3074 @@
+{
+  "fecha": "2026-10-24T16:12:28",
+  "modelos": {
+    "analista": "gemini-3.5-flash-lite",
+    "investigador": "gemini-3.5-flash-lite",
+    "evaluador": "gemini-3.5-flash-lite",
+    "redactor": "gemini-3.5-flash-lite"
+  },
+  "reranker": true,
+  "pausa_s": 20.0,
+  "abortado": null,
+  "resumen": {
+    "ampliacion": {
+      "casos": 2,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": null,
+      "entrega": null,
+      "informacion": 1.0,
+      "negativa": null,
+      "tiempo_s_promedio": 58.5
+    },
+    "busqueda_global_con_doc_activo": {
+      "casos": 5,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": null,
+      "entrega": null,
+      "informacion": 0.8,
+      "negativa": null,
+      "tiempo_s_promedio": 63.6
+    },
+    "fuera_de_dominio": {
+      "casos": 3,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": null,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": null,
+      "entrega": null,
+      "informacion": null,
+      "negativa": null,
+      "tiempo_s_promedio": 4.2
+    },
+    "inventario": {
+      "casos": 4,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": null,
+      "entrega": null,
+      "informacion": 1.0,
+      "negativa": null,
+      "tiempo_s_promedio": 14.3
+    },
+    "mal_escrita": {
+      "casos": 3,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": null,
+      "entrega": null,
+      "informacion": 1.0,
+      "negativa": null,
+      "tiempo_s_promedio": 38.6
+    },
+    "referencia_ambigua": {
+      "casos": 2,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": 1.0,
+      "alerta": null,
+      "solicita_archivo": null,
+      "entrega": null,
+      "informacion": null,
+      "negativa": null,
+      "tiempo_s_promedio": 11.2
+    },
+    "referencia_exacta": {
+      "casos": 5,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": null,
+      "entrega": null,
+      "informacion": 1.0,
+      "negativa": null,
+      "tiempo_s_promedio": 12.2
+    },
+    "referencia_inexistente": {
+      "casos": 2,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": null,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": null,
+      "entrega": null,
+      "informacion": null,
+      "negativa": 1.0,
+      "tiempo_s_promedio": 37.8
+    },
+    "saludo": {
+      "casos": 3,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": null,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": null,
+      "entrega": null,
+      "informacion": null,
+      "negativa": null,
+      "tiempo_s_promedio": 25.6
+    },
+    "seguimiento": {
+      "casos": 4,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": null,
+      "entrega": null,
+      "informacion": 1.0,
+      "negativa": null,
+      "tiempo_s_promedio": 62.8
+    },
+    "solicitud_archivo": {
+      "casos": 11,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": 1.0,
+      "entrega": 1.0,
+      "informacion": 1.0,
+      "negativa": null,
+      "tiempo_s_promedio": 16.7
+    },
+    "tema_sin_palabras_clave": {
+      "casos": 5,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": null,
+      "entrega": null,
+      "informacion": 1.0,
+      "negativa": null,
+      "tiempo_s_promedio": 16.8
+    },
+    "voz_numeros_en_palabras": {
+      "casos": 3,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": null,
+      "alerta": null,
+      "solicita_archivo": null,
+      "entrega": null,
+      "informacion": 1.0,
+      "negativa": null,
+      "tiempo_s_promedio": 11.8
+    },
+    "voz_ruido": {
+      "casos": 2,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": null,
+      "candidatos": null,
+      "alerta": 1.0,
+      "solicita_archivo": null,
+      "entrega": null,
+      "informacion": null,
+      "negativa": null,
+      "tiempo_s_promedio": 1.2
+    },
+    "GLOBAL": {
+      "casos": 54,
+      "errores": 0,
+      "degradados": 0,
+      "intencion": 1.0,
+      "archivos": 1.0,
+      "candidatos": 1.0,
+      "alerta": 1.0,
+      "solicita_archivo": 1.0,
+      "entrega": 1.0,
+      "informacion": 0.976,
+      "negativa": 1.0,
+      "tiempo_s_promedio": 26.2
+    }
+  },
+  "casos": [
+    {
+      "id": "ref-01",
+      "categoria": "referencia_exacta",
+      "perfil": "P0",
+      "razonamiento_analista": "El usuario pregunta explícitamente por el contenido de un decreto específico sin solicitar el archivo descargable.",
+      "degradado": [],
+      "mensaje": "¿Qué dice el Decreto 083 de 2018?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "El Decreto 083 de 2018 fue expedido por la Alcaldía Municipal de Marinilla para modificar el horario de atención al público en la Inspección Municipal de Policía, teniendo en cuenta las nuevas exigencias de la Ley 1801 de 2018 sobre el Código Nacional de Policía y Convivencia y la necesidad de dar eficiencia a los trámites administrativos [Decreto 083 de 2018, p. 1]. El Decreto establece en su artículo primero que el horario de atención al público será de lunes a jueves de 7:30 a.m. a 11:00 a.m. y de 1:30 p.m. a 4:00 p.m., y el día viernes de 7:30 a.m. a 11:00 a.m. y en la tarde hasta las 4:00 p.m. [Decreto 083 de 2018, p. 1]. Asimismo, en su artículo segundo dispone la publicación del decreto en las carteleras de la Administración Municipal y en la página web del municipio [Decreto 083 de 2018, p. 1]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: numero=83, pregunta=¿Qué dice el Decreto 083 de 2018?, tipo=decreto, anio=2018",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 16.8,
+      "intentos": 1
+    },
+    {
+      "id": "ref-02",
+      "categoria": "referencia_exacta",
+      "perfil": "P2",
+      "razonamiento_analista": "El usuario solicita un documento específico ('necesito') mencionando tipo, número y año, lo que implica buscarlo para explicar su contenido y entregar el archivo.",
+      "degradado": [],
+      "mensaje": "Necesito saber de qué trata la Resolución 4496 de 2018",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": true,
+      "respuesta": "La Resolución 4496 de 2018 trata sobre la adopción del 'Manual de Políticas Contables' para el Municipio de Marinilla [Resolución 4496 de 2018, p. 5]. Esta medida se toma en el marco de la convergencia hacia estándares internacionales de información financiera liderada por la Contaduría General de la Nación (CGN) para las entidades de gobierno [Resolución 4496 de 2018, p. 1]. El manual fija los principios, bases, reglas y procedimientos adoptados por la entidad para la elaboración, reconocimiento, medición, revelación y presentación de los estados financieros a partir del periodo contable 2018 [Resolución 4496 de 2018, p. 2, 5]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: anio=2018, pregunta=¿De qué trata la Resolución 4496 de 2018?, numero=4496, tipo=resoluci…",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=23653_resolucion-4496.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P2",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 11.9,
+      "intentos": 1
+    },
+    {
+      "id": "ref-03",
+      "categoria": "referencia_exacta",
+      "perfil": "P1",
+      "razonamiento_analista": "El usuario solicita la explicación del contenido de una ley específica.",
+      "degradado": [],
+      "mensaje": "Explícame la Ley 387 de 1997",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "14362_ley387de1997.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "14362_ley387de1997.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "La Ley 387 de 1997 adopta medidas para prevenir el desplazamiento forzado y atender, proteger y estabilizar socioeconómicamente a las personas desplazadas por la violencia en Colombia [Ley 387 1997, p. 1].\n\n¿A quién se considera desplazado?\nEs toda persona que se ha visto forzada a migrar dentro del país y a abandonar su lugar de residencia o trabajo porque su vida, seguridad o libertad han sido amenazadas por la violencia [Ley 387 1997, p. 1].\n\n¿Qué hace el Estado?\n- Crea comités municipales, distritales y departamentales para apoyar la atención de la población desplazada [Ley 387 1997, p. 3].\n- Brinda atención humanitaria de emergencia con alimentación, salud, alojamiento y transporte [Ley 387 1997, p. 6].\n- Ofrece créditos y programas para proyectos productivos y microempresas [Ley 387 1997, p. 7].\n\nEl documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: tipo=ley, numero=387, anio=1997, pregunta=Explícame la Ley 387 de 1997",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P1",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 13.9,
+      "intentos": 1
+    },
+    {
+      "id": "ref-04",
+      "categoria": "referencia_exacta",
+      "perfil": "P3",
+      "razonamiento_analista": "El usuario pregunta sobre el contenido de un decreto específico por su número y año.",
+      "degradado": [],
+      "mensaje": "¿Qué establece el Decreto 232 de 2015?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "2423_decretono232.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "2423_decretono232.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "El Decreto 232 del 29 de diciembre de 2015 establece las tarifas para los certificados tipo carné que expide el municipio para los programas sociales del SISBEN, basándose en el incremento del Índice de Precios al Consumidor (IPC) certificado por el DANE de 6.11% [Decreto No 232 Diciembre 29 de 2015, p. 1]. Las tarifas fijadas en su artículo primero son las siguientes: para el Nivel Tres o Superior, un valor de 3.100 pesos por hoja, y para el Nivel Dos, 1.500 pesos por hoja [Decreto No 232 Diciembre 29 de 2015, p. 1]. Asimismo, el decreto dispone en su artículo segundo que rige a partir del primero de enero de 2016 (mencionado en el texto como dos mil catorce por error tipográfico del documento) [Decreto No 232 Diciembre 29 de 2015, p. 1]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: anio=2015, numero=232, pregunta=Qué establece el Decreto 232 de 2015, tipo=decreto",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P3",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 9.9,
+      "intentos": 1
+    },
+    {
+      "id": "ref-05",
+      "categoria": "referencia_exacta",
+      "perfil": "P0",
+      "razonamiento_analista": "Pregunta por el contenido de una resolución específica con número y año.",
+      "degradado": [],
+      "mensaje": "Resolución 4397 de 2017, ¿qué impone?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "23661_resolucion-no-4397.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "23661_resolucion-no-4397.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "La Resolución 4397 de 2017 impone una sanción por no enviar información por un valor de $11.363.000 al contribuyente HARIPIELES S.A.S., con identificación tributaria 811.030.610 y responsable del Impuesto de Industria y Comercio [Resolución 4397 de 2017, p. 5]. Asimismo, ordena ajustar en el debido cobro del impuesto que si la sanción se cancela dentro de los dos meses siguientes a la notificación del acto administrativo, se reducirá al setenta por ciento (70%) de la suma determinada [Resolución 4397 de 2017, p. 5]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: tipo=resolucion, pregunta=¿Qué impone la Resolución 4397 de 2017?, anio=2017, numero=4397",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 8.3,
+      "intentos": 1
+    },
+    {
+      "id": "amb-01",
+      "categoria": "referencia_ambigua",
+      "perfil": "P1",
+      "razonamiento_analista": "Pregunta por el contenido de una resolución específica sin solicitar explícitamente el archivo.",
+      "degradado": [],
+      "mensaje": "¿Qué dice la Resolución 4397?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "23655_resolucion-4397.pdf",
+        "23661_resolucion-no-4397.pdf"
+      ],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [
+        "23655_resolucion-4397.pdf",
+        "23661_resolucion-no-4397.pdf"
+      ],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "¡Hola! Qué bueno saludarlo. \n\nPara poder ayudarle mejor, por favor elija cuál de estos dos documentos es el que necesita revisar:\n\n* Resolución 4397 de 2018 (con fecha del 13 de diciembre de 2018).\n* Resolución 4397 de 2017 (con fecha del 19 de diciembre de 2018).\n\nCuénteme cuál de los dos prefiere para explicarle.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: numero=4397, pregunta=Qué dice la Resolución 4397, tipo=resolucion",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Hay varios documentos posibles: se pedirá aclaración",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P1",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "candidatos_ok": true
+      },
+      "tiempo_s": 6.6,
+      "intentos": 1
+    },
+    {
+      "id": "amb-02",
+      "categoria": "referencia_ambigua",
+      "perfil": "P0",
+      "razonamiento_analista": "El usuario solicita el Decreto 116 sin especificar si quiere solo el archivo o contenido, por lo que solicita_archivo e incluye_contenido son true.",
+      "degradado": [],
+      "mensaje": "Quiero el Decreto 116",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "22529_decreto-no-1162018.pdf",
+        "22531_decreto-no-1262018.pdf"
+      ],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [
+        "22529_decreto-no-1162018.pdf",
+        "22531_decreto-no-1262018.pdf"
+      ],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": true,
+      "respuesta": "¡Hola! Con mucho gusto le ayudaré. Para poder brindarle la información correcta, por favor elija cuál de los siguientes documentos necesita:\n\n- Decreto 116 de 2018 (del 30 de octubre de 2018): \"Por medio del cual se adiciona el presupuesto para la presente vigencia fiscal\"\n- Decreto 116 de 2018 (del 13 de noviembre de 2018): \"Por medio del cual se realizan unos traslados al presupuesto de la actual vigencia\"\n\nQuedo atento a su elección para continuar con su solicitud.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: tipo=decreto, numero=116, pregunta=Decreto 116 contenido y archivo",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Hay varios documentos posibles: se pedirá aclaración",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "candidatos_ok": true
+      },
+      "tiempo_s": 15.9,
+      "intentos": 1
+    },
+    {
+      "id": "inex-01",
+      "categoria": "referencia_inexistente",
+      "perfil": "P0",
+      "razonamiento_analista": "El usuario pregunta explícitamente por el contenido del Decreto 999 de 2018.",
+      "degradado": [],
+      "mensaje": "¿Qué dice el Decreto 999 de 2018?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "No se encuentra información sobre el Decreto 999 de 2018 en los documentos provistos.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: anio=2018, numero=999, pregunta=¿Qué dice el Decreto 999 de 2018?, tipo=decreto",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: consulta=Decreto 999 de 2018",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Reintentando: Los fragmentos recuperados corresponden a otros decretos y resoluciones (como el Decreto 1290 de 2008, Decreto 004 de 2019, Decreto 103 de 2015), pero ninguno contiene información sobre el Decreto 999 de 2018.",
+          "icono": "✅"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: tipo=decreto, anio=2018, pregunta=Decreto 999 de 2018 Marinilla, numero=999",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: consulta=Decreto 999 de 2018",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0 · sin información pertinente en los fragmentos",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "negativa_ok": true
+      },
+      "tiempo_s": 36.1,
+      "intentos": 1
+    },
+    {
+      "id": "inex-02",
+      "categoria": "referencia_inexistente",
+      "perfil": "P2",
+      "razonamiento_analista": "El usuario solicita un documento específico sin aclarar si solo quiere el archivo o la explicación, por lo que se solicitan ambos.",
+      "degradado": [],
+      "mensaje": "Necesito la Resolución 12 de 2020",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": true,
+      "respuesta": "Lo siento, pero en la información disponible en el sistema no se encuentra la Resolución 12 de 2020.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: pregunta=Resolución 12 de 2020 contenido y archivo, numero=12, anio=2020, tipo=resolucion",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: consulta=Resolucion 12 de 2020",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Reintentando: Los fragmentos recuperados corresponden a otras resoluciones y decretos, pero no contienen la Resolución 12 de 2020 solicitada.",
+          "icono": "✅"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: numero=12, anio=2020, pregunta=Resolución número 12 de 2020, tipo=resolucion",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: consulta=Resolución número 12 de 2020",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "listar_documentos: anio=2020, tipo=resolucion",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P2 · sin información pertinente en los fragmentos",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "negativa_ok": true
+      },
+      "tiempo_s": 39.5,
+      "intentos": 1
+    },
+    {
+      "id": "tema-01",
+      "categoria": "tema_sin_palabras_clave",
+      "perfil": "P0",
+      "razonamiento_analista": "Pregunta sobre tarifas de transporte, que regula un decreto municipal.",
+      "degradado": [],
+      "mensaje": "¿Cuánto cuesta el taxi?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "La tarifa mínima de transporte público terrestre automotor individual de pasajeros en vehículo tipo taxi en el municipio de Marinilla es de cinco mil quinientos pesos ($5.500) [Decreto 001 de 2019, p. 2]. Adicionalmente, se establecen recargos nocturnos entre las 10:00 p.m. y las 6:00 a.m. equivalentes a quinientos pesos ($500) para trayectos urbanos, tres mil pesos ($3.000) para rurales, cinco mil pesos ($5.000) en el Oriente antioqueño y diez mil pesos ($10.000) para el área metropolitana [Decreto 001 de 2019, p. 2]. El costo por hora de espera es de veinte mil pesos ($20.000) [Decreto 001 de 2019, p. 2]. El decreto también especifica tarifas máximas para diversos trayectos específicos desde puntos como el parque principal, María Auxiliadora, el Pinar, entre otros [Decreto 001 de 2019, p. 2, 3, 4]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: consulta=tarifas del servicio de taxi en Marinilla",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "leer_documento: paginas=[2, 3, 4], archivo=22598_decreto-no-0012019.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 11.7,
+      "intentos": 1
+    },
+    {
+      "id": "tema-02",
+      "categoria": "tema_sin_palabras_clave",
+      "perfil": "P0",
+      "razonamiento_analista": "Pregunta sobre horarios de venta de licor regulada por decreto municipal.",
+      "degradado": [],
+      "mensaje": "¿Hasta qué hora se puede vender trago en las fiestas del pueblo?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "22593_decreto-no-1572018.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "22593_decreto-no-1572018.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Durante las fiestas populares y culturales en el municipio de Marinilla (como las fiestas de la Vaca en la Torre), el horario para los establecimientos abiertos al público con venta de licor del área urbana se modifica de la siguiente manera: del 3 al 7 de enero, la ejecución de música está permitida hasta las 2:30 a.m. y el cierre definitivo de los establecimientos es a las 3:00 de la mañana [Decreto 157 de 2018, p. 1, p. 2]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: consulta=horarios permitidos para la venta de licor durante las fiestas del municipio",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 14.7,
+      "intentos": 1
+    },
+    {
+      "id": "tema-03",
+      "categoria": "tema_sin_palabras_clave",
+      "perfil": "P1",
+      "razonamiento_analista": "Pregunta cotidiana sobre ruido, perifoneo y uso de altavoces en la vía pública, que está regulada por decretos o acuerdos municipales.",
+      "degradado": [],
+      "mensaje": "¿Puedo poner música con parlantes en la calle o anunciar con megáfono?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "2399_decretono148_001.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "2399_decretono148_001.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "En Marinilla está prohibido usar parlantes, altoparlantes o amplificadores de sonido en zonas públicas y en zonas privadas si el ruido sale al medio ambiente [Decreto No 148 de 12 de Agosto, p. 7]. Las únicas excepciones son para prevenir desastres, atender emergencias o difundir campañas de salud [Decreto No 148 de 12 de Agosto, p. 7]. Si necesitas hacer perifoneo para actos culturales, deportivos, religiosos o políticos, debes cumplir estas reglas:\n\n- Pedir un permiso previo por escrito a la Secretaría de Agricultura y Ambiente al menos tres días antes [Decreto No 148 de 12 de Agosto, p. 2, 5].\n- El permiso es personal [Decreto No 148 de 12 de Agosto, p. 2]. Debes llevarlo visible al público y mostrarlo a la policía cuando te lo pidan [Decreto No 148 de 12 de Agosto, p. 5].\n- Solo puedes usar los equipos en este horario: de 9:00 a.m. a 12:00 m. y de 2:00 p.m. a 5:00 p.m. [Decreto No 148 de 12 de Agosto, p. 5].\n- Si andas a pie o en vehículo con la fuente de sonido, no puedes perifonear por más de un minuto en el mismo lugar, ni pasar más de cinco veces al día por ese mismo sitio [Decreto No 148 de 12 de Agosto, p. 5].\n- Está prohibido anunciar la venta de productos usando megáfonos o sistemas de amplificación [Decreto No 148 de 12 de Agosto, p. 2, 5].\n- No se permite hacer perifoneo ni amplificar sonido cerca de hospitales, bibliotecas, guarderías, hogares geriátricos, colegios, universidades y otros centros de estudio [Decreto No 148 de 12 de Agosto, p. 6]. Tampoco frente a centros religiosos durante sus celebraciones [Decreto No 148 de 12 de Agosto, p. 6].\n\nEl documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: consulta=normas y restricciones sobre el uso de parlantes música en la calle o perifoneo …",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: consulta=requisitos prohibiciones perifoneo altavoces amplificadores, archivo=2399_decret…",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P1",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 25.5,
+      "intentos": 1
+    },
+    {
+      "id": "tema-04",
+      "categoria": "tema_sin_palabras_clave",
+      "perfil": "P0",
+      "razonamiento_analista": "Pregunta sobre la regulación municipal o nacional del porte de armas, un tema regulado que compete a la administración local.",
+      "degradado": [],
+      "mensaje": "¿Se puede andar con un arma por el pueblo?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "2420_decretono017.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "2420_decretono017.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "En el municipio de Marinilla, la administración municipal tiene la facultad de restringir de manera general y temporal el permiso para el porte y tenencia de armas a personas naturales, jurídicas o inmuebles rurales [Decreto No 017 Enero 05 de 2016, p. 1]. Por ejemplo, se han establecido medidas para restringir el porte de armas durante la celebración de fiestas tradicionales o populares en el municipio [Decreto No 017 Enero 05 de 2016, p. 1]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: consulta=porte de armas restricciones Marinilla",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 9.8,
+      "intentos": 1
+    },
+    {
+      "id": "tema-05",
+      "categoria": "tema_sin_palabras_clave",
+      "perfil": "P1",
+      "razonamiento_analista": "Pregunta sobre horarios de una dependencia municipal, regulada por actos administrativos del repositorio.",
+      "degradado": [],
+      "mensaje": "¿Hasta qué hora atienden en la inspección de policía?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "10322_decreto-no-0832018.pdf",
+        "2404_decretono191.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "10322_decreto-no-0832018.pdf",
+        "2404_decretono191.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "El horario de atención al público en la Inspección Municipal de Policía es:\n\n* De lunes a jueves:\n  - Mañana: 7:30 a.m. a 11:00 a.m. [Decreto 083 de 2018, p. 1]\n  - Tarde: 1:30 p.m. a 4:00 p.m. [Decreto 083 de 2018, p. 1] (o hasta las 5:00 p.m. según otra disposición [Decreto No 191 de 05 de Noviembre, p. 1]).\n* Viernes:\n  - Mañana: 7:30 a.m. a 11:00 a.m. [Decreto 083 de 2018, p. 1]\n  - Tarde: hasta las 4:00 p.m. [Decreto 083 de 2018, p. 1].\n\nEl documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: consulta=horario de atencion al publico inspeccion de policia",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P1",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 22.2,
+      "intentos": 1
+    },
+    {
+      "id": "inv-01",
+      "categoria": "inventario",
+      "perfil": "P0",
+      "razonamiento_analista": "Inventario de decretos por año, no solicita un archivo específico ni contenido de un documento único.",
+      "degradado": [],
+      "mensaje": "¿Qué decretos hay de 2019?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "22598_decreto-no-0012019.pdf",
+        "23608_decreto-no-0042019.pdf",
+        "23634_decreto-no-0022019.pdf",
+        "23635_decreto-no-0052019.pdf",
+        "23638_resolucion-no-00772019.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "22598_decreto-no-0012019.pdf",
+        "23608_decreto-no-0042019.pdf",
+        "23634_decreto-no-0022019.pdf",
+        "23635_decreto-no-0052019.pdf",
+        "23636_decreto-no-0062019.pdf",
+        "23637_decreto-no-0132019.pdf",
+        "23638_resolucion-no-00772019.pdf",
+        "23646_decreto-no-0182019.pdf",
+        "23660_decreto-no-0072019.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "En el año 2019 se registran los siguientes decretos: el Decreto 001 de 2019, que fija las tarifas para el servicio público de transporte terrestre individual y colectivo municipal [Decreto 001 de 2019]; el Decreto 002 de 2019, que realiza traslados al presupuesto [Decreto 002 de 2019]; el Decreto 004 de 2019, que fija las tarifas para los trámites de la Secretaría de Movilidad y Tránsito [Decreto 004 de 2019]; el Decreto 005 de 2019, sobre traslados presupuestales [Decreto 005 de 2019]; el Decreto 006 de 2019, que modifica el Decreto 093 de 2017 sobre el comité técnico de contrataciones [Decreto 006 de 2019]; el Decreto 007 de 2019, que adiciona recursos de caja y bancos al presupuesto [Decreto 007 de 2019]; el Decreto 013 de 2019, que modifica el Decreto 115 de 2012 del consejo municipal de gestión del riesgo [Decreto 013 de 2019]; el Decreto 018 de 2019, que adiciona aportes con destinación especial al presupuesto [Decreto 018 de 2019]; y el Decreto 077 de 2019, que constituye la caja menor para la vigencia [Decreto 077 de 2019].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "listar_documentos: anio=2019, tipo=decreto",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 31.8,
+      "intentos": 1
+    },
+    {
+      "id": "inv-02",
+      "categoria": "inventario",
+      "perfil": "P2",
+      "razonamiento_analista": "El usuario pregunta por un inventario o existencia de leyes en el repositorio.",
+      "degradado": [],
+      "mensaje": "¿Qué leyes tienen en el repositorio?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "14358_ley1532de2012.pdf",
+        "14360_ley-1190de-2008.pdf",
+        "14362_ley387de1997.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "14358_ley1532de2012.pdf",
+        "14360_ley-1190de-2008.pdf",
+        "14362_ley387de1997.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "En el repositorio municipal se encuentran disponibles las siguientes leyes:\n\n1. Ley 1532 de 2012: Por medio de la cual se adoptan unas medidas de política y se regula el funcionamiento del programa Familias en Acción [Ley 1532 de 2012].\n2. Ley 1190 de 2008: Por medio de la cual el Congreso de la República de Colombia declara el 2008 como el año de la promoción de los derechos de las personas desplazadas por la violencia y se dictan otras disposiciones [Ley 1190 2008].\n3. Ley 387 de 1997: Por la cual se adoptan medidas para la prevención del desplazamiento forzado; la atención, protección, consolidación y estabilización socioeconómica de los desplazados internos por la violencia en la República de Colombia [Ley 387 1997].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "listar_documentos: tipo=ley",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P2",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 11.5,
+      "intentos": 1
+    },
+    {
+      "id": "inv-03",
+      "categoria": "inventario",
+      "perfil": "P1",
+      "razonamiento_analista": "El usuario solicita un inventario de resoluciones del año 2018, por lo que es una consulta de búsqueda general sin requerir archivo.",
+      "degradado": [],
+      "mensaje": "Dime las resoluciones de 2018",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "23652_resolucion-3892.pdf",
+        "23653_resolucion-4496.pdf",
+        "23654_resolucion-4497.pdf",
+        "23655_resolucion-4397.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf",
+        "23652_resolucion-3892.pdf",
+        "23653_resolucion-4496.pdf",
+        "23654_resolucion-4497.pdf",
+        "23655_resolucion-4397.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Las resoluciones del año 2018 son las siguientes: \n\n* Resolución 3892 de 2018: Establece los mecanismos para hacer el saneamiento contable en la alcaldía [Resolución 3892 de 2018].\n* Resolución 4397 de 2018: Ordena la depuración contable de la cartera del municipio [Resolución 4397 de 2018].\n* Resolución 4496 de 2018: Adopta el documento de políticas contables con el nuevo marco normativo [Resolución 4496 de 2018].\n* Resolución 4497 de 2018: Modifica una parte de la resolución 874 de 2011 sobre el comité técnico de sostenibilidad contable [Resolución 4497 de 2018].\n* Resolución No. 3615 de 2018: Adopta el plan estratégico de talento humano para los servidores públicos para los años 2018 a 2020 [Resolución No. 3615].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "listar_documentos: tipo=resolucion, anio=2018",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P1",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 5.5,
+      "intentos": 1
+    },
+    {
+      "id": "inv-04",
+      "categoria": "inventario",
+      "perfil": "P3",
+      "razonamiento_analista": "Pregunta de búsqueda general sobre un tema regulado por normas municipales, sin solicitar archivos específicos.",
+      "degradado": [],
+      "mensaje": "¿Qué normas hay sobre horarios de atención al público?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "10322_decreto-no-0832018.pdf",
+        "22552_decreto-no-1442018.pdf",
+        "2404_decretono191.pdf",
+        "2405_decretono200.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "10322_decreto-no-0832018.pdf",
+        "22552_decreto-no-1442018.pdf",
+        "22593_decreto-no-1572018.pdf",
+        "2404_decretono191.pdf",
+        "2405_decretono200.pdf",
+        "2408_decretono207.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Sobre los horarios de atención al público, existen varias disposiciones normativas en el municipio:\n\n- Decreto 083 de 2018: Modifica el horario de atención al público en la Inspección Municipal de Policía, el cual quedó establecido de lunes a jueves de 7:30 a.m. a 11:00 a.m. y de 1:30 p.m. a 4:00 p.m.; y los viernes en la mañana de 7:30 a.m. a 11:00 a.m. y en la tarde hasta las 4:00 p.m. [Decreto 083 de 2018, p. 1]. Esta modificación se adoptó acorde con las exigencias de la Ley 1801 del Código Nacional de Policía y Convivencia y en concordancia con la facultad dada por el Decreto Municipal 051 de 2006 [Decreto 083 de 2018, p. 1].\n- Decreto No 191 de 05 de Noviembre de 2015: Modifica el horario de atención al público en la Inspección de Policía [Decreto No 191 de 05 de Noviembre].\n- Decreto No 200 de Noviembre 23 de 2015: Modifica el horario de atención al público en la Secretaría de Cultura y Turismo [Decreto No 200 Noviembre 23 de 2015].\n- Decreto 144 de 2018: Suspende la atención al público el día catorce (14) de diciembre de 2018 [Decreto 144 de 2018].\n- Decreto 157 de 2018: Modifica el horario de los establecimientos abiertos al público con venta de licores durante las fiestas de fin de año y fiestas populares y culturales de la Vaca en la Torre [Decreto 157 de 2018].\n- Decreto No 207 de Diciembre 07 de 2015: Suspende la atención al público el día 11 de diciembre de 2015 [Decreto No 207 Diciembre 07 de 2015].\n\nEl documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "listar_documentos: tema=horarios de atención al público",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: archivo=10322_decreto-no-0832018.pdf, consulta=¿Cuál es el horario de atención al público…",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P3",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 8.3,
+      "intentos": 1
+    },
+    {
+      "id": "seg-01",
+      "categoria": "seguimiento",
+      "perfil": "P3",
+      "razonamiento_analista": "Pregunta corta que se refiere directamente al documento activo (Resolución No. 3615).",
+      "degradado": [],
+      "mensaje": "¿Para qué periodo tiene vigencia?",
+      "intencion_esperada": "seguimiento",
+      "intencion_obtenida": "seguimiento",
+      "archivos_esperados": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "El Plan Estratégico de Talento Humano para los servidores públicos del Municipio de Marinilla tiene vigencia para el periodo 2018-2020 [Resolución No. 3615, p. 1, 2]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: seguimiento",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: codigo=18399, pregunta=¿Para qué periodo tiene vigencia la Resolución No. 3615, plan estr…",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P3",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 44.2,
+      "intentos": 1
+    },
+    {
+      "id": "seg-02",
+      "categoria": "seguimiento",
+      "perfil": "P0",
+      "razonamiento_analista": "Pregunta de seguimiento sobre el contenido del documento activo, pidiendo detalles específicos para los buses.",
+      "degradado": [],
+      "mensaje": "¿y para los buses cuánto es?",
+      "intencion_esperada": "seguimiento",
+      "intencion_obtenida": "seguimiento",
+      "archivos_esperados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Las tarifas para vehículos tipo bus y bus mixto establecidas en el Decreto 001 de 2019 varían según la ruta desde el punto de acopio, encontrándose valores generales como $2.400 para destinos como La Milagrosa, Alto de Chocho, Cimarronas, Cascajo Abajo, El Socorro, San Bosco y La Peña; $2.500 para Alto del Mercado Vereda y Las Mercedes; $2.700 para Cascajo Arriba, Gaviria y La Esperanza; $2.800 para Chocho Mayo; $2.900 para Montañita, La Esmeralda, Santa Cruz y La Asunción; $3.400 para La Peña; $3.600 para Llanadas; $4.000 para Salto (arriba); y $4.500 para Salto (abajo), además de contemplar una tarifa de transporte rural para estudiantes de $1.400 y una tarifa mínima de $1.700 [Decreto 001 de 2019, p. 7, 8]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: seguimiento",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: archivo=22598_decreto-no-0012019.pdf, consulta=tarifas para los buses pasajeros transport…",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 69.3,
+      "intentos": 1
+    },
+    {
+      "id": "seg-03",
+      "categoria": "seguimiento",
+      "perfil": "P2",
+      "razonamiento_analista": "Es una pregunta de seguimiento sobre la vigencia del cambio en el documento activo.",
+      "degradado": [],
+      "mensaje": "¿Desde cuándo rige ese cambio?",
+      "intencion_esperada": "seguimiento",
+      "intencion_obtenida": "seguimiento",
+      "archivos_esperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "El Decreto 083 de 2018 fue expedido el 29 de agosto de 2018 [Decreto 083 de 2018, p. 1]. Sin embargo, los fragmentos entregados no especifican de manera explícita la fecha exacta de inicio o vigencia en la que empieza a regir este cambio de horario. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: seguimiento",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: archivo=10322_decreto-no-0832018.pdf, anio=2018, numero=83, tipo=decreto, pregunta=Desde …",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "leer_documento: archivo=10322_decreto-no-0832018.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Reintentando: Los fragmentos recuperados muestran el preámbulo y los considerandos del Decreto 083 de 2018, pero no incluyen el artículo que especifica la fecha o vigencia exacta del cambio de horario.",
+          "icono": "✅"
+        },
+        {
+          "agente": "investigador",
+          "accion": "leer_documento: paginas=[1, 2, 3], archivo=10322_decreto-no-0832018.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P2",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 47.0,
+      "intentos": 1
+    },
+    {
+      "id": "amp-01",
+      "categoria": "ampliacion",
+      "perfil": "P1",
+      "razonamiento_analista": "El usuario pide más información sobre el documento activo ('háblame más'), por lo que es un seguimiento sin solicitar archivo.",
+      "degradado": [],
+      "mensaje": "Háblame más",
+      "intencion_esperada": "seguimiento",
+      "intencion_obtenida": "seguimiento",
+      "archivos_esperados": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "La Resolución No. 3615 adopta el Plan Estratégico de Talento Humano para los servidores públicos del municipio de Marinilla para el periodo 2018-2020 [Resolución No. 3615, p. 1].\n\nAquí te contamos lo principal que contiene:\n\n* **Objetivo principal:** Busca organizar las políticas y directrices para planear la gestión del talento humano en la alcaldía, conectando esto con los planes de desarrollo y las metas de la entidad [Resolución No. 3615, p. 3].\n* **Fases del talento humano:** La gestión se divide en tres momentos sencillos:\n  1. **Ingreso:** Cuándo la persona se vincula y recibe su inducción [Resolución No. 3615, p. 4].\n  2. **Permanencia:** Incluye las capacitaciones, cómo se evalúa el desempeño, planes de bienestar, estímulos, vacantes y teletrabajo [Resolución No. 3615, p. 4].\n  3. **Retiro:** Cuando la persona termina su labor por necesidades del servicio o por pensión [Resolución No. 3615, p. 4].\n* **Objetivo general:** Busca unir las prácticas de talento humano para apoyar el desarrollo de la Alcaldía y mejorar la calidad de vida de los trabajadores [Resolución No. 3615, p. 4].\n\nEl documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: seguimiento",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "leer_documento: archivo=18399_resolucion-3615-plan-estrategico-20182020-1.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P1",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 77.8,
+      "intentos": 1
+    },
+    {
+      "id": "amp-02",
+      "categoria": "ampliacion",
+      "perfil": "P0",
+      "razonamiento_analista": "Es un seguimiento que solicita más detalles sobre el documento activo actual.",
+      "degradado": [],
+      "mensaje": "Explícamelo con más detalle por favor",
+      "intencion_esperada": "seguimiento",
+      "intencion_obtenida": "seguimiento",
+      "archivos_esperados": [
+        "14358_ley1532de2012.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "14358_ley1532de2012.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "La Ley 1532 de 2012 regula el funcionamiento del programa Familias en Acción, el cual se encuentra bajo la dirección y coordinación del Departamento Administrativo para la Prosperidad Social [Ley 1532 de 2012, p. 1]. Este programa consiste en entregar de forma condicionada y periódica una transferencia monetaria directa para complementar los ingresos y mejorar la salud y educación de los menores de 18 años en familias en situación de pobreza y vulnerabilidad [Ley 1532 de 2012, p. 1]. Sus objetivos principales son contribuir a la superación y prevención de la pobreza y a la formación de capital humano [Ley 1532 de 2012, p. 1].\n\nLos beneficiarios de los subsidios condicionados incluyen a familias en situación de pobreza según los criterios del Gobierno Nacional, familias en situación de desplazamiento, familias indígenas en situación de pobreza validadas mediante listados censales de sus cabildos, y familias afrodescendientes en pobreza extrema [Ley 1532 de 2012, p. 1, 2]. Cabe destacar que las familias beneficiarias con menores de 18 años que sean desescolarizados, explotados laboralmente, presenten desnutrición, sean víctimas de maltrato físico o sexual, abandono o negligencia notificados por el ICBF, perderán el derecho a ser beneficiarias, aunque el Departamento Administrativo para la Prosperidad Social reglamentará la materia para que los menores no sean excluidos y las ayudas se otorguen a otros adultos del núcleo familiar no comprometidos en la vulneración [Ley 1532 de 2012, p. 2].\n\nEn cuanto a su cobertura y tipos de subsidios, el programa se implementa a nivel nacional [Ley 1532 de 2012, p. 2]. Los tipos y montos de los subsidios se definen considerando las prioridades del Plan Nacional de Desarrollo y se revisan cada año con un reajuste no menor al IPC de ingresos bajos [Ley 1532 de 2012, p. 2]. Asimismo, los pagos se efectúan cada dos meses, privilegiando el pago a las mujeres del hogar como medida de empoderamiento, y utilizando preferiblemente productos financieros para la bancarización sin que las familias asuman comisiones [Ley 1532 de 2012, p. 4]. Se prohíben afiliaciones al programa durante los noventa días previos a una contienda electoral, con excepción de las familias desplazadas [Ley 1532 de 2012, p. 4]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: seguimiento",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "leer_documento: archivo=14358_ley1532de2012.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 39.2,
+      "intentos": 1
+    },
+    {
+      "id": "glob-01",
+      "categoria": "busqueda_global_con_doc_activo",
+      "perfil": "P1",
+      "razonamiento_analista": "El usuario solicita una búsqueda general sobre un tema y no sobre el documento activo.",
+      "degradado": [],
+      "mensaje": "¿Qué normas SIGEM hay sobre talento humano?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Sobre talento humano se encuentra la Resolución No. 3615, por medio de la cual se adopta el plan estratégico de talento humano para los servidores públicos del municipio de Marinilla para la vigencia 2018-2020 [Resolución No. 3615]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "listar_documentos: tema=talento humano",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P1",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": false
+      },
+      "tiempo_s": 67.4,
+      "intentos": 1
+    },
+    {
+      "id": "glob-02",
+      "categoria": "busqueda_global_con_doc_activo",
+      "perfil": "P0",
+      "razonamiento_analista": "El usuario solicita una búsqueda general sobre un tema diferente al documento activo.",
+      "degradado": [],
+      "mensaje": "¿Qué documentos existen sobre presupuesto municipal?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "10323_decreto-no-0842018.pdf",
+        "23634_decreto-no-0022019.pdf",
+        "23635_decreto-no-0052019.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "10311_decreto-no-0782018.pdf",
+        "10323_decreto-no-0842018.pdf",
+        "10330_decreto-no-0802018.pdf",
+        "14353_decreto-no-0942018.pdf",
+        "14354_decreto-no-0862018.pdf",
+        "16375_decreto-no-1042018.pdf",
+        "16376_dereto-no-1062018.pdf",
+        "16377_dereto-no-1072018.pdf",
+        "23634_decreto-no-0022019.pdf",
+        "23635_decreto-no-0052019.pdf",
+        "23646_decreto-no-0182019.pdf",
+        "23660_decreto-no-0072019.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "En el repositorio SIGEM existen varios decretos relacionados con el presupuesto municipal de las vigencias 2018 y 2019, los cuales se dividen en traslados, adiciones y reducciones presupuestales:\n\nPara el año 2019:\n- Decreto 002 de 2019, mediante el cual se realizan traslados al presupuesto [Decreto 002 de 2019].\n- Decreto 005 de 2019, que efectúa traslados al presupuesto de la vigencia [Decreto 005 de 2019].\n- Decreto 007 de 2019, por el cual se adiciona el presupuesto con la existencia en caja y bancos a diciembre 31 de 2018 de fondos comunes [Decreto 007 de 2019].\n- Decreto 018 de 2019, que adiciona el presupuesto con aportes de destinación especial y recursos sin situación de fondos del régimen subsidiado [Decreto 018 de 2019].\n\nPara el año 2018:\n- Decreto 078 de 2018, por el cual se hace una reducción al presupuesto por dieciséis millones setecientos nueve mil quinientos quince pesos ($16.709.515) [Decreto 078 de 2018].\n- Decreto 080 de 2018, mediante el cual se reduce el presupuesto por un millón novecientos cuarenta y un mil ciento sesenta pesos ($1.941.160) [Decreto 080 de 2018].\n- Decreto 084 de 2018, que realiza traslados presupuestales [Decreto 084 de 2018].\n- Decreto 086 de 2018, que efectúa traslados al presupuesto [Decreto 086 de 2018].\n- Decreto 094 de 2018, por el cual se adiciona el presupuesto de la vigencia fiscal [Decreto 094 de 2018].\n- Decreto 104 de 2018, que realiza una reducción presupuestal por trescientos setenta y seis millones seiscientos setenta y siete mil ochocientos setenta y dos pesos ($376.677.872) [Decreto 104 de 2018].\n- Decreto 106 de 2018, por el cual se realizan traslados al presupuesto [Decreto 106 de 2018].\n- Decreto 107 de 2018, que efectúa traslados presupuestales [Decreto 107 de 2018].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "listar_documentos: tema=presupuesto municipal",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 43.8,
+      "intentos": 1
+    },
+    {
+      "id": "glob-03",
+      "categoria": "busqueda_global_con_doc_activo",
+      "perfil": "P2",
+      "razonamiento_analista": "El usuario solicita una búsqueda general sobre decretos de transporte, ignorando el documento activo.",
+      "degradado": [],
+      "mensaje": "Busca decretos sobre transporte",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Para el año 2019, se cuenta con el Decreto 001 de 2019, por medio del cual se fijan las tarifas para el servicio público de transporte terrestre individual y colectivo municipal de pasajeros, incluyendo taxis, buses, busetas, microbuses, buses mixtos y camperos [Decreto 001 de 2019].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "listar_documentos: tema=transporte, tipo=decreto",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P2",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 49.8,
+      "intentos": 1
+    },
+    {
+      "id": "glob-04",
+      "categoria": "busqueda_global_con_doc_activo",
+      "perfil": "P0",
+      "razonamiento_analista": "El usuario menciona un documento diferente al documento activo (Decreto 83 de 2018), por lo que se trata de una nueva consulta en el repositorio.",
+      "degradado": [],
+      "mensaje": "¿Qué modifica el Decreto 83 de 2018?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "El Decreto 83 de 2018 modifica el horario de atención al público en la Inspección Municipal de Policía [Decreto 083 de 2018, p. 1]. Este cambio se realizó debido a las nuevas exigencias de la Ley 1801 de 2018 (Código Nacional de Policía y Convivencia), con el fin de ampliar el trámite interno de situaciones administrativas y evitar el incumplimiento de deberes legales [Decreto 083 de 2018, p. 1]. El nuevo horario quedó establecido de lunes a jueves de 7:30 a.m. a 11:00 a.m. y de 1:30 p.m. a 4:00 p.m., y los viernes de 7:30 a.m. a 11:00 a.m. y en la tarde hasta las 4:00 p.m. [Decreto 083 de 2018, p. 1]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: numero=83, tipo=decreto, anio=2018, pregunta=¿Qué modifica el Decreto 83 de 2018?",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 40.8,
+      "intentos": 1
+    },
+    {
+      "id": "glob-05",
+      "categoria": "busqueda_global_con_doc_activo",
+      "perfil": "P3",
+      "razonamiento_analista": "El usuario pide un documento por su identificador de archivo interno y requiere el documento.",
+      "degradado": [],
+      "mensaje": "Necesito el documento 18399",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": true,
+      "respuesta": "La Resolución No. 3615 aborda diversos aspectos relacionados con la gestión del talento humano en la administración municipal. Entre ellos se encuentran el Plan de Bienestar e Incentivos para los servidores públicos [Resolución No. 3615, p. 19], el enfoque estratégico de la gestión del talento humano y los principios de justicia, equidad y transparencia en los procesos de selección, inducción, formación, capacitación y evaluación del desempeño [Resolución No. 3615, p. 12]. Asimismo, se establecen los valores institucionales como el compromiso, la honestidad y el respeto [Resolución No. 3615, p. 11], los lineamientos del Modelo Estándar de Control Interno (MECI 2014) [Resolución No. 3615, p. 3], el Plan Anual de Vacantes bajo los artículos 14 y 15 de la Ley 909 de 2004 [Resolución No. 3615, p. 14], y la estructura de los subprocesos de ingreso, permanencia y retiro [Resolución No. 3615, p. 9], además de los lineamientos del Plan de Seguridad y Salud en el Trabajo (SST) [Resolución No. 3615, p. 7]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: codigo=18399, pregunta=Contenido del documento 18399",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=18399_resolucion-3615.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=18399_resolucion-3615-plan-estrategico-20182020-1.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Reintentando: Los fragmentos recuperados corresponden a la Resolución No. 3615 pero no mencionan el código específico 18399 solicitado por el usuario.",
+          "icono": "✅"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: codigo=18399, pregunta=contenido y texto completo del documento con codigo 18399",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=18399_resolucion-3615-plan-estrategico-20182020-1.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P3",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 116.0,
+      "intentos": 1
+    },
+    {
+      "id": "tc-seg-01",
+      "categoria": "seguimiento",
+      "perfil": "P0",
+      "razonamiento_analista": "Pregunta de seguimiento sobre el documento activo consultando la vigencia específica.",
+      "degradado": [],
+      "mensaje": "¿Para qué periodo tiene vigencia?",
+      "intencion_esperada": "seguimiento",
+      "intencion_obtenida": "seguimiento",
+      "archivos_esperados": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "18399_resolucion-3615-plan-estrategico-20182020-1.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "La vigencia del Plan Estratégico de Gestión del Talento Humano de la Administración Municipal de Marinilla corresponde al periodo 2018-2020 [Resolución No. 3615, p. 8]. Durante este periodo, la oficina de Recursos Humanos se concentra en desarrollar estrategias para optimizar la calidad de vida laboral y el bienestar de los funcionarios [Resolución No. 3615, p. 12]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: seguimiento",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: archivo=18399_resolucion-3615-plan-estrategico-20182020-1.pdf, consulta=periodo vigencia …",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 90.6,
+      "intentos": 1
+    },
+    {
+      "id": "tc-sal-01",
+      "categoria": "saludo",
+      "perfil": "P0",
+      "razonamiento_analista": "Agradecimiento sin pregunta ni solicitud adicional.",
+      "degradado": [],
+      "mensaje": "Gracias",
+      "intencion_esperada": "saludo",
+      "intencion_obtenida": "saludo",
+      "archivos_esperados": [],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "¡Hola! Soy el asistente virtual de la Alcaldía de Marinilla. Puedo ayudarte con información disponible en los documentos de SIGEM. Cuéntame qué trámite, norma, formato o proceso quieres consultar.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: saludo",
+          "icono": "🧭"
+        },
+        {
+          "agente": "respuesta_directa",
+          "accion": "Respuesta directa: saludo",
+          "icono": "💬"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true
+      },
+      "tiempo_s": 73.0,
+      "intentos": 1
+    },
+    {
+      "id": "mal-01",
+      "categoria": "mal_escrita",
+      "perfil": "P0",
+      "razonamiento_analista": "El usuario pregunta por un decreto específico y su contenido sobre horarios de atención, corrigiendo la ortografía y sin requerir un archivo.",
+      "degradado": [],
+      "mensaje": "decrto 83 de 2018 horaro de atension",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "El Decreto 083 de 2018 modifica el horario de atención al público en la Inspección Municipal de Policía de la siguiente manera: de lunes a jueves se atiende en la jornada de la mañana de 7:30 a.m. a 11:00 a.m., y en la tarde de 1:30 p.m. a 4:00 p.m. El día viernes el horario en la mañana es de 7:30 a.m. a 11:00 a.m., y en la tarde va hasta las 4:00 p.m. [Decreto 083 de 2018, p. 1]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: anio=2018, numero=83, pregunta=Cuál es el horario de atención establecido, tipo=decreto",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Reintentando: Los fragmentos mencionan el Decreto 083 de 2018 sobre el horario de la Inspección Municipal de Policía, pero el texto se corta justo antes de mostrar el horario específico.",
+          "icono": "✅"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: tipo=decreto, pregunta=horario de atencion Inspección Municipal de Policía articulo prime…",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 34.6,
+      "intentos": 1
+    },
+    {
+      "id": "mal-02",
+      "categoria": "mal_escrita",
+      "perfil": "P2",
+      "razonamiento_analista": "El usuario consulta una resolución específica con un tema y pide el documento implícitamente, por lo que se requiere buscar el contenido y el archivo.",
+      "degradado": [],
+      "mensaje": "resolusion 4496 politicas contables",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": true,
+      "respuesta": "De acuerdo con el Marco Normativo para Entidades de Gobierno, las políticas contables son los principios, bases, acuerdos, reglas y procedimientos adoptados por la entidad para la elaboración y presentación de los estados financieros [Resolución 4496 de 2018, p. 2]. En el Municipio de Marinilla, mediante la Resolución 4496 de 2018, se adoptó el documento denominado \"Manual de Políticas Contables\" bajo el Nuevo Marco Normativo de Contabilidad Pública, el cual es de obligatorio cumplimiento para todas las dependencias y servidores responsables de los procesos contables a partir del período contable 2018 [Resolución 4496 de 2018, p. 2, 3, 5]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: numero=4496, tipo=resolucion, pregunta=Cuáles son las políticas contables",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=23653_resolucion-4496.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Reintentando: Los fragmentos indican que se adoptó el Manual de Políticas Contables mediante la Resolución 4496, pero no detallan el contenido específico de dichas políticas.",
+          "icono": "✅"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: pregunta=Manual de Políticas Contables contenido detalle de las políticas contables, tipo…",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=23653_resolucion-4496.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P2",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 49.8,
+      "intentos": 1
+    },
+    {
+      "id": "mal-03",
+      "categoria": "mal_escrita",
+      "perfil": "P0",
+      "razonamiento_analista": "El usuario pregunta sobre el contenido de la Ley 387 referente al desplazamiento, corrigiendo la ortografía y sin pedir un archivo.",
+      "degradado": [],
+      "mensaje": "ke dice la ley 387 sobre el desplasamiento",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "14362_ley387de1997.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "14362_ley387de1997.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "La Ley 387 de 1997 adopta medidas para la prevención del desplazamiento forzado, así como para la atención, protección, consolidación y estabilización socioeconómica de los desplazados internos por la violencia en Colombia [Ley 387 1997, p. 1]. \n\nEn su artículo 1º, define como desplazado a toda persona que se ha visto forzada a migrar dentro del territorio nacional abandonando su localidad de residencia o actividades económicas habituales, debido a que su vida, integridad física, seguridad o libertad personales han sido vulneradas o amenazadas por situaciones como el conflicto armado interno, disturbios y tensiones interiores, violencia generalizada, violaciones masivas de los Derechos Humanos, infracciones al Derecho Internacional Humanitario u otras circunstancias que alteren drásticamente el orden público [Ley 387 1997, p. 1] [Ley 387 1997, p. 1].\n\nAsimismo, la ley establece principios de protección y derechos fundamentales para esta población, tales como el derecho a no ser desplazados forzadamente, a solicitar y recibir ayuda internacional, a no ser discriminados, a la reunificación familiar, a acceder a soluciones definitivas y al regreso a su lugar de origen [Ley 387 1997, p. 1] [Ley 387 1997, p. 1]. También contempla la atención humanitaria de emergencia para socorrer y proteger a la población en aspectos como alimentación, salud, alojamiento y transporte, así como programas para su estabilización socioeconómica [Ley 387 1997, p. 6] [Ley 387 1997, p. 7]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: tipo=ley, numero=387, pregunta=¿Qué dice la Ley 387 sobre el desplazamiento?",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 31.5,
+      "intentos": 1
+    },
+    {
+      "id": "voz-num-01",
+      "categoria": "voz_numeros_en_palabras",
+      "perfil": "P0",
+      "razonamiento_analista": "Pregunta de voz sobre el contenido del Decreto 83 de 2018, convertido a dígitos sin requerir el archivo físico.",
+      "degradado": [],
+      "mensaje": "qué dice el decreto ochenta y tres de dos mil dieciocho",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "El Decreto 083 de 2018 modifica el horario de atención al público en la Inspección Municipal de Policía [Decreto 083 de 2018, p. 1]. Esta modificación se realiza debido a las exigencias de la Ley 1801 sobre el Código Nacional de Policía y Convivencia, con el fin de ampliar el trámite interno de situaciones administrativas y cumplir con los deberes legales, buscando una mayor eficiencia y eficacia en la institución [Decreto 083 de 2018, p. 1]. El nuevo horario establecido es de lunes a jueves de 7:30 a.m. a 11:00 a.m. y de 1:30 p.m. a 4:00 p.m., y el viernes de 7:30 a.m. a 11:00 a.m. y en la tarde hasta las 4:00 p.m. [Decreto 083 de 2018, p. 1]. Además, se ordena publicar este decreto en las carteleras de la Administración Municipal y en la página web del municipio [Decreto 083 de 2018, p. 1]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: numero=83, pregunta=¿De qué trata el Decreto 83 de 2018 y cuáles son sus disposiciones pr…",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 10.9,
+      "intentos": 1
+    },
+    {
+      "id": "voz-num-02",
+      "categoria": "voz_numeros_en_palabras",
+      "perfil": "P1",
+      "razonamiento_analista": "Pregunta de voz sobre una resolución específica, convertida a dígitos, solicitando información sobre su contenido.",
+      "degradado": [],
+      "mensaje": "háblame de la resolución cuatro mil cuatrocientos noventa y seis de dos mil dieciocho",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "La Resolución 4496 de 2018 trata sobre la adopción del Manual de Políticas Contables para el Municipio de Marinilla [Resolución 4496 de 2018, p. 5]. Esta resolución se apoya en las normas de la Contaduría General de la Nación para alinear la información financiera con los estándares internacionales del sector público [Resolución 4496 de 2018, p. 1, p. 3]. Su aplicación rige desde el periodo contable 2018 para el reconocimiento, medición, revelación y presentación de los hechos económicos [Resolución 4496 de 2018, p. 5]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: tipo=resolucion, anio=2018, numero=4496, pregunta=¿De qué trata la Resolución 4496 de 201…",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P1",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 7.1,
+      "intentos": 1
+    },
+    {
+      "id": "voz-num-03",
+      "categoria": "voz_numeros_en_palabras",
+      "perfil": "P0",
+      "razonamiento_analista": "El usuario solicita un decreto específico nombrando el número y año, expresado originalmente por voz. Al pedirlo directamente ('necesito'), requiere tanto el contenido como el archivo.",
+      "degradado": [],
+      "mensaje": "necesito el decreto uno de dos mil diecinueve",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": true,
+      "respuesta": "El Decreto 001 de 2019 establece las tarifas concertadas para el servicio público terrestre automotor individual (taxis), buses, busetas, camperos, buses mixtos (escaleras) y microbuses en el municipio de Marinilla, de acuerdo con los costos y factores definidos por la Secretaría de Movilidad y Tránsito [Decreto 001 de 2019, p. 1, 2]. Entre sus disposiciones principales, fija la tarifa mínima de taxi en cinco mil quinientos pesos ($5.500) [Decreto 001 de 2019, p. 2], establece recargos nocturnos, cobros por hora de espera y tarifas máximas para diversos trayectos urbanos y rurales [Decreto 001 de 2019, p. 2, 5, 8], y ordena a las empresas SOTRAMAR S.A., COOTRAMARINI y COTRAINDIVIDUAL dar cumplimiento a la norma bajo la vigilancia de la Secretaría de Movilidad y Tránsito [Decreto 001 de 2019, p. 4, 8]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: pregunta=Contenido del Decreto 1 de 2019, numero=1, anio=2019, tipo=decreto",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=22598_decreto-no-0012019.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 17.3,
+      "intentos": 1
+    },
+    {
+      "id": "voz-ruido-01",
+      "categoria": "voz_ruido",
+      "perfil": "P0",
+      "razonamiento_analista": "La transcripción de voz no contiene una pregunta ni información útil, solo ruido o vacilaciones.",
+      "degradado": [],
+      "mensaje": "eh... mm... ajá",
+      "intencion_esperada": "no_comprensible",
+      "intencion_obtenida": "no_comprensible",
+      "archivos_esperados": [],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "No logré entender bien tu audio. Puede que se haya grabado sin voz, con mucho ruido de fondo, o que se haya enviado sin querer. Intenta de nuevo hablando cerca del micrófono.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: no_comprensible",
+          "icono": "🧭"
+        },
+        {
+          "agente": "respuesta_directa",
+          "accion": "Respuesta directa: no_comprensible",
+          "icono": "💬"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "alerta_ok": true
+      },
+      "tiempo_s": 1.3,
+      "intentos": 1
+    },
+    {
+      "id": "voz-ruido-02",
+      "categoria": "voz_ruido",
+      "perfil": "P1",
+      "razonamiento_analista": "La transcripción de voz contiene solo letras y palabras sin sentido o ruido que no forman una pregunta comprensible.",
+      "degradado": [],
+      "mensaje": "ss tk el la",
+      "intencion_esperada": "no_comprensible",
+      "intencion_obtenida": "no_comprensible",
+      "archivos_esperados": [],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "No logré entender bien tu audio. Puede que se haya grabado sin voz, con mucho ruido de fondo, o que se haya enviado sin querer. Intenta de nuevo hablando cerca del micrófono.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: no_comprensible",
+          "icono": "🧭"
+        },
+        {
+          "agente": "respuesta_directa",
+          "accion": "Respuesta directa: no_comprensible",
+          "icono": "💬"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "alerta_ok": true
+      },
+      "tiempo_s": 1.2,
+      "intentos": 1
+    },
+    {
+      "id": "sal-01",
+      "categoria": "saludo",
+      "perfil": "P0",
+      "razonamiento_analista": "El mensaje es un saludo formal sin ninguna pregunta asociada.",
+      "degradado": [],
+      "mensaje": "Hola, buenos días",
+      "intencion_esperada": "saludo",
+      "intencion_obtenida": "saludo",
+      "archivos_esperados": [],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "¡Hola! Soy el asistente virtual de la Alcaldía de Marinilla. Puedo ayudarte con información disponible en los documentos de SIGEM. Cuéntame qué trámite, norma, formato o proceso quieres consultar.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: saludo",
+          "icono": "🧭"
+        },
+        {
+          "agente": "respuesta_directa",
+          "accion": "Respuesta directa: saludo",
+          "icono": "💬"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true
+      },
+      "tiempo_s": 1.2,
+      "intentos": 1
+    },
+    {
+      "id": "sal-02",
+      "categoria": "saludo",
+      "perfil": "P3",
+      "razonamiento_analista": "Es un saludo formal sin ninguna pregunta asociada.",
+      "degradado": [],
+      "mensaje": "Buenas, ¿cómo estás?",
+      "intencion_esperada": "saludo",
+      "intencion_obtenida": "saludo",
+      "archivos_esperados": [],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "¡Hola! Soy el asistente virtual de la Alcaldía de Marinilla. Puedo ayudarte con información disponible en los documentos de SIGEM. Cuéntame qué trámite, norma, formato o proceso quieres consultar.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: saludo",
+          "icono": "🧭"
+        },
+        {
+          "agente": "respuesta_directa",
+          "accion": "Respuesta directa: saludo",
+          "icono": "💬"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true
+      },
+      "tiempo_s": 2.6,
+      "intentos": 1
+    },
+    {
+      "id": "fuera-01",
+      "categoria": "fuera_de_dominio",
+      "perfil": "P0",
+      "razonamiento_analista": "Receta de cocina, ajena a la gestión municipal.",
+      "degradado": [],
+      "mensaje": "¿Cómo preparo un sancocho antioqueño?",
+      "intencion_esperada": "fuera_de_dominio",
+      "intencion_obtenida": "fuera_de_dominio",
+      "archivos_esperados": [],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Soy especialista en el conocimiento de los documentos de SIGEM de la Alcaldía de Marinilla. No puedo responder sobre temas que estén por fuera de ese repositorio. Si tienes una pregunta sobre trámites, normas, formatos o procesos municipales, con gusto te ayudo.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: fuera_de_dominio",
+          "icono": "🧭"
+        },
+        {
+          "agente": "respuesta_directa",
+          "accion": "Respuesta directa: fuera_de_dominio",
+          "icono": "💬"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true
+      },
+      "tiempo_s": 1.3,
+      "intentos": 1
+    },
+    {
+      "id": "fuera-02",
+      "categoria": "fuera_de_dominio",
+      "perfil": "P1",
+      "razonamiento_analista": "Pregunta sobre fútbol, un tema ajeno a la gestión municipal del repositorio SIGEM.",
+      "degradado": [],
+      "mensaje": "¿Quién ganó el partido de Nacional ayer?",
+      "intencion_esperada": "fuera_de_dominio",
+      "intencion_obtenida": "fuera_de_dominio",
+      "archivos_esperados": [],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Soy especialista en el conocimiento de los documentos de SIGEM de la Alcaldía de Marinilla. No puedo responder sobre temas que estén por fuera de ese repositorio. Si tienes una pregunta sobre trámites, normas, formatos o procesos municipales, con gusto te ayudo.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: fuera_de_dominio",
+          "icono": "🧭"
+        },
+        {
+          "agente": "respuesta_directa",
+          "accion": "Respuesta directa: fuera_de_dominio",
+          "icono": "💬"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true
+      },
+      "tiempo_s": 3.0,
+      "intentos": 1
+    },
+    {
+      "id": "fuera-03",
+      "categoria": "fuera_de_dominio",
+      "perfil": "P2",
+      "razonamiento_analista": "Programación en Python es un tema ajeno a la gestión municipal y al repositorio SIGEM.",
+      "degradado": [],
+      "mensaje": "Escríbeme un script en Python para ordenar una lista",
+      "intencion_esperada": "fuera_de_dominio",
+      "intencion_obtenida": "fuera_de_dominio",
+      "archivos_esperados": [],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Soy especialista en el conocimiento de los documentos de SIGEM de la Alcaldía de Marinilla. No puedo responder sobre temas que estén por fuera de ese repositorio. Si tienes una pregunta sobre trámites, normas, formatos o procesos municipales, con gusto te ayudo.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: fuera_de_dominio",
+          "icono": "🧭"
+        },
+        {
+          "agente": "respuesta_directa",
+          "accion": "Respuesta directa: fuera_de_dominio",
+          "icono": "💬"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true
+      },
+      "tiempo_s": 8.3,
+      "intentos": 1
+    },
+    {
+      "id": "arch-01",
+      "categoria": "solicitud_archivo",
+      "perfil": "P2",
+      "razonamiento_analista": "El usuario solicita explícitamente descargar el archivo de un decreto específico.",
+      "degradado": [],
+      "mensaje": "Descárgame el Decreto 001 de 2019",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Aquí tienes el Decreto 001 de 2019 listo para ti, el cual puedes encontrar en el botón de descarga que aparece justo debajo de este mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: tipo=decreto, numero=1, anio=2019, pregunta=Decreto 1 de 2019",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=22598_decreto-no-0012019.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Archivo listo para entregar",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P2",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 27.5,
+      "intentos": 1
+    },
+    {
+      "id": "arch-02",
+      "categoria": "solicitud_archivo",
+      "perfil": "P2",
+      "razonamiento_analista": "Pregunta explícita sobre el contenido de un decreto específico.",
+      "degradado": [],
+      "mensaje": "¿Qué dice el Decreto 001 de 2019?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "El Decreto 001 de 2019 establece las tarifas del servicio público de transporte terrestre automotor individual y colectivo de pasajeros en el municipio de Marinilla [Decreto 001 de 2019, p. 1, 3, 8]. Estas tarifas fueron concertadas el 27 de diciembre de 2018 entre la Secretaría de Movilidad y Tránsito y los representantes de las empresas transportadoras, teniendo en cuenta factores como costos variables, fijos y de capital, el comportamiento del mercado, riesgos de siniestralidad vial y el incremento del salario mínimo [Decreto 001 de 2019, p. 1, 2]. Entre sus disposiciones principales, el decreto fija la tarifa mínima para vehículos tipo taxi en cinco mil quinientos pesos ($5.500) [Decreto 001 de 2019, p. 8]. Además, establece un recargo nocturno de 10:00 p.m. a 6:00 a.m. que equivale a quinientos pesos ($500) para trayectos urbanos, tres mil pesos ($3.000) para rurales, cinco mil pesos ($5.000) para el Oriente Antioqueño y diez mil pesos ($10.000) para el área metropolitana, así como un costo por hora de espera de veinte mil pesos ($20.000) [Decreto 001 de 2019, p. 8]. El decreto también define diversas tarifas máximas y específicas para trayectos urbanos y rurales hacia diferentes veredas, municipios y puntos de acopio (como La Asunción, Llanadas, El Rosario, entre otros), indica que los vehículos de servicio individual deben llevar visible y plastificada la calcomanía con las tarifas autorizadas, y asigna a la Secretaría de Movilidad y Tránsito la labor de velar por su cumplimiento bajo las sanciones correspondientes [Decreto 001 de 2019, p. 2, 4, 5, 6, 8]. El documento está dirigido y comunicado a las empresas SOTRAMAR S.A., COOTRAMARINI y COTRAINDIVIDUAL [Decreto 001 de 2019, p. 8]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: tipo=decreto, numero=1, pregunta=¿Qué dice el Decreto 001 de 2019?, anio=2019",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P2",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 9.9,
+      "intentos": 1
+    },
+    {
+      "id": "arch-03",
+      "categoria": "solicitud_archivo",
+      "perfil": "P0",
+      "razonamiento_analista": "El usuario solicita explícitamente el archivo PDF de una resolución específica.",
+      "degradado": [],
+      "mensaje": "Mándame el PDF de la Resolución 4496 de 2018",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Aquí tiene el archivo de la Resolución 4496 de 2018, el cual puede encontrar disponible para su descarga en el botón que aparece debajo de este mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: numero=4496, pregunta=Resolución 4496 de 2018, anio=2018, tipo=resolucion",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=23653_resolucion-4496.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Archivo listo para entregar",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 5.8,
+      "intentos": 1
+    },
+    {
+      "id": "arch-04",
+      "categoria": "solicitud_archivo",
+      "perfil": "P0",
+      "razonamiento_analista": "El usuario pide que se le explique el contenido de una resolución específica.",
+      "degradado": [],
+      "mensaje": "Explícame la Resolución 4496 de 2018",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "23653_resolucion-4496.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "La Resolución 4496 del 28 de diciembre de 2018 fue expedida por el Alcalde del Municipio de Marinilla - Antioquia [Resolución 4496 de 2018, p. 1, 4]. Su propósito es adoptar el documento 'Políticas Contables bajo el Nuevo Marco Normativo de Contabilidad Pública - Municipio de MARINILLA - ANTIOQUIA' [Resolución 4496 de 2018, p. 7]. Esta resolución se fundamenta en las normativas emitidas por la Contaduría General de la Nación (CGN) y en el proceso de convergencia hacia estándares internacionales de información financiera (como las Normas Internacionales de Contabilidad del Sector Público - NICSP) para promover la transparencia, la rendición de cuentas y la comparabilidad [Resolución 4496 de 2018, p. 1, 3, 4]. Asimismo, el Manual de Políticas Contables adoptado es de aplicación obligatoria para todas las dependencias del municipio en lo referente al reconocimiento, medición, revelación y presentación de los hechos económicos a partir del periodo contable 2018, estableciendo además la actualización y publicación de sus versiones a través del aplicativo 'Mejoramiso' [Resolución 4496 de 2018, p. 3, 5]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: anio=2018, numero=4496, pregunta=¿Qué dice la Resolución 4496 de 2018?, tipo=resolucion",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 6.4,
+      "intentos": 1
+    },
+    {
+      "id": "arch-05",
+      "categoria": "solicitud_archivo",
+      "perfil": "P1",
+      "razonamiento_analista": "El usuario solicita un decreto específico por número y año sin especificar si quiere solo el archivo o contenido, por lo que se solicitan ambos.",
+      "degradado": [],
+      "mensaje": "Dame el Decreto 083 de 2018",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": true,
+      "respuesta": "El Decreto 083 de 2018 fue expedido por la Alcaldesa Municipal encargada de Marinilla [Decreto 083 de 2018, p. 1]. Su propósito es modificar el horario de atención al público en la Inspección Municipal de Policía para cumplir con las normas del Código Nacional de Policía y Convivencia [Decreto 083 de 2018, p. 1, p. 2]. El nuevo horario es el siguiente: \n- De lunes a jueves: de 7:30 am a 11:00 am y de 1:30 pm a 4:00 pm [Decreto 083 de 2018, p. 2].\n- Viernes: de 7:30 am a 11:00 am y en la tarde hasta las 4:00 pm [Decreto 083 de 2018, p. 2].\nEl documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: tipo=decreto, anio=2018, numero=83, pregunta=Dame el Decreto 083 de 2018",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=10322_decreto-no-0832018.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P1",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 7.0,
+      "intentos": 1
+    },
+    {
+      "id": "arch-06",
+      "categoria": "solicitud_archivo",
+      "perfil": "P3",
+      "razonamiento_analista": "El usuario solicita explícitamente ver el archivo completo de una ley específica.",
+      "degradado": [],
+      "mensaje": "¿Dónde puedo ver la Ley 387 de 1997 completa?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "14362_ley387de1997.pdf"
+      ],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [
+        "14362_ley387de1997.pdf"
+      ],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Aquí tiene el documento Ley 387 1997 y lo puede encontrar en el botón de descarga que aparece debajo de su mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: anio=1997, numero=387, tipo=ley, pregunta=archivo completo Ley 387 de 1997",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=14362_ley387de1997.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Archivo listo para entregar",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P3",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 14.9,
+      "intentos": 1
+    },
+    {
+      "id": "arch-07",
+      "categoria": "solicitud_archivo",
+      "perfil": "P3",
+      "razonamiento_analista": "Pregunta explícita sobre el contenido y temática de una ley específica.",
+      "degradado": [],
+      "mensaje": "¿De qué trata la Ley 387 de 1997?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "14362_ley387de1997.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "14362_ley387de1997.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "La Ley 387 de 1997 adopta medidas para la prevención del desplazamiento forzado, así como para la atención, protección, consolidación y estabilización socioeconómica de los desplazados internos por la violencia en Colombia [Ley 387 1997, p. 1]. Define como desplazado a toda persona forzada a migrar dentro del territorio nacional tras abandonar su lugar de residencia o actividades económicas habituales debido a la vulneración o amenaza directa de su vida, integridad física, seguridad o libertad personales [Ley 387 1997, p. 1]. Asimismo, establece disposiciones relacionadas con la responsabilidad del Estado, la creación de comités municipales, distritales y departamentales para la atención integral [Ley 387 1997, p. 3], la asistencia legal, el retorno voluntario o reubicación [Ley 387 1997, p. 4], y programas de estabilización socioeconómica y acceso a créditos para proyectos productivos [Ley 387 1997, p. 8].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: pregunta=¿De qué trata la Ley 387 de 1997?, numero=387, tipo=ley, anio=1997",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P3",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 25.7,
+      "intentos": 1
+    },
+    {
+      "id": "arch-08",
+      "categoria": "solicitud_archivo",
+      "perfil": "P2",
+      "razonamiento_analista": "El usuario pide el decreto de tarifas de taxi y que se le informe el costo de la carrera mínima, lo que implica entregar el documento y explicar su contenido.",
+      "degradado": [],
+      "mensaje": "Pásame el decreto de las tarifas de taxi y dime cuánto cuesta la carrera mínima",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [
+        "22598_decreto-no-0012019.pdf"
+      ],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": true,
+      "respuesta": "La tarifa mínima de transporte público individual en vehículo tipo taxi en el municipio es de cinco mil quinientos pesos ($5.500) [Decreto 001 de 2019, p. 2]. Asimismo, el decreto establece los costos para trayectos urbanos y rurales, recargos nocturnos y valores por hora de espera [Decreto 001 de 2019, p. 2]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "listar_documentos: tema=tarifas de taxi, tipo=decreto",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_fragmentos: archivo=22598_decreto-no-0012019.pdf, consulta=tarifas taxi carrera mínima",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=22598_decreto-no-0012019.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P2",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 31.4,
+      "intentos": 1
+    },
+    {
+      "id": "arch-09",
+      "categoria": "solicitud_archivo",
+      "perfil": "P1",
+      "razonamiento_analista": "El usuario pide el documento activo actual empleando una expresión corta ('pásamelo'), por lo que se trata de un seguimiento que solicita tanto el archivo como la explicación.",
+      "degradado": [],
+      "mensaje": "pásamelo",
+      "intencion_esperada": "seguimiento",
+      "intencion_obtenida": "seguimiento",
+      "archivos_esperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_fuentes": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": true,
+      "respuesta": "El Decreto 083 de 2018 cambia el horario de atención en la Inspección Municipal de Policía para cumplir con el Código Nacional de Policía y Convivencia [Decreto 083 de 2018, p. 1]. Los nuevos horarios son de lunes a jueves de 7:30 a.m. a 11:00 a.m. y de 1:30 p.m. a 4:00 p.m.; el viernes es de 7:30 a.m. a 11:00 a.m. y en la tarde hasta las 4:00 p.m. [Decreto 083 de 2018, p. 1]. El documento queda disponible en el botón de descarga debajo del mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: seguimiento (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: anio=2018, tipo=decreto, pregunta=horario de atención de la inspección municipal de polic…",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=10322_decreto-no-0832018.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P1",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 34.7,
+      "intentos": 1
+    },
+    {
+      "id": "arch-10",
+      "categoria": "solicitud_archivo",
+      "perfil": "P0",
+      "razonamiento_analista": "Pregunta de inventario sobre un tema general de la gestión municipal, sin solicitar un archivo específico.",
+      "degradado": [],
+      "mensaje": "¿Qué documentos existen sobre presupuesto municipal?",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [],
+      "archivos_en_fuentes": [
+        "10311_decreto-no-0782018.pdf",
+        "10323_decreto-no-0842018.pdf",
+        "10330_decreto-no-0802018.pdf",
+        "14353_decreto-no-0942018.pdf",
+        "14354_decreto-no-0862018.pdf",
+        "16375_decreto-no-1042018.pdf",
+        "16376_dereto-no-1062018.pdf",
+        "16377_dereto-no-1072018.pdf",
+        "23634_decreto-no-0022019.pdf",
+        "23635_decreto-no-0052019.pdf",
+        "23646_decreto-no-0182019.pdf",
+        "23660_decreto-no-0072019.pdf"
+      ],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [],
+      "solicita_archivo_obtenido": false,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "En el repositorio SIGEM existen varios decretos relacionados con el presupuesto municipal de las vigencias 2018 y 2019. Entre ellos se encuentran: el Decreto 002 de 2019, mediante el cual se realizan traslados al presupuesto [Decreto 002 de 2019]; el Decreto 005 de 2019, que también efectúa traslados presupuestales [Decreto 005 de 2019]; el Decreto 007 de 2019, que adiciona recursos de caja y bancos a diciembre 31 de 2018 [Decreto 007 de 2019]; y el Decreto 018 de 2019, que adiciona aportes con destinación especial y recursos sin situación de fondos para el régimen subsidiado [Decreto 018 de 2019]. Asimismo, figuran decretos de reducción y traslados de la vigencia 2018, tales como el Decreto 078 de 2018 [Decreto 078 de 2018], el Decreto 080 de 2018 [Decreto 080 de 2018], el Decreto 084 de 2018 [Decreto 084 de 2018], el Decreto 086 de 2018 [Decreto 086 de 2018], el Decreto 094 de 2018 [Decreto 094 de 2018], el Decreto 104 de 2018 [Decreto 104 de 2018], el Decreto 106 de 2018 [Decreto 106 de 2018] y el Decreto 107 de 2018 [Decreto 107 de 2018].",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "listar_documentos: tema=presupuesto municipal",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Evidencia suficiente",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true
+      },
+      "tiempo_s": 5.6,
+      "intentos": 1
+    },
+    {
+      "id": "arch-11",
+      "categoria": "solicitud_archivo",
+      "perfil": "P0",
+      "razonamiento_analista": "El usuario solicita explícitamente la descarga del archivo PDF de un decreto específico, con números convertidos a dígitos.",
+      "degradado": [],
+      "mensaje": "descárgame el decreto ochenta y tres de dos mil dieciocho",
+      "intencion_esperada": "consulta_sigem",
+      "intencion_obtenida": "consulta_sigem",
+      "archivos_esperados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "archivos_en_fuentes": [],
+      "archivos_en_candidatos": [],
+      "archivos_entregados": [
+        "10322_decreto-no-0832018.pdf"
+      ],
+      "solicita_archivo_obtenido": true,
+      "incluye_contenido_obtenido": false,
+      "respuesta": "Aquí tiene el Decreto 083 de 2018 para su descarga, el cual puede encontrar en el botón que aparece justo debajo de este mensaje.",
+      "pasos": [
+        {
+          "agente": "analista",
+          "accion": "Analizando la pregunta: consulta_sigem (pide el archivo)",
+          "icono": "🧭"
+        },
+        {
+          "agente": "investigador",
+          "accion": "buscar_documento_por_referencia: numero=83, tipo=decreto, anio=2018, pregunta=descargar decreto 83 de 2018",
+          "icono": "🔎"
+        },
+        {
+          "agente": "investigador",
+          "accion": "preparar_descarga: archivo=10322_decreto-no-0832018.pdf",
+          "icono": "🔎"
+        },
+        {
+          "agente": "evaluador",
+          "accion": "Archivo listo para entregar",
+          "icono": "✅"
+        },
+        {
+          "agente": "redactor",
+          "accion": "Redactando respuesta para perfil P0",
+          "icono": "✍️"
+        }
+      ],
+      "metricas": {
+        "intencion_ok": true,
+        "archivos_ok": true,
+        "solicita_archivo_ok": true,
+        "incluye_contenido_ok": true,
+        "entrega_ok": true,
+        "informacion_ok": true
+      },
+      "tiempo_s": 14.4,
+      "intentos": 1
+    }
+  ]
+}

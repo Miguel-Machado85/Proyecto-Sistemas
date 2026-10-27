@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<!-- SPRINT 7: pantalla de inicio de sesión para la administración documental. -->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iniciar sesión · Administración SIGEM</title>
+<style>
+  :root { --blue:#004884; --sky:#218ff0; --ink:#1c2530; --muted:#607080; --line:#d9e1e8; --danger:#b42318; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; color:var(--ink); background:#f5f8fa; font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; display:grid; grid-template-rows:auto 1fr; }
+  .topbar { background:var(--blue); padding:16px 24px; }
+  .topbar img { height:28px; display:block; }
+  main { display:grid; place-items:center; padding:32px 16px; }
+  .card { width:min(100%, 420px); background:#fff; border:1px solid var(--line); border-radius:8px; padding:32px; box-shadow:0 10px 30px rgba(15,43,69,.09); }
+  h1 { font-size:25px; margin:0 0 8px; } p { color:var(--muted); line-height:1.5; margin:0 0 24px; }
+  label { display:block; color:#334155; font-size:14px; font-weight:600; margin:16px 0 7px; }
+  input { width:100%; font:inherit; color:var(--ink); border:1px solid #b9c5d0; border-radius:5px; padding:10px 11px; }
+  input:focus { outline:3px solid rgba(33,143,240,.28); border-color:var(--sky); }
+  button { width:100%; margin-top:24px; font:inherit; font-weight:650; border:0; border-radius:5px; padding:11px 16px; cursor:pointer; background:var(--sky); color:#fff; }
+  button:hover { background:#127dd7; } button:disabled { cursor:not-allowed; opacity:.6; }
+  .error { min-height:22px; margin:14px 0 0; color:var(--danger); font-size:14px; }
+</style>
+</head>
+<body>
+  <header class="topbar"><img src="assets/govco-logo-blanco.svg" alt="gov.co"></header>
+  <main><section class="card" aria-labelledby="titulo">
+    <h1 id="titulo">Administración documental</h1>
+    <p>Inicia sesión para cargar, revisar e indexar documentos del repositorio SIGEM.</p>
+    <form id="login-form">
+      <label for="usuario">Usuario</label><input id="usuario" autocomplete="username" required autofocus>
+      <label for="contrasena">Contraseña</label><input id="contrasena" type="password" autocomplete="current-password" required>
+      <button id="submit" type="submit">Iniciar sesión</button><p id="error" class="error" role="alert"></p>
+    </form>
+  </section></main>
+  <script>
+    (function () {
+      var API = 'http://localhost:8001/admin';
+      var form = document.getElementById('login-form'); var usuario = document.getElementById('usuario');
+      var contrasena = document.getElementById('contrasena'); var submit = document.getElementById('submit'); var error = document.getElementById('error');
+      // SPRINT 7: el backend emite un JWT y lo guarda en una cookie HttpOnly.
+      form.addEventListener('submit', async function (event) {
+        event.preventDefault(); error.textContent = ''; submit.disabled = true;
+        try {
+          var response = await fetch(API + '/login', { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({usuario:usuario.value.trim(), contrasena:contrasena.value}) });
+          if (!response.ok) { var data = await response.json().catch(function () { return {}; }); throw new Error(data.detail || 'No fue posible iniciar sesión.'); }
+          window.location.replace('admin.html');
+        } catch (fallo) { error.textContent = fallo.message; contrasena.value = ''; contrasena.focus(); }
+        finally { submit.disabled = false; }
+      });
+    }());
+  </script>
+</body>
+</html>

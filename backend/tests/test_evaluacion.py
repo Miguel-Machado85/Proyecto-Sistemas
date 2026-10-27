@@ -3,6 +3,7 @@
 import importlib.util
 from pathlib import Path
 
+import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 
 RUTA = Path(__file__).resolve().parent.parent / "evaluacion" / "evaluar_agente.py"
@@ -40,7 +41,7 @@ def test_evaluar_caso_mide_intencion_y_archivos():
 
     resultado = evaluar_agente.evaluar_caso(None, ejecutar, caso(), pausa=0, sello="x")
 
-    assert resultado["metricas"] == {"intencion_ok": True, "archivos_ok": True, "informacion_ok": True}
+    assert resultado["metricas"] == {"intencion_ok": True, "archivos_ok": True, "boton_ok": True, "informacion_ok": True}
     assert llamadas == [("eval-c1-x", "¿qué dice el decreto?", "texto")]
 
 
@@ -67,7 +68,7 @@ def test_candidatos_esperados_se_buscan_en_candidatos_y_no_en_fuentes():
         None, ejecutar, caso(candidatos_esperados=True, archivos_esperados=["a.pdf", "b.pdf"]), 0, "x"
     )
 
-    assert resultado["metricas"] == {"intencion_ok": True, "archivos_ok": True, "candidatos_ok": True}
+    assert resultado["metricas"] == {"intencion_ok": True, "archivos_ok": True, "boton_ok": True, "candidatos_ok": True}
 
 
 def test_alerta_esperada_en_ruido_de_voz():
@@ -78,7 +79,7 @@ def test_alerta_esperada_en_ruido_de_voz():
         None, ejecutar, caso(intencion_esperada="no_comprensible", archivos_esperados=[], categoria="voz_ruido"), 0, "x"
     )
 
-    assert resultado["metricas"] == {"intencion_ok": True, "alerta_ok": True}
+    assert resultado["metricas"] == {"intencion_ok": True, "boton_ok": True, "alerta_ok": True}
 
 
 def test_resumen_por_categoria_ignora_los_errores_en_los_porcentajes():
@@ -92,7 +93,7 @@ def test_resumen_por_categoria_ignora_los_errores_en_los_porcentajes():
 
     assert resumen["saludo"] == {
         "casos": 3, "errores": 1, "degradados": 0, "intencion": 0.5, "archivos": None, "candidatos": None, "alerta": None,
-        "informacion": None, "negativa": None,
+        "informacion": None, "negativa": None, "solicita_archivo": None, "entrega": None, "boton": None,
         "tiempo_s_promedio": 3.0,
     }
     assert resumen["GLOBAL"]["casos"] == 3
@@ -194,3 +195,137 @@ def test_negativa_ok_en_documentos_inexistentes_exige_decirlo_y_no_mostrar_fuent
 
     assert bien["metricas"]["negativa_ok"] is True
     assert con_relleno["metricas"]["negativa_ok"] is False
+
+
+# ── solicitud de archivo ──
+
+def estado_con_archivos(solicita, incluye=False, archivos=(), fuentes=()):
+    estado = estado_final("consulta_sigem", fuentes=fuentes)
+    estado["analisis"] = {"intencion": "consulta_sigem", "solicita_archivo": solicita, "incluye_contenido": incluye}
+    estado["archivos"] = [{"archivo": a} for a in archivos]
+    return estado
+
+
+def evaluar_con_estado(estado, **cambios):
+    return evaluar_agente.evaluar_caso(None, lambda *a: estado, caso(**cambios), pausa=0, sello="x")
+
+
+def test_solicitud_de_archivo_mide_la_bandera_la_entrega_y_el_contenido():
+    resultado = evaluar_con_estado(
+        estado_con_archivos(True, False, archivos=["a.pdf"]), solicita_archivo_esperado=True, incluye_contenido_esperado=False
+    )
+
+    assert resultado["metricas"]["solicita_archivo_ok"] and resultado["metricas"]["incluye_contenido_ok"]
+    assert resultado["metricas"]["entrega_ok"] and resultado["metricas"]["archivos_ok"]  # el archivo entregado cuenta como encontrado
+    assert resultado["archivos_entregados"] == ["a.pdf"]
+
+
+def test_falso_positivo_de_solicita_archivo_se_detecta():
+    resultado = evaluar_con_estado(estado_con_archivos(True, archivos=["a.pdf"], fuentes=["a.pdf"]), solicita_archivo_esperado=False)
+
+    assert resultado["metricas"]["solicita_archivo_ok"] is False
+    assert resultado["metricas"]["entrega_ok"] is False  # no se esperaba ningún botón
+
+
+def test_pedido_de_contenido_correcto_no_entrega_archivos():
+    resultado = evaluar_con_estado(estado_con_archivos(False, fuentes=["a.pdf"]), solicita_archivo_esperado=False)
+
+    assert resultado["metricas"]["solicita_archivo_ok"] and resultado["metricas"]["entrega_ok"]
+    assert "incluye_contenido_ok" not in resultado["metricas"]
+
+
+def test_archivos_del_estado_sin_la_bandera_no_cuentan_como_entregados():
+    # Misma compuerta que la API: sin solicita_archivo el usuario no recibe nada.
+    resultado = evaluar_con_estado(estado_con_archivos(False, archivos=["a.pdf"]), solicita_archivo_esperado=True)
+
+    assert resultado["metricas"]["entrega_ok"] is False and resultado["archivos_entregados"] == []
+
+
+def test_los_casos_sin_campo_de_archivo_no_cambian_sus_metricas():
+    resultado = evaluar_con_estado(estado_final("consulta_sigem", fuentes=["a.pdf"]))
+
+    assert set(resultado["metricas"]) == {"intencion_ok", "archivos_ok", "informacion_ok", "boton_ok"}
+
+
+def test_el_resumen_reporta_la_exactitud_de_solicita_archivo():
+    resultados = [
+        {"categoria": "solicitud_archivo", "tiempo_s": 1.0, "metricas": {"solicita_archivo_ok": ok, "entrega_ok": True}}
+        for ok in (True, True, True, False)
+    ]
+
+    resumen = evaluar_agente.resumir(resultados)["solicitud_archivo"]
+
+    assert resumen["solicita_archivo"] == 0.75 and resumen["entrega"] == 1.0
+
+
+def test_el_dataset_define_casos_de_solicitud_de_archivo_con_pares_contrastados():
+    casos = [c for c in evaluar_agente.cargar_casos(RUTA.parent / "dataset.jsonl") if c["categoria"] == "solicitud_archivo"]
+
+    assert len(casos) >= 10
+    assert any(c["solicita_archivo_esperado"] for c in casos) and any(not c["solicita_archivo_esperado"] for c in casos)
+    assert any(c.get("incluye_contenido_esperado") for c in casos)  # al menos un pedido mixto
+    assert all("solicita_archivo_esperado" in c for c in casos)
+
+
+# ── límites de palabra y botón inexistente (hallazgo de la evaluación de la fase 6) ──
+
+def respuesta_de(texto, **extra):
+    estado = estado_final("consulta_sigem", fuentes=["a.pdf"])
+    estado["messages"] = [HumanMessage(content="p"), AIMessage(content=texto)]
+    estado.update(extra)
+    return estado
+
+
+def test_las_frases_negativas_exigen_limite_de_palabra():
+    sin_informacion = evaluar_agente.respuesta_sin_informacion
+    assert not sin_informacion(respuesta_de("Sobre el talento humano se encuentra la Resolución 3615."))
+    assert not sin_informacion(respuesta_de("El decreto reúne a los signos se encuentra vigente."))
+    assert sin_informacion(respuesta_de("No se encuentra información sobre eso."))
+    assert sin_informacion(respuesta_de("Lo siento, no hay información sobre ese tema."))
+    assert sin_informacion(respuesta_de("Ese documento no existe en SIGEM."))
+
+
+def test_el_caso_de_talento_humano_ya_no_se_marca_como_sin_informacion():
+    resultado = evaluar_con_estado(respuesta_de("Sobre talento humano se encuentra la Resolución No. 3615 [Resolución No. 3615]."))
+
+    assert resultado["metricas"]["informacion_ok"] is True
+
+
+def test_boton_ok_detecta_la_promesa_de_un_boton_sin_archivo():
+    resultado = evaluar_con_estado(respuesta_de("El horario es de 8 a 12. El documento queda disponible en el botón de descarga debajo del mensaje."))
+
+    assert resultado["metricas"]["boton_ok"] is False
+
+
+def test_boton_ok_acepta_el_boton_cuando_si_se_entrega_el_archivo():
+    estado = respuesta_de("Aquí tienes el documento, en el botón de descarga.")
+    estado["analisis"] = {"intencion": "consulta_sigem", "solicita_archivo": True, "incluye_contenido": False}
+    estado["archivos"] = [{"archivo": "a.pdf"}]
+
+    assert evaluar_con_estado(estado)["metricas"]["boton_ok"] is True
+
+
+def test_boton_ok_no_se_deja_engañar_por_archivos_sin_la_compuerta():
+    # El estado trae archivos pero el analista no marcó solicita_archivo: la API no los muestra, el botón no existe.
+    estado = respuesta_de("Queda disponible en el botón de descarga.")
+    estado["archivos"] = [{"archivo": "a.pdf"}]
+
+    assert evaluar_con_estado(estado)["metricas"]["boton_ok"] is False
+
+
+@pytest.mark.parametrize("texto", ["Los botones de descarga están abajo.", "Pulsa el Botón.", "BOTÓN de descarga"])
+def test_menciona_boton_cubre_variantes(texto):
+    assert evaluar_agente.menciona_boton_inexistente(texto, set()) is True
+
+
+@pytest.mark.parametrize("texto", ["El pie de página del documento", "La palabra sobrebotón no cuenta", "Respuesta sin nada"])
+def test_menciona_boton_no_confunde_otras_palabras(texto):
+    assert evaluar_agente.menciona_boton_inexistente(texto, set()) is False
+
+
+def test_el_resumen_reporta_la_exactitud_de_boton_ok():
+    resultados = [
+        {"categoria": "x", "tiempo_s": 1.0, "metricas": {"boton_ok": ok}} for ok in (True, True, True, False)
+    ]
+
+    assert evaluar_agente.resumir(resultados)["x"]["boton"] == 0.75

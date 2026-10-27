@@ -12,6 +12,7 @@ from agente_sigem.estado import AnalisisConsulta, EvaluacionEvidencia, FiltrosSi
 from fakes_llm import (  # noqa: E402
     CANDIDATOS,
     FRAGMENTO_TAXI,
+    ARCHIVO_TAXI_SALIDA,
     FUENTE_TAXI,
     FakeEstructurado,
     ModeloFalso,
@@ -41,6 +42,8 @@ def estado_base(**cambios) -> dict:
         "consulta_actual": "",
         "pasos": [],
         "es_alerta": False,
+        "archivos": [],
+        "archivos_no_disponibles": [],
     }
     estado.update(cambios)
     return estado
@@ -52,6 +55,8 @@ def analisis_dict(**cambios) -> dict:
         "consulta_autonoma": "¿Cuáles son las tarifas del taxi?",
         "filtros": None,
         "usa_documento_activo": False,
+        "solicita_archivo": False,
+        "incluye_contenido": False,
         "pregunta_aclaracion": None,
         "razonamiento": "x",
     }
@@ -210,7 +215,7 @@ def test_ruta_despues_analista_sin_analisis_busca():
     [
         ("saludo", prompts.RESPUESTA_SALUDO, False),
         ("fuera_de_dominio", prompts.RESPUESTA_FUERA_DE_CONTEXTO, False),
-        ("no_comprensible", prompts.MENSAJE_AUDIO_POCO_CLARO, True),
+        ("no_comprensible", prompts.MENSAJE_TEXTO_POCO_CLARO, True),
     ],
 )
 def test_respuesta_directa_usa_los_textos_fijos(intencion, texto, alerta):
@@ -221,6 +226,25 @@ def test_respuesta_directa_usa_los_textos_fijos(intencion, texto, alerta):
     assert resultado["messages"][0].content == texto
     assert resultado["es_alerta"] is alerta
     assert resultado["pasos"][-1]["agente"] == "respuesta_directa"
+
+
+@pytest.mark.parametrize(
+    "origen, texto",
+    [("voz", prompts.MENSAJE_AUDIO_POCO_CLARO), ("texto", prompts.MENSAJE_TEXTO_POCO_CLARO)],
+)
+def test_no_comprensible_elige_el_mensaje_segun_el_origen(origen, texto):
+    estado = estado_base(analisis=analisis_dict(intencion="no_comprensible"), origen=origen)
+
+    resultado = m_respuesta.respuesta_directa(estado)
+
+    assert resultado["messages"][0].content == texto
+    assert resultado["es_alerta"] is True
+
+
+def test_mensaje_de_texto_poco_claro_no_habla_de_audio():
+    minusculas = prompts.MENSAJE_TEXTO_POCO_CLARO.lower()
+
+    assert not any(palabra in minusculas for palabra in ("audio", "micrófono", "grab"))
 
 
 def test_respuesta_directa_ambigua_usa_la_pregunta_de_aclaracion():
@@ -243,6 +267,7 @@ def correr_investigador(monkeypatch, respuestas, salidas_tools, estado=None, con
     modelo = ModeloFalso(respuestas=list(respuestas))
     pedidos = instalar(monkeypatch, m_investigador, modelo)
     monkeypatch.setattr(tools, "HERRAMIENTAS_INVESTIGADOR", herramientas_dobles(salidas_tools))
+    monkeypatch.setattr(tools, "HERRAMIENTAS_DESCARGA", herramientas_dobles({"preparar_descarga": ARCHIVO_TAXI_SALIDA}))
     resultado = m_investigador.investigador(estado or estado_base(
         analisis=analisis_dict(), consulta_actual="¿Cuáles son las tarifas del taxi?"), config_ejecucion)
     return resultado, modelo, pedidos

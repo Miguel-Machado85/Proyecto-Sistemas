@@ -14,6 +14,11 @@ MENSAJE_AUDIO_POCO_CLARO = (
     "hablando cerca del micrófono."
 )
 
+MENSAJE_TEXTO_POCO_CLARO = (
+    "No logré entender tu mensaje. ¿Puedes escribirlo de nuevo con otras palabras? "
+    "Por ejemplo: '¿Qué dice el Decreto 83 de 2018?'"
+)
+
 MENSAJE_SERVICIO_SATURADO = (
     "En este momento hay mucha demanda y no puedo procesar tu consulta. "
     "Por favor, inténtalo de nuevo en unos minutos."
@@ -85,9 +90,11 @@ INTENCIONES
   Si no hay documento activo, nunca uses "seguimiento".
 - "ambigua": no hay forma razonable de buscar ("necesito un documento", "ayúdame con un trámite").
   Incluye siempre pregunta_aclaracion: una pregunta corta pidiendo tema, número, año o dependencia.
-- "no_comprensible": SOLO cuando el origen es "voz" y la transcripción es ruido, silencio o palabras
-  sueltas sin sentido ("eh… mm… ajá"). Si es una pregunta real mal transcrita, reconstrúyela en
-  consulta_autonoma y elige la intención que corresponda.
+- "no_comprensible": el mensaje no contiene una pregunta, sea cual sea el origen. Con voz: ruido,
+  silencio o palabras sueltas sin sentido ("eh… mm… ajá"). Con texto: caracteres o palabras sin
+  sentido que no forman una pregunta ("asd;fj;rjfirjp"). Si es una pregunta real mal transcrita o
+  mal escrita ("el decrto 1 dl 2019"), reconstrúyela en consulta_autonoma y elige la intención que
+  corresponda (aquí, "consulta_sigem"): NO es "no_comprensible".
 
 CAMPOS
 - consulta_autonoma: la pregunta reescrita para que se entienda SIN el historial, con la ortografía
@@ -101,6 +108,20 @@ CAMPOS
 - Convierte números dichos en palabras a dígitos: "decreto doce de dos mil diecinueve" →
   tipo=decreto, numero=12, anio=2019. "resolución cuatro mil cuatrocientos noventa y seis" → numero=4496.
 - usa_documento_activo: true solo si la pregunta se refiere al documento activo.
+- solicita_archivo / incluye_contenido: el usuario puede querer el CONTENIDO de un documento, su ARCHIVO
+  (el PDF original) o ambos. Es el mismo tipo de consulta ("consulta_sigem" o "seguimiento"), porque igual
+  hay que identificar el documento.
+  · Solo contenido ("¿qué dice…?", "explícame…", "¿cuánto cuesta…?"): solicita_archivo=false.
+  · Pide el ARCHIVO con claridad (descargar, descárgame, PDF, archivo, enlace, "dónde puedo ver/bajar el
+    documento completo"): solicita_archivo=true e incluye_contenido=false.
+  · Pide el documento sin decir qué quiere de él (dame, necesito, quiero, pásame, envíame, mándame, "tienes
+    el decreto…") o pide ambas cosas ("pásame el decreto y dime de qué trata"): solicita_archivo=true e
+    incluye_contenido=true. Quien dice "dame el decreto 83" muchas veces quiere entenderlo, así que se
+    le explica y además se le entrega el archivo.
+  · Un inventario ("¿qué decretos hay de 2019?") o una pregunta de tema NO piden archivo.
+  · Con documento activo, "pásamelo" / "¿me lo puedes enviar?" es un seguimiento con usa_documento_activo=true
+    y se trata como la regla anterior (sin decir "archivo" o "PDF", incluye_contenido=true).
+  · Sin documento activo y sin referencia ("pásame el archivo" a secas) la intención es "ambigua".
 - razonamiento: UNA frase breve explicando tu decisión.
 
 EJEMPLOS (entrada → salida)
@@ -143,11 +164,45 @@ EJEMPLOS (entrada → salida)
    → intencion="no_comprensible", consulta_autonoma="eh... mm... ajá",
      razonamiento="La transcripción no contiene una pregunta."
 
-7) Saludo.
+   Texto sin sentido.
+   Documento activo: ninguno. Origen: texto. Mensaje: "asd;fj;rjfirjp"
+   → intencion="no_comprensible", consulta_autonoma="asd;fj;rjfirjp",
+     razonamiento="El texto son caracteres sin sentido, no una pregunta."
+   Contraejemplo: Origen: texto. Mensaje: "el decrto 1 dl 2019 q dise"
+   → intencion="consulta_sigem", consulta_autonoma="¿Qué dice el Decreto 1 de 2019?",
+     filtros={"tipo": "decreto", "numero": 1, "anio": 2019},
+     razonamiento="Pregunta real con errores de ortografía; se reconstruyó."
+
+7) Contenido vs archivo (pares contrastados, documentos reales).
+   Origen: texto, sin documento activo.
+   a. "¿Qué dice el Decreto 001 de 2019?" → consulta_sigem, filtros={"tipo":"decreto","numero":1,"anio":2019},
+      solicita_archivo=false, incluye_contenido=false.
+   b. "Descárgame el Decreto 001 de 2019" → consulta_sigem, consulta_autonoma="Descargar el archivo del Decreto 001
+      de 2019", filtros={"tipo":"decreto","numero":1,"anio":2019}, solicita_archivo=true, incluye_contenido=false.
+   c. "Dame el Decreto 001 de 2019" → consulta_sigem, filtros iguales, solicita_archivo=true,
+      incluye_contenido=true (no dice si quiere el archivo o entenderlo: se hace ambas cosas).
+   d. "Explícame la Resolución 4496 de 2018" → solicita_archivo=false.
+      "Mándame el PDF de la Resolución 4496 de 2018" → solicita_archivo=true, incluye_contenido=false.
+      "Necesito la Resolución 4496 de 2018" → solicita_archivo=true, incluye_contenido=true.
+   e. "¿De qué trata la Ley 387 de 1997?" → solicita_archivo=false.
+      "¿Dónde puedo ver la Ley 387 de 1997 completa?" → solicita_archivo=true, incluye_contenido=false.
+   f. "¿Qué documentos hay sobre presupuesto municipal?" → inventario: solicita_archivo=false.
+   g. "Pásame el decreto de las tarifas de taxi y dime cuánto cuesta la carrera mínima" → consulta_sigem,
+      filtros={"tema":"tarifas de taxi"}, solicita_archivo=true, incluye_contenido=true.
+
+8) Documento activo y "pásamelo".
+   Documento activo: "Decreto 083 de 2018" (horario de atención de la inspección de policía). Origen: texto.
+   a. "¿y cuál es el horario?" → seguimiento, usa_documento_activo=true, solicita_archivo=false.
+   b. "pásamelo" → seguimiento, usa_documento_activo=true, consulta_autonoma="Entregar el Decreto 083 de 2018",
+      solicita_archivo=true, incluye_contenido=true.
+   c. "descárgamelo en PDF" → seguimiento, usa_documento_activo=true, solicita_archivo=true,
+      incluye_contenido=false.
+
+9) Saludo.
    Documento activo: ninguno. Origen: texto. Mensaje: "Hola, buenos días"
    → intencion="saludo", consulta_autonoma="Hola, buenos días", razonamiento="Saludo sin pregunta."
 
-8) Fuera de dominio.
+10) Fuera de dominio.
    Documento activo: ninguno. Origen: texto. Mensaje: "¿cómo preparo un sancocho antioqueño?"
    → intencion="fuera_de_dominio", consulta_autonoma="¿Cómo preparo un sancocho antioqueño?",
      razonamiento="Receta de cocina, ajena a la gestión municipal."
@@ -183,6 +238,24 @@ REGLAS
 6. Usa pocas llamadas: lo mínimo para reunir evidencia suficiente.
 7. Termina con una nota BREVE (1–3 frases) de qué encontraste y qué falta, sin dirigirte al ciudadano.
 """
+
+INSTRUCCIONES_INVESTIGADOR_ARCHIVO = """
+EL USUARIO PIDE EL ARCHIVO DEL DOCUMENTO
+Además de las herramientas de búsqueda tienes `preparar_descarga(archivo)`, que prepara la descarga del PDF original.
+1. Primero identifica el documento: con buscar_documento_por_referencia (tipo y número o código), con
+   buscar_fragmentos, o usando el documento activo si el encargo lo indica.
+2. Luego llama `preparar_descarga` con el nombre del PDF (el campo `archivo` de las fuentes), una vez por documento.
+3. Si la identificación devuelve `candidatos`, NO elijas ni llames `preparar_descarga`: el redactor pedirá aclaración.
+4. Si `preparar_descarga` dice que no está disponible para descarga, no insistas ni busques otro documento.
+5. Nunca escribas enlaces ni URLs: la descarga la construye el sistema.
+6. Si el encargo indica que además se necesita el contenido, reúne evidencia como siempre.
+"""
+
+
+def construir_prompt_investigador(solicita_archivo: bool = False) -> str:
+    """Prompt del investigador; la sección de descarga solo existe cuando el analista marcó solicita_archivo."""
+    return PROMPT_INVESTIGADOR + (INSTRUCCIONES_INVESTIGADOR_ARCHIVO if solicita_archivo else "")
+
 
 # ══════════════════════════════════════════════════════════════
 # EVALUADOR
@@ -221,14 +294,41 @@ REGLAS IMPORTANTES:
 5. Si los fragmentos solo cubren parte de la pregunta, responde esa parte y di con claridad qué
    no aparece en los documentos.
 6. Responde siempre en español.
-7. Indica con `informacion_encontrada` si los fragmentos contenían información pertinente para la pregunta:
-   false solo cuando tu respuesta dice que no hay información sobre lo preguntado.
+7. NUNCA escribas URLs, enlaces ni rutas de archivos. No menciones botones, descargas ni archivos
+   descargables, salvo que la entrada lo indique expresamente.
+8. FORMATO: el único formato permitido es **negrilla** para datos clave (fechas, valores, números de
+   norma) y listas con "- " al inicio de línea. No uses títulos con #, tablas, cursivas, enlaces ni
+   bloques de código.
 """
+
+# Se agregan desde el código (construir_prompt_redactor) solo cuando el estado trae archivos o documentos sin
+# original: en el prompt fijo, el modelo las aplicaba también a respuestas que no tenían ningún botón.
+INSTRUCCION_RESPUESTA_CON_ARCHIVO = """
+ARCHIVO PARA DESCARGAR: la entrada lista un ARCHIVO(S) PARA DESCARGAR. Cierra con una frase corta diciendo que el
+documento queda disponible en el botón de descarga debajo del mensaje (sin escribir enlaces)."""
+
+INSTRUCCION_RESPUESTA_SIN_ORIGINAL = """
+ORIGINAL NO DISPONIBLE: la entrada indica que el original NO está disponible para descarga. Dilo en una frase
+al final, sin mencionar ningún botón."""
 
 INSTRUCCIONES_MODO_REDACTOR = {
     "respuesta": """
 MODO: RESPUESTA
-Responde la pregunta usando solo los fragmentos numerados de la evidencia y cita cada dato en línea.""",
+Responde la pregunta usando solo los fragmentos numerados de la evidencia y cita cada dato en línea.
+Indica con el campo `informacion_encontrada` si los fragmentos contenían información pertinente para la pregunta:
+false solo cuando tu respuesta dice que no hay información sobre lo preguntado.""",
+
+    "entrega": """
+MODO: ENTREGA DEL ARCHIVO
+El usuario pidió el archivo de un documento y ya está listo para descargar. Responde en 1 o 2 frases
+cortas: confirma que aquí tiene el documento (di su título) y que lo encuentra en el botón de descarga
+que aparece debajo de tu mensaje. No resumas el contenido, no cites fragmentos y no escribas enlaces.""",
+
+    "descarga_no_disponible": """
+MODO: DESCARGA NO DISPONIBLE
+El usuario pidió el archivo de un documento que sí existe en SIGEM, pero su original todavía no está
+disponible para descargar. Dilo con amabilidad en 1 o 2 frases, menciona el título del documento y sugiere
+pedirlo directamente en la Alcaldía de Marinilla. No inventes enlaces ni contenido.""",
 
     "aclaracion": """
 MODO: ACLARACIÓN
@@ -244,8 +344,17 @@ Si el usuario nombró un documento, indícale que revise el tipo, el número o e
 }
 
 
-def construir_prompt_redactor(perfil: str, modo: str) -> str:
-    """Reglas base + instrucciones del modo + estilo del perfil (P0 si el perfil no se reconoce)."""
+def construir_prompt_redactor(perfil: str, modo: str, hay_archivos: bool = False, hay_sin_original: bool = False) -> str:
+    """Reglas base + instrucciones del modo + estilo del perfil (P0 si el perfil no se reconoce).
+
+    Las menciones al botón de descarga en una respuesta con contenido solo se piden cuando el estado trae
+    archivos (`hay_archivos`) o documentos sin original (`hay_sin_original`); los demás modos ya las traen.
+    """
     estilo = ESTILO_POR_PERFIL.get(perfil, ESTILO_POR_PERFIL["P0"])
     instrucciones = INSTRUCCIONES_MODO_REDACTOR.get(modo, INSTRUCCIONES_MODO_REDACTOR["respuesta"])
+    if modo == "respuesta":
+        if hay_archivos:
+            instrucciones += INSTRUCCION_RESPUESTA_CON_ARCHIVO
+        if hay_sin_original:
+            instrucciones += INSTRUCCION_RESPUESTA_SIN_ORIGINAL
     return PROMPT_REDACTOR_BASE + instrucciones + "\n" + estilo

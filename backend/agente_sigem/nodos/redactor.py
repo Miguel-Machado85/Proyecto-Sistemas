@@ -25,11 +25,16 @@ PATRON_TITULO_Y_PAGINAS = re.compile(r"^(.*?)(?:,\s*p[^\d,]*(\d.*))?$", re.DOTAL
 
 
 def elegir_modo(estado: dict) -> str:
-    """respuesta (hay evidencia) | aclaracion (solo candidatos) | sin_resultados."""
+    """respuesta | aclaracion (candidatos) | entrega (archivo sin evidencia) | descarga_no_disponible | sin_resultados."""
     if estado.get("evidencia"):
         return "respuesta"
     if estado.get("candidatos"):
+        # Si hay varios documentos posibles no se entrega ninguno: primero se pide aclaración.
         return "aclaracion"
+    if estado.get("archivos"):
+        return "entrega"
+    if estado.get("archivos_no_disponibles"):
+        return "descarga_no_disponible"
     return "sin_resultados"
 
 
@@ -40,6 +45,10 @@ def _evidencia_numerada(evidencia: list[dict]) -> str:
         pagina = f", p. {fuente['pagina']}" if fuente.get("pagina") else ""
         bloques.append(f"[{numero}] {fuente.get('titulo', 'Documento SIGEM')}{pagina}\n{fragmento.get('contenido', '')}")
     return "\n\n".join(bloques)
+
+
+def _titulos(documentos: list[dict]) -> str:
+    return "; ".join(d.get("titulo") or d.get("archivo") or "Documento" for d in documentos)
 
 
 def _candidatos_en_texto(candidatos: list[dict]) -> str:
@@ -59,6 +68,11 @@ def construir_entrada(estado: dict, modo: str) -> str:
     documento = estado.get("documento_activo")
     if analisis.get("usa_documento_activo") and documento:
         partes.append(f"DOCUMENTO ACTIVO DE LA CONVERSACIÓN: {documento.get('titulo', '')}")
+
+    if estado.get("archivos"):
+        partes.append("ARCHIVO(S) PARA DESCARGAR (la interfaz los muestra como botón): " + _titulos(estado["archivos"]))
+    if estado.get("archivos_no_disponibles"):
+        partes.append("ORIGINAL NO DISPONIBLE PARA DESCARGA: " + _titulos(estado["archivos_no_disponibles"]))
 
     if modo == "respuesta":
         partes.append("EVIDENCIA:\n" + _evidencia_numerada(estado.get("evidencia", [])))
@@ -133,6 +147,15 @@ def _documento_activo_desde(estado: dict, citadas: list[dict] | None = None) -> 
     return None
 
 
+def _documento_de_archivo(archivo: dict) -> dict:
+    return {
+        "titulo": archivo.get("titulo"),
+        "archivo": archivo.get("archivo"),
+        "descripcion": archivo.get("descripcion"),
+        "fecha_expedicion": archivo.get("fecha_expedicion"),
+    }
+
+
 def _redactar(llm, mensajes: list, config: RunnableConfig | None, estructurado: bool) -> tuple[str, bool]:
     """Devuelve (texto, informacion_encontrada). En modo respuesta pide la señal explícita al modelo."""
     if estructurado:
@@ -155,7 +178,11 @@ def redactor(estado: dict, config: RunnableConfig | None = None) -> dict:
 
     llm = crear_llm(configuracion.REDACTOR_MODEL, 0.3)
     mensajes = [
-        SystemMessage(content=construir_prompt_redactor(perfil, modo)),
+        SystemMessage(content=construir_prompt_redactor(
+            perfil, modo,
+            hay_archivos=bool(estado.get("archivos")),
+            hay_sin_original=bool(estado.get("archivos_no_disponibles")),
+        )),
         HumanMessage(content=construir_entrada(estado, modo)),
     ]
     texto, informacion_encontrada = _redactar(llm, mensajes, config, estructurado=(modo == "respuesta"))
@@ -165,6 +192,10 @@ def redactor(estado: dict, config: RunnableConfig | None = None) -> dict:
         # La respuesta dice que no hay información: no se muestran fuentes ni cambia el documento activo.
         fuentes = []
         documento_activo = estado.get("documento_activo")
+    elif modo in ("entrega", "descarga_no_disponible"):
+        # Sin fragmentos que citar: el documento activo pasa a ser el que se entregó (o el que se pidió).
+        fuentes = []
+        documento_activo = _documento_de_archivo((estado.get("archivos") or estado.get("archivos_no_disponibles"))[0])
     else:
         # Las fuentes que se muestran al usuario son las que la respuesta cita, no todo lo buscado.
         fuentes = fuentes_citadas(texto, fuentes_estado) if modo == "respuesta" else fuentes_estado

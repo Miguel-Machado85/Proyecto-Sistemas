@@ -57,6 +57,8 @@ def evaluador(estado: dict, config: RunnableConfig | None = None) -> dict:
     # Atajos sin LLM.
     if candidatos and not evidencia:
         return resultado("Hay varios documentos posibles: se pedirá aclaración")
+    if (estado.get("archivos") or estado.get("archivos_no_disponibles")) and not evidencia:
+        return resultado("Archivo listo para entregar" if estado.get("archivos") else "El original no está disponible para descarga")
     if not evidencia and intentos >= configuracion.MAX_INTENTOS_BUSQUEDA:
         return resultado("Sin resultados tras agotar los intentos de búsqueda")
     if not configuracion.EVALUADOR_HABILITADO:

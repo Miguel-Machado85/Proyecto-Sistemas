@@ -16,10 +16,10 @@ from agente_sigem import api, prompts
 from agente_sigem.catalogo import CatalogoDocumentos
 from agente_sigem.config import config
 
-CLAVES_CHAT = {"respuesta", "thread_id", "pasos", "fuentes", "candidatos", "tiempo_ms"}
+CLAVES_CHAT = {"respuesta", "thread_id", "pasos", "fuentes", "candidatos", "archivos", "tiempo_ms"}
 CLAVES_VOZ = {
     "transcripcion", "respuesta", "thread_id", "pregunta_audio_url", "respuesta_audio_url",
-    "fuentes", "candidatos", "alerta",
+    "fuentes", "candidatos", "archivos", "alerta",
 }
 CLAVES_PASO = {"agente", "accion", "icono"}
 CLAVES_FUENTE = {"titulo", "archivo", "pagina", "fecha_expedicion", "descripcion"}
@@ -132,6 +132,17 @@ def test_chat_de_saludo_devuelve_el_texto_fijo_sin_fuentes(monkeypatch, cliente)
     assert cuerpo["fuentes"] == [] and cuerpo["candidatos"] == []
 
 
+def test_chat_texto_no_comprensible_usa_el_mensaje_neutral(monkeypatch, cliente):
+    instalar_grafo(monkeypatch, [AnalisisConsulta(
+        intencion="no_comprensible", consulta_autonoma="asd;fj;rjfirjp", razonamiento="texto sin sentido")])
+
+    cuerpo = cliente.post("/chat", json={"mensaje": "asd;fj;rjfirjp"}).json()
+
+    assert cuerpo["respuesta"] == prompts.MENSAJE_TEXTO_POCO_CLARO
+    assert cuerpo["respuesta"] != prompts.MENSAJE_AUDIO_POCO_CLARO
+    assert cuerpo["fuentes"] == [] and cuerpo["candidatos"] == []
+
+
 def test_chat_valida_el_mensaje_vacio(cliente):
     assert cliente.post("/chat", json={"mensaje": ""}).status_code == 422
 
@@ -168,6 +179,23 @@ def test_chat_voz_tiene_exactamente_la_forma_de_chat_voz_response(monkeypatch, c
     assert entorno.sintetizados == [cuerpo["respuesta"]]
     assert [turno[1] for turno in entorno.turnos] == ["usuario", "agente"]
     assert all(turno[3] for turno in entorno.turnos)  # ambos con audio_key
+
+
+def test_chat_voz_sintetiza_texto_limpio_y_conserva_el_formato_en_respuesta_y_turno(monkeypatch, cliente, entorno):
+    original = "La tarifa es **$5.500**:\n- Diurna\n- Nocturna [Decreto 001 de 2019, p. 1]"
+    instalar_grafo(
+        monkeypatch,
+        analisis=[consulta_taxi()],
+        investigador_msgs=[llamada("buscar_fragmentos", consulta="tarifa del taxi"), AIMessage(content="Listo.")],
+        redactor_msgs=[AIMessage(content=original)],
+        salidas_tools={"buscar_fragmentos": {"fuentes": [FUENTE_TAXI], "fragmentos": [FRAGMENTO_TAXI]}},
+    )
+
+    cuerpo = cliente.post("/chat-voz", files=audio_de_prueba(), data={"thread_id": "f1"}).json()
+
+    assert entorno.sintetizados == ["La tarifa es $5.500:\nDiurna\nNocturna [Decreto 001 de 2019, p. 1]"]
+    assert cuerpo["respuesta"] == original
+    assert entorno.turnos[1][2] == original
 
 
 def test_chat_voz_alerta_guarda_rol_alerta_y_no_sintetiza(monkeypatch, cliente, entorno):

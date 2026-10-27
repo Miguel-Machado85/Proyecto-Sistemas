@@ -1,9 +1,19 @@
 import os
+import re
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+def extraer_id_carpeta_drive(valor: str | None) -> str | None:
+    """Acepta el ID de una carpeta de Drive o su URL completa (…/folders/<id>?…) y devuelve el ID."""
+    if not valor or not valor.strip():
+        return None
+    valor = valor.strip()
+    coincidencia = re.search(r"/folders/([A-Za-z0-9_-]+)", valor) or re.search(r"[?&]id=([A-Za-z0-9_-]+)", valor)
+    return coincidencia.group(1) if coincidencia else valor
 
 
 class Config:
@@ -41,8 +51,12 @@ class Config:
     ALLOWED_AUDIO_EXTENSIONS = {"webm", "wav", "mp3", "m4a", "mp4", "ogg"}
 
     # ── Chroma ────────
-    # Chroma corre embebido (una carpeta local persistida), se usa
-    # CHROMA_PERSIST_DIR. 
+    # local: carpeta persistida en CHROMA_PERSIST_DIR (tests, desarrollo y origen de la migración).
+    # http: servidor Chroma aparte (contenedor `chroma` en Compose) en CHROMA_HOST:CHROMA_PORT.
+    CHROMA_MODO = os.getenv("CHROMA_MODO", "local").strip().lower()
+    CHROMA_HOST = os.getenv("CHROMA_HOST", "localhost")
+    CHROMA_PORT = int(os.getenv("CHROMA_PORT", "8000"))
+    CHROMA_SSL = os.getenv("CHROMA_SSL", "false").strip().lower() in {"1", "true", "yes", "si", "sí"}
     CHROMA_PERSIST_DIR = os.getenv("CHROMA_PERSIST_DIR", "./chroma_db")
 
     # La colección existente se llama `langchain`; usar otro valor crea un índice vacío.
@@ -57,7 +71,17 @@ class Config:
     CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "200"))
     EMBEDDING_BATCH_SIZE = int(os.getenv("EMBEDDING_BATCH_SIZE", "25"))
     EMBEDDING_BATCH_PAUSE_SECONDS = float(os.getenv("EMBEDDING_BATCH_PAUSE_SECONDS", "20"))
-    ADMIN_UPLOAD_TOKEN = os.getenv("ADMIN_UPLOAD_TOKEN")
+    # ── SPRINT 7: Autenticación de administración (JWT en cookie HttpOnly) ──
+    ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
+    # Compose interpreta `$` en archivos env; `$$` conserva el carácter. Normalizamos
+    # también para poder usar el mismo archivo en Docker y con `uv run` local.
+    ADMIN_PASSWORD_HASH = (os.getenv("ADMIN_PASSWORD_HASH") or "").replace("$$", "$") or None
+    ADMIN_JWT_SECRET = os.getenv("ADMIN_JWT_SECRET")
+    ADMIN_SESSION_HOURS = int(os.getenv("ADMIN_SESSION_HOURS", "8"))
+    ADMIN_COOKIE_SECURE = os.getenv("ADMIN_COOKIE_SECURE", "false").lower() == "true"
+    ADMIN_CORS_ORIGINS = [
+        origen.strip() for origen in os.getenv("ADMIN_CORS_ORIGINS", "http://localhost:8080").split(",") if origen.strip()
+    ]
 
     DOCS_DIR = Path(os.getenv("DOCS_DIR", Path(__file__).resolve().parent.parent / "docs"))
 
@@ -71,6 +95,16 @@ class Config:
     S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
     # Las URLs firmadas expiran; así el bucket puede quedar privado sin problema.
     PRESIGNED_URL_EXPIRATION = int(os.getenv("PRESIGNED_URL_EXPIRATION", 3600))
+
+    # ── Archivos originales: repositorio de documentos (Drive o carpeta local) ──
+    # local: carpeta UPLOAD_ROOT/repositorio (desarrollo y tests, no necesita credenciales).
+    # drive: carpeta de Google Drive con OAuth de usuario (token generado con scripts/autorizar_drive.py).
+    ARCHIVOS_BACKEND = os.getenv("ARCHIVOS_BACKEND", "local").strip().lower()
+    GOOGLE_DRIVE_FOLDER_ID = extraer_id_carpeta_drive(os.getenv("GOOGLE_DRIVE_FOLDER_ID"))
+    GOOGLE_OAUTH_CLIENT_FILE = Path(os.getenv("GOOGLE_OAUTH_CLIENT_FILE", Path(__file__).resolve().parent.parent / "secrets" / "oauth-client.json"))
+    GOOGLE_OAUTH_TOKEN_FILE = Path(os.getenv("GOOGLE_OAUTH_TOKEN_FILE", Path(__file__).resolve().parent.parent / "secrets" / "oauth-token.json"))
+    # stream: el backend descarga de Drive y reenvía el archivo | redirect: 302 al enlace de Drive.
+    DRIVE_MODO_ENTREGA = os.getenv("DRIVE_MODO_ENTREGA", "stream").strip().lower()
 
     # ── Langfuse (observabilidad/tracing del agente) ──
     # Si estas dos quedan vacías, el tracing simplemente se desactiva:

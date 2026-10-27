@@ -105,7 +105,8 @@ def main() -> int:
         print("ERROR: falta GOOGLE_API_KEY (necesaria para los embeddings de consulta). No se calculó nada.")
         return 2
     chroma = Path(config.CHROMA_PERSIST_DIR)
-    if not (chroma / "chroma.sqlite3").exists():
+    # Con CHROMA_MODO=http el índice vive en el servidor: no hace falta la carpeta local.
+    if config.CHROMA_MODO == "local" and not (chroma / "chroma.sqlite3").exists():
         print(f"ERROR: no hay un Chroma local en {chroma.resolve()}. No se calculó nada.")
         return 2
 

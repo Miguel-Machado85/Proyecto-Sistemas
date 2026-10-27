@@ -1,9 +1,12 @@
 import json
+import logging
 import re
+import threading
 import unicodedata
 from collections import defaultdict
 from functools import lru_cache
 
+import chromadb
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
@@ -12,6 +15,8 @@ from . import reranker
 from .config import config
 from .catalogo import CatalogoDocumentos
 
+
+logger = logging.getLogger(__name__)
 
 RESULTADOS_FINALES = 8
 RESULTADOS_POR_ESTRATEGIA = 24
@@ -32,6 +37,15 @@ def normalizar(texto: str) -> str:
     return re.sub(r"\s+", " ", texto).strip()
 
 
+def crear_cliente_chroma() -> chromadb.ClientAPI:
+    """Cliente de Chroma según CHROMA_MODO: servidor por red (http) o carpeta local (local)."""
+    if config.CHROMA_MODO == "http":
+        return chromadb.HttpClient(host=config.CHROMA_HOST, port=config.CHROMA_PORT, ssl=config.CHROMA_SSL)
+    if config.CHROMA_MODO == "local":
+        return chromadb.PersistentClient(path=config.CHROMA_PERSIST_DIR)
+    raise ValueError(f"CHROMA_MODO inválido: {config.CHROMA_MODO!r} (usa 'local' o 'http').")
+
+
 @lru_cache(maxsize=1)
 def obtener_vector_store() -> Chroma:
     """Abre Chroma (una sola vez) con el modelo de embeddings que generó sus vectores existentes."""
@@ -40,9 +54,9 @@ def obtener_vector_store() -> Chroma:
         google_api_key=config.GOOGLE_API_KEY,
     )
     return Chroma(
+        client=crear_cliente_chroma(),
         collection_name=config.COLLECTION_NAME,
         embedding_function=embeddings,
-        persist_directory=config.CHROMA_PERSIST_DIR,
     )
 
 
@@ -54,17 +68,41 @@ def documentos_desde_resultado(resultado: dict) -> list[Document]:
     return documentos
 
 
-@lru_cache(maxsize=1)
+_candado_catalogo = threading.Lock()
+_catalogo: CatalogoDocumentos | None = None
+_conteo_catalogo: int | None = None
+
+
 def obtener_catalogo_documentos() -> CatalogoDocumentos:
-    """Carga una sola vez las metadata de Chroma como documentos únicos normalizados."""
-    vector_store = obtener_vector_store()
-    resultado = vector_store.get(include=["metadatas"])
-    return CatalogoDocumentos.desde_metadatas(resultado["metadatas"])
+    """Metadata de Chroma como documentos únicos normalizados.
+
+    Guarda el collection.count() con el que se construyó y se reconstruye si cambió: así un
+    documento indexado por otro proceso (con Chroma como servidor) aparece sin invalidación explícita.
+    """
+    global _catalogo, _conteo_catalogo
+    with _candado_catalogo:
+        vector_store = obtener_vector_store()
+        try:
+            conteo = vector_store._collection.count()
+        except Exception:
+            if _catalogo is None:
+                raise
+            logger.warning("No se pudo consultar el conteo de Chroma; se usa el catálogo anterior.", exc_info=True)
+            return _catalogo
+        if _catalogo is None or conteo != _conteo_catalogo:
+            # El conteo se toma antes del get: si alguien indexa en medio, la siguiente llamada reconstruye otra vez.
+            resultado = vector_store.get(include=["metadatas"])
+            _catalogo = CatalogoDocumentos.desde_metadatas(resultado["metadatas"])
+            _conteo_catalogo = conteo
+        return _catalogo
 
 
 def invalidar_cache_documentos() -> None:
     """Hace visible una indexación nueva para el catálogo y las tools del agente."""
-    obtener_catalogo_documentos.cache_clear()
+    global _catalogo, _conteo_catalogo
+    with _candado_catalogo:
+        _catalogo = None
+        _conteo_catalogo = None
 
 
 def terminos_textuales(consulta: str) -> list[str]:

@@ -19,7 +19,7 @@ __all__ = [
 ]
 
 
-def instalar_grafo(monkeypatch, analisis, evaluaciones=None, investigador_msgs=None, redactor_msgs=None, salidas_tools=None):
+def instalar_grafo(monkeypatch, analisis, evaluaciones=None, investigador_msgs=None, redactor_msgs=None, salidas_tools=None, salidas_descarga=None):
     """Sustituye los LLM de los 4 nodos con LLM y las tools del investigador.
 
     Devuelve un dict con los fakes para poder inspeccionar qué recibió cada uno.
@@ -38,4 +38,5 @@ def instalar_grafo(monkeypatch, analisis, evaluaciones=None, investigador_msgs=N
     from fakes_llm import herramientas_dobles
 
     monkeypatch.setattr(tools, "HERRAMIENTAS_INVESTIGADOR", herramientas_dobles(salidas_tools or {"buscar_fragmentos": {}}))
+    monkeypatch.setattr(tools, "HERRAMIENTAS_DESCARGA", herramientas_dobles(salidas_descarga or {"preparar_descarga": {}}))
     return fakes

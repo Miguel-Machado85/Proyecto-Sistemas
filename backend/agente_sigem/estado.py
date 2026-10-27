@@ -28,6 +28,8 @@ class EstadoAgente(TypedDict):
     consulta_actual: str  # la que usa el investigador (puede reformularla el evaluador)
     pasos: list[dict]  # {"agente","accion","icono"} para ChatResponse.pasos
     es_alerta: bool  # audio no comprensible
+    archivos: list[dict]  # originales listos para descargar {"titulo","archivo","url_descarga",...}
+    archivos_no_disponibles: list[dict]  # documentos pedidos que existen pero no tienen original {"titulo","archivo"}
 
 
 class FiltrosSigem(BaseModel):
@@ -45,6 +47,22 @@ class AnalisisConsulta(BaseModel):
     consulta_autonoma: str  # pregunta reescrita para entenderse sin el historial, ortografía corregida
     filtros: FiltrosSigem | None = None
     usa_documento_activo: bool = False  # True si la pregunta se refiere al documento activo
+    solicita_archivo: bool = Field(
+        default=False,
+        description=(
+            "true si el usuario pide el ARCHIVO de un documento (descargar, enviar, pasar, dar, PDF, 'dónde lo veo "
+            "completo') o pide un documento sin decir qué quiere de él ('dame el decreto 83', 'necesito la ley 387'). "
+            "false si solo pregunta por su contenido o por un tema."
+        ),
+    )
+    incluye_contenido: bool = Field(
+        default=False,
+        description=(
+            "Solo con solicita_archivo=true: true si además hay que explicar el contenido, es decir, cuando pide el "
+            "documento sin referirse al archivo en sí (dame, necesito, quiero, pásame) o pide ambas cosas. "
+            "false únicamente si pide con claridad el ARCHIVO (descargar, PDF, archivo, enlace, 'dónde puedo bajarlo')."
+        ),
+    )
     pregunta_aclaracion: str | None = None  # solo si intencion == "ambigua"
     razonamiento: str  # 1 frase, para depurar en Langfuse
 
