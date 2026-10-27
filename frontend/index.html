@@ -136,6 +136,17 @@
     border-bottom-left-radius: 4px;
   }
 
+  /* Lista de las respuestas del agente: la burbuja usa pre-wrap, la lista no (evita huecos entre <li>). */
+  .msg-lista {
+    margin: 6px 0;
+    padding-left: 20px;
+    white-space: normal;
+  }
+
+  .msg-lista li {
+    margin: 2px 0;
+  }
+
   .msg-sources {
     margin-top: 10px;
     padding-top: 8px;
@@ -544,6 +555,7 @@
     <p class="query-error" id="query-error" role="alert"></p>
   </main>
 
+ <script src="assets/formato.js"></script>
  <script>
     // ══════════════════════════════════════════════════════════════
     // Caracterización (US-02) — sin cambios de lógica, solo se agregó
@@ -692,7 +704,11 @@
       }
       var bubble = document.createElement('div');
       bubble.className = 'msg msg-' + kind;
-      bubble.textContent = text;
+      if (kind === 'agent') {
+        pintarFormato(bubble, text); // negrilla y listas (assets/formato.js); sin innerHTML
+      } else {
+        bubble.textContent = text;
+      }
       chatMessages.appendChild(bubble);
       scrollToBottom();
       return bubble;

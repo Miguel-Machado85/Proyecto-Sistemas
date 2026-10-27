@@ -1,6 +1,7 @@
 """Adaptadores de Google Gemini para audio (STT y TTS), vía la Interactions API."""
 import base64
 import io
+import re
 import wave
 
 from google import genai
@@ -41,6 +42,21 @@ def transcribe(data: bytes, content_type: str) -> str:
         ],
     )
     return (interaction.output_text or "").strip()
+
+
+_NEGRILLA_VOZ = re.compile(r"(\*\*|__)(?=\S)(.+?)(?<=\S)\1")
+_ENCABEZADO_VOZ = re.compile(r"^([ \t]*)#{1,3}[ \t]+", re.MULTILINE)
+_VINETA_VOZ = re.compile(r"^([ \t]*)(?:[-*•])[ \t]+", re.MULTILINE)
+
+
+def limpiar_formato_para_voz(texto: str) -> str:
+    """Quita el formato que el chat pinta (negrilla, #, viñetas) para que el TTS no lo lea.
+
+    Conserva el texto, los saltos de línea y las citas; un ** sin pareja se deja como está.
+    """
+    texto = _NEGRILLA_VOZ.sub(r"\2", texto)
+    texto = _ENCABEZADO_VOZ.sub(r"\1", texto)
+    return _VINETA_VOZ.sub(r"\1", texto)
 
 
 def synthesize(text: str) -> bytes:

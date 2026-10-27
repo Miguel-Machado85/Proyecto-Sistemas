@@ -36,6 +36,7 @@
 {"id": "voz-num-03", "turnos": [{"origen": "voz", "mensaje": "necesito el decreto uno de dos mil diecinueve"}], "perfil": "P0", "intencion_esperada": "consulta_sigem", "archivos_esperados": ["22598_decreto-no-0012019.pdf"], "categoria": "voz_numeros_en_palabras"}
 {"id": "voz-ruido-01", "turnos": [{"origen": "voz", "mensaje": "eh... mm... ajá"}], "perfil": "P0", "intencion_esperada": "no_comprensible", "archivos_esperados": [], "categoria": "voz_ruido"}
 {"id": "voz-ruido-02", "turnos": [{"origen": "voz", "mensaje": "ss tk el la"}], "perfil": "P1", "intencion_esperada": "no_comprensible", "archivos_esperados": [], "categoria": "voz_ruido"}
+{"id": "texto-ruido-01", "turnos": [{"origen": "texto", "mensaje": "asd;fj;rjfirjp"}], "perfil": "P0", "intencion_esperada": "no_comprensible", "archivos_esperados": [], "categoria": "texto_ruido"}
 {"id": "sal-01", "turnos": [{"origen": "texto", "mensaje": "Hola, buenos días"}], "perfil": "P0", "intencion_esperada": "saludo", "archivos_esperados": [], "categoria": "saludo"}
 {"id": "sal-02", "turnos": [{"origen": "texto", "mensaje": "Buenas, ¿cómo estás?"}], "perfil": "P3", "intencion_esperada": "saludo", "archivos_esperados": [], "categoria": "saludo"}
 {"id": "fuera-01", "turnos": [{"origen": "texto", "mensaje": "¿Cómo preparo un sancocho antioqueño?"}], "perfil": "P0", "intencion_esperada": "fuera_de_dominio", "archivos_esperados": [], "categoria": "fuera_de_dominio"}
