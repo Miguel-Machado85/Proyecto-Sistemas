@@ -87,6 +87,12 @@ uv run python evaluacion/evaluar_recuperacion.py   # recuperación (solo embeddi
 uv run python evaluacion/evaluar_agente.py --estimar   # evaluación completa del agente (consume cuota)
 ```
 
+Pruebas del frontend (formato de las respuestas; Node 20+, sin dependencias), desde la raíz del repositorio:
+
+```bash
+node --test "frontend/tests/*.test.js"
+```
+
 ## Notas operativas
 - **Cuota de Gemini:** una consulta con búsqueda gasta de 3 a 6 llamadas. El plan gratuito de `gemini-3.5-flash`
   permite ~20 solicitudes por día; para uso real hace falta facturación (o usar flash-lite en investigador y redactor).

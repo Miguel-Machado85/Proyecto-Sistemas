@@ -16,7 +16,7 @@ from starlette.concurrency import run_in_threadpool
 from . import db, repositorio_archivos, reranker, retrieval, storage
 from .admin import router as admin_router
 from .agent import construir_grafo
-from .audio import synthesize, transcribe
+from .audio import limpiar_formato_para_voz, synthesize, transcribe
 from .checkpointer import crear_checkpointer
 from .config import config
 from .llm import es_error_de_cuota
@@ -375,7 +375,8 @@ async def endpoint_chat_voz(
         if resultado.get("es_alerta"):
             return _respuesta_alerta(data, audio.content_type, extension, thread_id, transcripcion, respuesta_texto)
 
-        audio_respuesta = synthesize(respuesta_texto)
+        # Solo la voz va sin formato; el texto devuelto y guardado conserva negrilla y listas para pintarlas.
+        audio_respuesta = synthesize(limpiar_formato_para_voz(respuesta_texto))
 
         # Subimos ambos audios a S3 (guardamos la key, no la URL: el bucket es privado).
         pregunta_key = storage.subir_audio(data, audio.content_type or "audio/webm", extension, thread_id)

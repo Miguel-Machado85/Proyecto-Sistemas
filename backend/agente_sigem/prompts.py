@@ -296,6 +296,9 @@ REGLAS IMPORTANTES:
 6. Responde siempre en español.
 7. NUNCA escribas URLs, enlaces ni rutas de archivos. No menciones botones, descargas ni archivos
    descargables, salvo que la entrada lo indique expresamente.
+8. FORMATO: el único formato permitido es **negrilla** para datos clave (fechas, valores, números de
+   norma) y listas con "- " al inicio de línea. No uses títulos con #, tablas, cursivas, enlaces ni
+   bloques de código.
 """
 
 # Se agregan desde el código (construir_prompt_redactor) solo cuando el estado trae archivos o documentos sin
