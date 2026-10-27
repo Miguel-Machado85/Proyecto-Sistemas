@@ -94,11 +94,14 @@ Si hay varios documentos posibles se pide aclaración (no se entrega ninguno); s
 | `GET /documentos/{archivo}/descargar` | Entrega el original del documento indexado (`Content-Disposition: attachment`, nombre original). `404` amable si no está en el catálogo o no tiene original; `503` si el repositorio (Drive) no está disponible. `DRIVE_MODO_ENTREGA=redirect` responde `302` al enlace de Drive. |
 | `GET /historial/{thread_id}` | Turnos del hilo con URLs firmadas de audio. |
 | `GET /documentos/sugerencias?q=` | Autocompletado del catálogo. |
-| `POST /admin/lotes` | Recibe uno o varios PDF/PNG y prepara un lote sin generar embeddings. Requiere `X-Admin-Token`. |
-| `GET /admin/lotes/{lote_id}` | Consulta el estado y los errores por archivo de un lote administrativo. Requiere `X-Admin-Token`. |
-| `POST /admin/lotes/{lote_id}/indexar` | Confirma la metadata editable e indexa los documentos listos en Chroma. Requiere `X-Admin-Token`. |
-| `POST /admin/lotes/{lote_id}/cancelar` | Cancela un lote pendiente y elimina sus originales sin indexar. Requiere `X-Admin-Token`. |
-| `POST /admin/lotes/{lote_id}/revertir-indexacion` | Elimina de Chroma todo lo añadido por un lote indexado, manda sus originales a la papelera del repositorio, borra sus filas de `archivos_documento` y devuelve el lote a pendiente. Requiere `X-Admin-Token`. |
+| `POST /admin/login` | Valida usuario y contraseña y establece una sesión JWT en cookie HttpOnly. |
+| `GET /admin/sesion` | Comprueba si existe una sesión administrativa válida. |
+| `POST /admin/logout` | Borra la cookie de sesión del navegador. |
+| `POST /admin/lotes` | Recibe uno o varios PDF/PNG y prepara un lote sin generar embeddings. Requiere sesión administrativa. |
+| `GET /admin/lotes/{lote_id}` | Consulta el estado y los errores por archivo de un lote administrativo. Requiere sesión administrativa. |
+| `POST /admin/lotes/{lote_id}/indexar` | Confirma la metadata editable e indexa los documentos listos. Requiere sesión administrativa. |
+| `POST /admin/lotes/{lote_id}/cancelar` | Cancela un lote pendiente y elimina sus originales sin indexar. Requiere sesión administrativa. |
+| `POST /admin/lotes/{lote_id}/revertir-indexacion` | Elimina de Chroma lo añadido por un lote y lo devuelve a pendiente. Requiere sesión administrativa. |
 | `GET /health` | Estado de la API; con `CHROMA_MODO=http` también el de Chroma (`{"status":"ok","chroma":"ok"}`, o `503` si el servidor no responde). |
 | `GET /health/llm` | Estado del modelo de Gemini. |
 
@@ -125,7 +128,8 @@ Copia `.env.example` a `.env` (nunca se versiona). Las principales:
 | `GOOGLE_DRIVE_FOLDER_ID` | — | ID o URL completa de la carpeta de Drive con los PDF. |
 | `GOOGLE_OAUTH_CLIENT_FILE`, `GOOGLE_OAUTH_TOKEN_FILE` | `./secrets/oauth-client.json`, `./secrets/oauth-token.json` | Credenciales OAuth de Drive (fuera de Git; en Compose, `/app/secrets` de solo lectura). |
 | `DRIVE_MODO_ENTREGA` | `stream` | `stream` (el backend reenvía el archivo) o `redirect` (302 al enlace de Drive). |
-| `ADMIN_UPLOAD_TOKEN` | — | Secreto obligatorio para los endpoints y la pantalla administrativa. |
+| `ADMIN_USERNAME` / `ADMIN_PASSWORD_HASH` / `ADMIN_JWT_SECRET` | — | Credenciales del administrador, hash bcrypt y secreto de firma de JWT. Obligatorios para administrar documentos. |
+| `ADMIN_SESSION_HOURS` / `ADMIN_COOKIE_SECURE` / `ADMIN_CORS_ORIGINS` | `8` / `false` / `http://localhost:8080` | Vencimiento, seguridad de cookie y origen autorizado del frontend. |
 | `UPLOAD_ROOT` | `./documentos` | Carpeta persistente de lotes pendientes e indexados; no se versiona. |
 | `CHUNK_SIZE`, `CHUNK_OVERLAP` | `1000`, `200` | Particionado compatible con los documentos históricos. |
 | `EMBEDDING_BATCH_SIZE`, `EMBEDDING_BATCH_PAUSE_SECONDS` | `25`, `20` | Lotes y pausa de Gemini durante la indexación administrativa. |
@@ -214,9 +218,18 @@ Si el token falta, está dañado o caducó, la API **arranca igual** y el chat f
 
 ## Carga administrativa
 
-Configura `ADMIN_UPLOAD_TOKEN` en `backend/.env`, inicia los contenedores y abre
-`http://localhost:8080/admin.html`. El token se mantiene solo en memoria del navegador y se envía en el encabezado
-`X-Admin-Token`; el backend lo valida en cada operación.
+### Inicio de sesión del administrador
+
+La administración documental ya no usa un token que se copia en la página. Configura en `backend/.env` un único usuario, el hash bcrypt de su contraseña y un secreto aleatorio para firmar las sesiones JWT:
+
+```bash
+# Desde backend/, este comando pide la contraseña sin mostrarla y devuelve un hash
+# listo para pegar en Docker Compose (duplica los $ que Compose interpreta).
+uv run python -c "import bcrypt,getpass; print(bcrypt.hashpw(getpass.getpass().encode(), bcrypt.gensalt()).decode().replace(chr(36), chr(36)*2))"
+uv run python -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+Después asigna las salidas a `ADMIN_PASSWORD_HASH` y `ADMIN_JWT_SECRET`, y define `ADMIN_USERNAME`. Abre `http://localhost:8080/admin-login.html` para iniciar sesión. El JWT se guarda en una cookie `HttpOnly` que vence según `ADMIN_SESSION_HOURS`; en un despliegue HTTPS configura `ADMIN_COOKIE_SECURE=true` y ajusta `ADMIN_CORS_ORIGINS` con el dominio real del frontend.
 
 La pantalla acepta hasta 20 PDF o PNG por lote. La primera acción guarda los archivos en
 `documentos/pendientes/<lote_id>/`, extrae texto (con OCR en español cuando hace falta) y propone la metadata.

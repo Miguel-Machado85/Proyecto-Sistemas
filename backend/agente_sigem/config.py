@@ -71,7 +71,17 @@ class Config:
     CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "200"))
     EMBEDDING_BATCH_SIZE = int(os.getenv("EMBEDDING_BATCH_SIZE", "25"))
     EMBEDDING_BATCH_PAUSE_SECONDS = float(os.getenv("EMBEDDING_BATCH_PAUSE_SECONDS", "20"))
-    ADMIN_UPLOAD_TOKEN = os.getenv("ADMIN_UPLOAD_TOKEN")
+    # ── SPRINT 7: Autenticación de administración (JWT en cookie HttpOnly) ──
+    ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
+    # Compose interpreta `$` en archivos env; `$$` conserva el carácter. Normalizamos
+    # también para poder usar el mismo archivo en Docker y con `uv run` local.
+    ADMIN_PASSWORD_HASH = (os.getenv("ADMIN_PASSWORD_HASH") or "").replace("$$", "$") or None
+    ADMIN_JWT_SECRET = os.getenv("ADMIN_JWT_SECRET")
+    ADMIN_SESSION_HOURS = int(os.getenv("ADMIN_SESSION_HOURS", "8"))
+    ADMIN_COOKIE_SECURE = os.getenv("ADMIN_COOKIE_SECURE", "false").lower() == "true"
+    ADMIN_CORS_ORIGINS = [
+        origen.strip() for origen in os.getenv("ADMIN_CORS_ORIGINS", "http://localhost:8080").split(",") if origen.strip()
+    ]
 
     DOCS_DIR = Path(os.getenv("DOCS_DIR", Path(__file__).resolve().parent.parent / "docs"))
 

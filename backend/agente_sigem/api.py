@@ -229,8 +229,11 @@ def health_check_llm():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    # SPRINT 7: las cookies administrativas requieren un origen explícito; el frontend público
+    # sigue pudiendo consultar la API, pero las cookies administrativas
+    # solo se aceptan desde orígenes explícitos, nunca junto a CORS con "*".
+    allow_origins=config.ADMIN_CORS_ORIGINS,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
