@@ -132,6 +132,17 @@ def test_chat_de_saludo_devuelve_el_texto_fijo_sin_fuentes(monkeypatch, cliente)
     assert cuerpo["fuentes"] == [] and cuerpo["candidatos"] == []
 
 
+def test_chat_texto_no_comprensible_usa_el_mensaje_neutral(monkeypatch, cliente):
+    instalar_grafo(monkeypatch, [AnalisisConsulta(
+        intencion="no_comprensible", consulta_autonoma="asd;fj;rjfirjp", razonamiento="texto sin sentido")])
+
+    cuerpo = cliente.post("/chat", json={"mensaje": "asd;fj;rjfirjp"}).json()
+
+    assert cuerpo["respuesta"] == prompts.MENSAJE_TEXTO_POCO_CLARO
+    assert cuerpo["respuesta"] != prompts.MENSAJE_AUDIO_POCO_CLARO
+    assert cuerpo["fuentes"] == [] and cuerpo["candidatos"] == []
+
+
 def test_chat_valida_el_mensaje_vacio(cliente):
     assert cliente.post("/chat", json={"mensaje": ""}).status_code == 422
 

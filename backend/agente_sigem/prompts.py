@@ -14,6 +14,11 @@ MENSAJE_AUDIO_POCO_CLARO = (
     "hablando cerca del micrófono."
 )
 
+MENSAJE_TEXTO_POCO_CLARO = (
+    "No logré entender tu mensaje. ¿Puedes escribirlo de nuevo con otras palabras? "
+    "Por ejemplo: '¿Qué dice el Decreto 83 de 2018?'"
+)
+
 MENSAJE_SERVICIO_SATURADO = (
     "En este momento hay mucha demanda y no puedo procesar tu consulta. "
     "Por favor, inténtalo de nuevo en unos minutos."
@@ -85,9 +90,11 @@ INTENCIONES
   Si no hay documento activo, nunca uses "seguimiento".
 - "ambigua": no hay forma razonable de buscar ("necesito un documento", "ayúdame con un trámite").
   Incluye siempre pregunta_aclaracion: una pregunta corta pidiendo tema, número, año o dependencia.
-- "no_comprensible": SOLO cuando el origen es "voz" y la transcripción es ruido, silencio o palabras
-  sueltas sin sentido ("eh… mm… ajá"). Si es una pregunta real mal transcrita, reconstrúyela en
-  consulta_autonoma y elige la intención que corresponda.
+- "no_comprensible": el mensaje no contiene una pregunta, sea cual sea el origen. Con voz: ruido,
+  silencio o palabras sueltas sin sentido ("eh… mm… ajá"). Con texto: caracteres o palabras sin
+  sentido que no forman una pregunta ("asd;fj;rjfirjp"). Si es una pregunta real mal transcrita o
+  mal escrita ("el decrto 1 dl 2019"), reconstrúyela en consulta_autonoma y elige la intención que
+  corresponda (aquí, "consulta_sigem"): NO es "no_comprensible".
 
 CAMPOS
 - consulta_autonoma: la pregunta reescrita para que se entienda SIN el historial, con la ortografía
@@ -156,6 +163,15 @@ EJEMPLOS (entrada → salida)
    Documento activo: ninguno. Origen: voz. Mensaje: "eh... mm... ajá"
    → intencion="no_comprensible", consulta_autonoma="eh... mm... ajá",
      razonamiento="La transcripción no contiene una pregunta."
+
+   Texto sin sentido.
+   Documento activo: ninguno. Origen: texto. Mensaje: "asd;fj;rjfirjp"
+   → intencion="no_comprensible", consulta_autonoma="asd;fj;rjfirjp",
+     razonamiento="El texto son caracteres sin sentido, no una pregunta."
+   Contraejemplo: Origen: texto. Mensaje: "el decrto 1 dl 2019 q dise"
+   → intencion="consulta_sigem", consulta_autonoma="¿Qué dice el Decreto 1 de 2019?",
+     filtros={"tipo": "decreto", "numero": 1, "anio": 2019},
+     razonamiento="Pregunta real con errores de ortografía; se reconstruyó."
 
 7) Contenido vs archivo (pares contrastados, documentos reales).
    Origen: texto, sin documento activo.
